@@ -3872,6 +3872,44 @@ html { scroll-behavior: smooth; }
   </div>
 </div>
 
+<div class="mega-wrap" id="menu-calculators">
+  <div class="mega-panel has-sidebar">
+    <div class="mega-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
+        <div>
+          <div class="mega-group-label">System & Production</div>
+          <a href="/calculators/system-size/" class="mega-item">
+            <div class="mi-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2v16M2 10h16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+            <div class="mi-text"><div class="mi-name">System Size Calculator</div><div class="mi-desc">Optimal system sizing from usage</div></div>
+          </a>
+          <div class="mega-group-label" style="margin-top:12px">Financial & Incentives</div>
+          <a href="/calculators/macrs/" class="mega-item">
+            <div class="mi-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M2 16l4-6 4 3 4-5 4 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="mi-text"><div class="mi-name">MACRS Depreciation</div><div class="mi-desc">5-year commercial depreciation schedule</div></div>
+          </a>
+          <a href="/calculators/loan-payment/" class="mega-item">
+            <div class="mi-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM10 6v4l3 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+            <div class="mi-text"><div class="mi-name">Loan Payment Calculator</div><div class="mi-desc">Monthly payments vs. savings</div></div>
+          </a>
+        </div>
+        <div>
+          <div class="mega-group-label">Tools & Planners</div>
+          <a href="/calculators/" class="mega-item">
+            <div class="mi-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 4h12v12H4z" stroke="currentColor" stroke-width="1.4"/><path d="M4 8h12M8 4v12" stroke="currentColor" stroke-width="1.4"/></svg></div>
+            <div class="mi-text"><div class="mi-name">All Calculators</div><div class="mi-desc">30+ tools for sizing, finance, engineering</div></div>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="mega-sidebar">
+      <div class="sidebar-head">Calculator Platform</div>
+      <p style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:12px">30+ professional-grade solar calculators for system sizing, financial modeling, and engineering.</p>
+      <a href="/calculators/" class="mega-sidebar-btn">View All Calculators</a>
+    </div>
+  </div>
+</div>
+
+
 
 <!-- ════════════ HERO ════════════ -->
 <section class="subpage-hero" style="background-image:url('https://static.wixstatic.com/media/11062b_8382e0430efb495d85472609b53759fd~mv2.jpg/v1/fill/w_1920,h_900,al_c,q_85/11062b_8382e0430efb495d85472609b53759fd~mv2.jpg');min-height:420px">
@@ -4232,7 +4270,7 @@ function calcSystemSize() {
   if (mobileOverlay) mobileOverlay.addEventListener('click', closeMobileDrawer);
 
   /* ─── POPULATE MOBILE SUBMENUS FROM DESKTOP PANELS ─── */
-  const menuIds = ['about','engineering','procurement','construction','incentives','financing','training'];
+  const menuIds = ['about','engineering','procurement','construction','incentives','financing','training','calculators'];
   menuIds.forEach(function(id) {
     const desktopPanel = document.getElementById('menu-' + id);
     const mobileSub    = document.getElementById('mobile-sub-' + id);
