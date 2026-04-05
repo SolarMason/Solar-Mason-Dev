@@ -3966,7 +3966,13 @@ html { scroll-behavior: smooth; }
     <div class="az-field"><label>Account Type Override</label><select id="optType"><option value="auto">Auto-detect</option><option value="residential">Residential</option><option value="commercial">Commercial</option></select></div>
     <div class="az-field"><label>Mount Preference</label><select id="optMount"><option value="roof">Roof Mount</option><option value="ground">Ground Mount</option><option value="carport">Solar Carport</option></select></div>
   </div>
+  <div class="az-opt-row">
+    <div class="az-field"><label>Panel Wattage (W)</label><input type="number" id="optPanelW" value="450" min="300" max="600" step="10"></div>
+    <div class="az-field"><label>Cost per Watt ($)</label><input type="number" id="optCpw" value="3.00" min="0.50" max="6.00" step="0.10"></div>
+    <div class="az-field"><label>Production Factor (kWh/kW/yr)</label><input type="number" id="optProd" value="1275" min="800" max="1800" step="25"></div>
+  </div>
   <div style="text-align:center;margin-top:.75rem"><button onclick="reCalc()" style="padding:.75rem 2rem;border-radius:100px;border:none;background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(45,130,190,.25)">Recalculate</button></div>
+  <script>document.getElementById('optMount').addEventListener('change',function(){var v=this.value;var cpw=v==='ground'?2.20:v==='carport'?3.50:3.00;document.getElementById('optCpw').value=cpw.toFixed(2)});</script>
 </div>
 
 <!-- REPORT -->
@@ -4176,12 +4182,16 @@ function calculateSizing(){
   if(!billData||!billData.usage.annualKwh)return;
   const offset=parseInt(document.getElementById('optOffset').value)/100;
   const mount=document.getElementById('optMount').value;
-  const cpw=mount==='ground'?CONFIG.groundMountCostPerWatt:mount==='carport'?CONFIG.carportCostPerWatt:CONFIG.roofMountCostPerWatt;
+  // Read user-adjustable values from UI (with CONFIG as fallback)
+  var uiPanelW=parseInt(document.getElementById('optPanelW').value)||CONFIG.panelWattage;
+  var uiCpw=parseFloat(document.getElementById('optCpw').value)||CONFIG.roofMountCostPerWatt;
+  var uiProd=parseInt(document.getElementById('optProd').value)||CONFIG.nepaProductionPerKw;
+  const cpw=uiCpw;
   const requiredKwh=billData.usage.annualKwh*offset;
-  const systemKw=Math.ceil(requiredKwh/CONFIG.nepaProductionPerKw*10)/10;
-  const panels=Math.ceil(systemKw*1000/CONFIG.panelWattage);
-  const actualKw=panels*CONFIG.panelWattage/1000;
-  const estProd=Math.round(actualKw*CONFIG.nepaProductionPerKw);
+  const systemKw=Math.ceil(requiredKwh/uiProd*10)/10;
+  const panels=Math.ceil(systemKw*1000/uiPanelW);
+  const actualKw=panels*uiPanelW/1000;
+  const estProd=Math.round(actualKw*uiProd);
   const arraySqFt=panels*CONFIG.panelAreaSqFt;
   const estCost=Math.round(actualKw*1000*cpw);
   const annualSavings=Math.round(estProd*(billData.rate.effectiveRate||0.14));
@@ -4200,7 +4210,7 @@ function calculateSizing(){
   billData.solar_sizing={
     targetOffset:offset,mountType:mount,requiredKwh,systemKw:actualKw,panels,
     estAnnualProd:estProd,arraySqFt,estCost,annualSavings:Math.round(estProd*utilityRate),costPerWatt:cpw,
-    productionFactor:CONFIG.nepaProductionPerKw,panelWattage:CONFIG.panelWattage,
+    productionFactor:uiProd,panelWattage:uiPanelW,
     solarLCOE:solarLCOE,utilityRate:utilityRate,savings25yr:Math.round(savings25),
     simplePayback:Math.round(simplePayback*10)/10,roi25:roi25,totalProd25:Math.round(totalProd25)
   };
