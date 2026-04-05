@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MACRS Depreciation Calculator | Solar Mason</title>
-<meta name="description" content="Calculate 5-year accelerated depreciation for commercial solar with ITC basis reduction and bonus depreciation. Construction must begin before July 4, 2026.">
+<title>Panel Layout Calculator | Solar Mason</title>
+<meta name="description" content="Estimate how many panels fit on your roof or ground area with setbacks and spacing.">
 <link rel="icon" href="https://static.wixstatic.com/media/4dcc05_c778003a773a4844ba6c8806c92c7583~mv2.png/v1/fill/w_32,h_32,al_c,q_85/1.png">
 <style>
 /* ═══════════════════════════════════════════
@@ -3875,86 +3875,44 @@ html { scroll-behavior: smooth; }
 
 
 <!-- ════════════ HERO ════════════ -->
-<section class="subpage-hero" style="background-image:url('https://images.unsplash.com/photo-1509391366360-2e959784a276?w=1920&q=80');min-height:300px">
+<section class="subpage-hero" style="background-image:url('https://images.unsplash.com/photo-1509391366360-2e959784a276?w=1920&q=80');min-height:280px">
   <div class="subpage-hero-content">
-    <div class="hero-badge">Commercial</div>
-    <h1>MACRS Depreciation Calculator</h1>
-    <p class="hero-subtitle">Calculate 5-year accelerated depreciation for commercial solar with ITC basis reduction and bonus depreciation. Construction must begin before July 4, 2026.</p>
+    <div class="hero-badge">Engineering</div>
+    <h1>Panel Layout Calculator</h1>
+    <p class="hero-subtitle">Estimate how many panels fit on your roof or ground area with setbacks and spacing.</p>
   </div>
 </section>
 
 <!-- ════════════ BREADCRUMB ════════════ -->
 <div class="breadcrumb">
-  <a href="/">Home</a> <span>›</span> MACRS Depreciation Calculator
+  <a href="/">Home</a> <span>›</span> Panel Layout Calculator
 </div>
 
 <!-- ════════════ CONTENT ════════════ -->
-
 <div class="content-section" style="max-width:900px">
 <style>
-.cf{display:flex;flex-direction:column;gap:.35rem}.cf label{font-size:.82rem;font-weight:600;color:#475569}.cf input,.cf select{padding:.75rem 1rem;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.85);font-size:.95rem;color:#0B2545;outline:none;transition:all .2s}.cf input:focus,.cf select:focus{border-color:var(--brand,#2D82BE);box-shadow:0 0 0 3px rgba(45,130,190,.1)}.cf .u{font-size:.75rem;color:#94a3b8;margin-top:.15rem}.cr{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}@media(max-width:600px){.cr{grid-template-columns:1fr}}.calc-btn{display:block;margin:1.5rem auto;padding:1rem 3rem;border-radius:100px;border:none;background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);color:#fff;font-size:1.05rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(45,130,190,.3)}.calc-btn:hover{transform:translateY(-2px)}.rc{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem}.rcard{background:rgba(255,255,255,.8);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.7);border-radius:14px;padding:1.25rem;text-align:center}.rcard.pri{background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);border:none}.rcard.pri .rv,.rcard.pri .rl,.rcard.pri .rs{color:#fff}.rv{font-size:1.8rem;font-weight:800;color:var(--navy,#0B2545);line-height:1.2}.rl{font-size:.75rem;color:#64748B;text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-top:.25rem}.rs{font-size:.72rem;color:#94a3b8;margin-top:.1rem}.insight{background:rgba(45,130,190,.04);border:1px solid rgba(45,130,190,.12);border-radius:14px;padding:1.5rem;margin:1.5rem 0}.insight h3{font-size:1rem;font-weight:700;color:var(--brand,#2D82BE);margin-bottom:.5rem}.insight p{font-size:.9rem;color:#475569;line-height:1.7}.ctable{width:100%;border-collapse:separate;border-spacing:0;border-radius:12px;overflow:hidden;border:1px solid rgba(0,0,0,.06);margin:1.5rem 0}.ctable th{background:rgba(45,130,190,.08);padding:.7rem 1rem;text-align:left;font-size:.78rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em}.ctable td{padding:.6rem 1rem;font-size:.88rem;color:#334155;border-top:1px solid rgba(0,0,0,.04)}.ctable .tot td{font-weight:700;background:rgba(45,130,190,.05);color:var(--navy,#0B2545)}.calc-cta{background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);border-radius:18px;padding:2.5rem;text-align:center;margin:2rem 0}.calc-cta h3{color:#fff;font-size:1.3rem;font-weight:700;margin-bottom:.5rem}.calc-cta p{color:rgba(255,255,255,.85);font-size:.95rem;margin-bottom:1rem}.calc-cta a{display:inline-block;padding:.75rem 2rem;border-radius:100px;background:#fff;color:var(--brand,#2D82BE);font-weight:600;text-decoration:none;margin:.25rem}.calc-cta-info{color:rgba(255,255,255,.7);font-size:.82rem;margin-top:.75rem}#results{display:none}
+.cf{display:flex;flex-direction:column;gap:.35rem}.cf label{font-size:.82rem;font-weight:600;color:#475569}.cf input,.cf select{padding:.75rem 1rem;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.85);font-size:.95rem;color:#0B2545;outline:none;transition:all .2s}.cf input:focus,.cf select:focus{border-color:var(--brand,#2D82BE);box-shadow:0 0 0 3px rgba(45,130,190,.1)}.cf .u{font-size:.75rem;color:#94a3b8;margin-top:.15rem}.cr{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}@media(max-width:600px){.cr{grid-template-columns:1fr}}.calc-btn{display:block;margin:1.5rem auto;padding:1rem 3rem;border-radius:100px;border:none;background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);color:#fff;font-size:1.05rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(45,130,190,.3)}.calc-btn:hover{transform:translateY(-2px)}.rc{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem}.rcard{background:rgba(255,255,255,.8);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.7);border-radius:14px;padding:1.25rem;text-align:center}.rcard.pri{background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);border:none}.rcard.pri .rv,.rcard.pri .rl,.rcard.pri .rs{color:#fff}.rv{font-size:1.8rem;font-weight:800;color:var(--navy,#0B2545);line-height:1.2}.rl{font-size:.75rem;color:#64748B;text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-top:.25rem}.rs{font-size:.72rem;color:#94a3b8;margin-top:.1rem}.insight{background:rgba(45,130,190,.04);border:1px solid rgba(45,130,190,.12);border-radius:14px;padding:1.5rem;margin:1.5rem 0}.insight h3{font-size:1rem;font-weight:700;color:var(--brand,#2D82BE);margin-bottom:.5rem}.insight p{font-size:.9rem;color:#475569;line-height:1.7}.ctable{width:100%;border-collapse:separate;border-spacing:0;border-radius:12px;overflow:hidden;border:1px solid rgba(0,0,0,.06);margin:1.5rem 0}.ctable th{background:rgba(45,130,190,.08);padding:.7rem 1rem;text-align:left;font-size:.78rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em}.ctable td{padding:.6rem 1rem;font-size:.88rem;color:#334155;border-top:1px solid rgba(0,0,0,.04)}.ctable .tot td{font-weight:700;background:rgba(45,130,190,.05)}.calc-cta{background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);border-radius:18px;padding:2.5rem;text-align:center;margin:2rem 0}.calc-cta h3{color:#fff;font-size:1.3rem;font-weight:700;margin-bottom:.5rem}.calc-cta p{color:rgba(255,255,255,.85);font-size:.95rem;margin-bottom:1rem}.calc-cta a{display:inline-block;padding:.75rem 2rem;border-radius:100px;background:#fff;color:var(--brand,#2D82BE);font-weight:600;text-decoration:none;margin:.25rem}.calc-cta-info{color:rgba(255,255,255,.7);font-size:.82rem;margin-top:.75rem}#results{display:none}
 </style>
 
-<div class="glass-card" style="border-left:4px solid var(--brand,#2D82BE)">
-  <h2 style="color:var(--brand)">⚠ Commercial Only — Deadline: July 4, 2026</h2>
-  <p style="font-size:.92rem;color:#475569;line-height:1.7">MACRS depreciation is only available to for-profit businesses that own the solar equipment. Your project must begin construction (physical work on-site) before July 4, 2026 to qualify for the ITC. This calculator provides estimates only — consult a tax professional.</p>
-</div>
-
-<div class="glass-card">
-  <h2>System & Cost</h2>
-  <div class="cr">
-    <div class="cf"><label>Total System Cost ($)</label><input type="number" id="cost" value="200000" min="0" step="1000"></div>
-    <div class="cf"><label>ITC Rate</label><select id="itc"><option value="30">30% (Base + prevailing wage)</option><option value="40">40% (+domestic content)</option><option value="50">50% (+energy community)</option><option value="70">70% (Maximum stacked)</option><option value="6">6% (No prevailing wage)</option><option value="0">0% (No ITC)</option></select></div>
-  </div>
-  <div class="cr">
-    <div class="cf"><label>Federal Tax Rate (%)</label><input type="number" id="tr" value="24" min="0" max="50"><span class="u">Corporate: 21%, Pass-through: varies</span></div>
-    <div class="cf"><label>Bonus Depreciation</label><select id="bd"><option value="20">20% (2026)</option><option value="40">40% (2025)</option><option value="100">100% (2022-2023)</option><option value="0">0% (None)</option></select></div>
-  </div>
-  <div class="cr">
-    <div class="cf"><label>State Tax Rate (%)</label><input type="number" id="sr" value="8.99" min="0" max="15" step="0.01"><span class="u">PA corporate: 8.99% (2026)</span></div>
-    <div class="cf"><label>Year Placed in Service</label><select id="yr"><option value="2026">2026</option><option value="2025">2025</option><option value="2027">2027</option></select></div>
-  </div>
-</div>
-
-<button class="calc-btn" onclick="calc()">Calculate Depreciation</button>
-
-<div id="results">
-  <div class="glass-card">
-    <h2>Depreciation Summary</h2>
-    <div class="rc">
-      <div class="rcard pri"><div class="rv" id="rItc">—</div><div class="rl">ITC Value</div><div class="rs" id="rItcP" style="color:rgba(255,255,255,.7)"></div></div>
-      <div class="rcard"><div class="rv" id="rBas">—</div><div class="rl">Depreciable Basis</div></div>
-      <div class="rcard"><div class="rv" id="rTot">—</div><div class="rl">Total Tax Savings</div><div class="rs">ITC + Depreciation</div></div>
-      <div class="rcard"><div class="rv" id="rNet">—</div><div class="rl">Net System Cost</div><div class="rs" id="rNetP"></div></div>
-    </div>
-    <div class="insight"><h3>What This Means</h3><p id="rI"></p></div>
-    <h3 style="margin-top:2rem">Year-by-Year Schedule</h3>
-    <table class="ctable"><thead><tr><th>Year</th><th>MACRS Rate</th><th>Depreciation</th><th>Fed Tax Savings</th><th>State Tax Savings</th><th>Total</th></tr></thead><tbody id="rSch"></tbody></table>
-    <h3 style="margin-top:2rem">Complete Summary</h3>
-    <table class="ctable"><thead><tr><th>Benefit</th><th>Amount</th></tr></thead><tbody id="rSum"></tbody></table>
-    <div style="font-size:.8rem;color:#94a3b8;padding:1rem;margin-top:1rem"><strong>Notes:</strong> MACRS rates: 20%, 32%, 19.2%, 11.52%, 11.52%, 5.76%. ITC reduces depreciable basis by 50% of credit. PA does not conform to federal bonus depreciation — state column uses standard MACRS only.</div>
-  </div>
-  <div style="text-align:center;margin:1.5rem 0"><button onclick="window.print()" style="padding:.6rem 1.5rem;border-radius:100px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.7);font-size:.82rem;font-weight:600;color:#475569;cursor:pointer">🖨️ Print Schedule</button></div>
-  <div class="calc-cta"><h3>Don't Miss the July 2026 Deadline</h3><p>Solar Mason can get your commercial project designed, permitted, and under construction before the deadline.</p><a href="https://app.solarmason.com/account">Start Your Project</a><a href="mailto:engineering@solarmason.com" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)">Talk to an Engineer</a><div class="calc-cta-info">570-MY-SOLAR (570-697-6527) · solarmason.com · engineering@solarmason.com</div></div>
-  <div style="font-size:.75rem;color:#94a3b8;padding:1rem;border-top:1px solid rgba(0,0,0,.05)"><strong>Disclaimer:</strong> This calculator provides estimates only and does not constitute tax advice. Consult a qualified CPA or tax attorney before making investment decisions.</div>
-</div>
-</div>
-
+<div class="glass-card"><h2>Area & Panel Details</h2>
+<div class="cr"><div class="cf"><label>Available Area Width (ft)</label><input type="number" id="w" value="40" min="5"></div><div class="cf"><label>Available Area Length (ft)</label><input type="number" id="l" value="30" min="5"></div></div>
+<div class="cr"><div class="cf"><label>Fire Setback — Ridge (ft)</label><input type="number" id="ridge" value="3" min="0"></div><div class="cf"><label>Fire Setback — Edge (ft)</label><input type="number" id="edge" value="1.5" min="0" step="0.5"></div></div>
+<div class="cr"><div class="cf"><label>Panel Width (in)</label><input type="number" id="pw" value="41" min="30" max="50"><span class="u">Standard: ~41"</span></div><div class="cf"><label>Panel Height (in)</label><input type="number" id="ph" value="69" min="50" max="90"><span class="u">Standard: ~69"</span></div></div>
+<div class="cr"><div class="cf"><label>Orientation</label><select id="orient"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div><div class="cf"><label>Panel Wattage</label><input type="number" id="watt" value="400" min="200" max="600"></div></div></div>
+<button class="calc-btn" onclick="calc()">Calculate Layout</button>
+<div id="results"><div class="glass-card"><h2>Panel Layout</h2>
+<div class="rc"><div class="rcard pri"><div class="rv" id="rP">—</div><div class="rl">Panels</div></div><div class="rcard"><div class="rv" id="rKw">—</div><div class="rl">System Size (kW)</div></div><div class="rcard"><div class="rv" id="rUse">—</div><div class="rl">Area Utilization</div></div></div>
+<div class="insight"><h3>Layout Details</h3><p id="rI"></p></div></div></div>
 <script>
-function calc(){
-  var c=parseFloat(document.getElementById('cost').value),ip=parseFloat(document.getElementById('itc').value)/100,tr=parseFloat(document.getElementById('tr').value)/100,bp=parseFloat(document.getElementById('bd').value)/100,sr=parseFloat(document.getElementById('sr').value)/100,yr=parseInt(document.getElementById('yr').value);
-  var iv=Math.round(c*ip),db=c-iv*.5,mr=[.2,.32,.192,.1152,.1152,.0576],html='',tf=0,ts=0;
-  for(var i=0;i<6;i++){var bd2=db*mr[i],ad;if(i===0&&bp>0){ad=db*bp+(db*(1-bp))*mr[0]}else if(bp>0){ad=db*(1-bp)*mr[i]}else{ad=bd2}var fs=Math.round(ad*tr),ss=Math.round(bd2*sr);tf+=fs;ts+=ss;html+='<tr><td>'+(yr+i)+'</td><td>'+(mr[i]*100).toFixed(2)+'%</td><td>$'+Math.round(ad).toLocaleString()+'</td><td>$'+fs.toLocaleString()+'</td><td>$'+ss.toLocaleString()+'</td><td>$'+(fs+ss).toLocaleString()+'</td></tr>'}
-  var td=tf+ts,tb=iv+td,nc=c-tb,np=Math.round(nc/c*100);
-  html+='<tr class="tot"><td colspan="3">Total Depreciation Savings</td><td>$'+tf.toLocaleString()+'</td><td>$'+ts.toLocaleString()+'</td><td>$'+td.toLocaleString()+'</td></tr>';
-  document.getElementById('rItc').textContent='$'+iv.toLocaleString();document.getElementById('rItcP').textContent=(ip*100)+'% of $'+c.toLocaleString();document.getElementById('rBas').textContent='$'+Math.round(db).toLocaleString();document.getElementById('rTot').textContent='$'+tb.toLocaleString();document.getElementById('rNet').textContent='$'+Math.round(nc).toLocaleString();document.getElementById('rNetP').textContent=np+'% of gross';
-  document.getElementById('rI').innerHTML='On a <strong>$'+c.toLocaleString()+'</strong> system, the <strong>'+(ip*100)+'% ITC</strong> saves <strong>$'+iv.toLocaleString()+'</strong>. After basis reduction, <strong>$'+Math.round(db).toLocaleString()+'</strong> is depreciated over 5 years'+(bp>0?' with '+(bp*100)+'% bonus depreciation':'') +', saving another <strong>$'+td.toLocaleString()+'</strong> in taxes. Net cost: <strong>$'+Math.round(nc).toLocaleString()+'</strong> — just <strong>'+np+'%</strong> of the original price.';
-  document.getElementById('rSch').innerHTML=html;
-  document.getElementById('rSum').innerHTML='<tr><td>Gross system cost</td><td>$'+c.toLocaleString()+'</td></tr><tr><td>ITC ('+(ip*100)+'%)</td><td>-$'+iv.toLocaleString()+'</td></tr><tr><td>Federal depreciation savings</td><td>-$'+tf.toLocaleString()+'</td></tr><tr><td>State depreciation savings</td><td>-$'+ts.toLocaleString()+'</td></tr><tr class="tot"><td>Net cost after tax benefits</td><td>$'+Math.round(nc).toLocaleString()+'</td></tr>';
-  document.getElementById('results').style.display='block';document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
-}
+function calc(){var W=parseFloat(document.getElementById('w').value),L=parseFloat(document.getElementById('l').value),ridge=parseFloat(document.getElementById('ridge').value),edge=parseFloat(document.getElementById('edge').value),pw=parseFloat(document.getElementById('pw').value)/12,ph=parseFloat(document.getElementById('ph').value)/12,orient=document.getElementById('orient').value,watt=parseInt(document.getElementById('watt').value);
+var usableW=W-2*edge,usableL=L-ridge-edge,modW=orient==='portrait'?pw:ph,modL=orient==='portrait'?ph:pw,cols=Math.floor(usableW/(modW+.25)),rows=Math.floor(usableL/(modL+.5)),panels=cols*rows,kw=panels*watt/1000,totalArea=W*L,panelArea=panels*pw*ph,util=Math.round(panelArea/totalArea*100);
+document.getElementById('rP').textContent=panels;document.getElementById('rKw').textContent=kw.toFixed(1);document.getElementById('rUse').textContent=util+'%';
+document.getElementById('rI').innerHTML='Usable area after setbacks: <strong>'+usableW.toFixed(1)+'×'+usableL.toFixed(1)+' ft</strong>. Layout: <strong>'+cols+' columns × '+rows+' rows = '+panels+' panels</strong> ('+orient+'). System: <strong>'+kw.toFixed(1)+' kW</strong>. Area utilization: <strong>'+util+'%</strong>.';
+document.getElementById('results').style.display='block';document.getElementById('results').scrollIntoView({behavior:'smooth'});}
 </script>
-
+<div class="calc-cta"><h3>Ready to Go Solar?</h3><p>Get a custom analysis from our engineering team.</p><a href="https://app.solarmason.com/account">Get Your Free Estimate</a><a href="mailto:engineering@solarmason.com" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)">Talk to an Engineer</a><div class="calc-cta-info">570-MY-SOLAR (570-697-6527) · solarmason.com · engineering@solarmason.com</div></div>
+<div style="font-size:.75rem;color:#94a3b8;padding:1rem;border-top:1px solid rgba(0,0,0,.05)"><strong>Disclaimer:</strong> Estimates for informational purposes only. Actual results vary. Consult a qualified professional before making decisions.</div>
+</div>
 
 <!-- ════════════ CTA ════════════ -->
 <div class="content-section">
