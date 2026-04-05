@@ -4041,10 +4041,11 @@ function parseBill(text){
   // Customer name
   m=t.match(/Service to\s*:?\s*([A-Z][A-Z &,.'-]+?)\s*\d/);if(m)d.customer.name=m[1].trim();
 
-  // Service address
-  m=t.match(/(\d+\s+[A-Z].*?(?:ST|AVE|BLVD|DR|RD|CT|LN|WAY|PL|CIR)[,.]?\s*(?:(?:APT|STE|UNIT|SUITE|HOUSE METER|#)?\s*\w*)?)\s*([A-Z]+,?\s*PA\s*\d{5})/i);
-  if(m){d.location={address:m[1].trim(),cityStateZip:m[2].trim()};const zp=m[2].match(/(\d{5})/);if(zp)d.location.zip=zp[1];const ct=m[2].match(/([A-Z]+)/);if(ct)d.location.city=ct[1];}
-  d.location=d.location||{};d.location.state='PA';
+  // Service address — extract from "Service to:" block
+  d.location={state:'PA'};
+  m=t.match(/Service to\s*:?\s*[A-Z][A-Z &,.'-]+?\s+(\d+\s+\S+\s+\S+(?:\s+\S+)?(?:,\s*HOUSE METER)?)\s+([A-Z]+),?\s*PA\s*(\d{5})/);
+  if(m){d.location.address=m[1].trim();d.location.city=m[2].trim();d.location.zip=m[3];d.location.cityStateZip=m[2].trim()+', PA '+m[3];}
+  else{m=t.match(/(\d+\s+\S+\s+\S+(?:\s+ST|AVE|BLVD|DR|RD|CT|LN|WAY|PL|CIR)\S*)\s+([A-Z]{3,}),?\s*PA\s*(\d{5})/i);if(m){d.location.address=m[1].trim();d.location.city=m[2].trim();d.location.zip=m[3];d.location.cityStateZip=m[2].trim()+', PA '+m[3];}}
 
   // Amount due
   m=t.match(/Amount Due[\s$]*(\d+\.\d{2})/i);if(m)d.charges.totalBill=parseFloat(m[1]);
@@ -4176,7 +4177,7 @@ function renderReport(){
   // ═══ CUSTOMER & SERVICE ═══
   h+='<div class="az-section"><h3>Customer & Service Summary</h3><table class="az-table">';
   h+='<tr><td>Customer</td><td>'+(d.customer.name||'Not detected')+'</td></tr>';
-  h+='<tr><td>Service Address</td><td>'+((d.location.address||'')+' '+(d.location.cityStateZip||''))+'</td></tr>';
+  h+='<tr><td>Service Address</td><td>'+(d.location.address||'Not detected')+(d.location.cityStateZip?'<br>'+d.location.cityStateZip:'')+'</td></tr>';
   h+='<tr><td>Account Number</td><td>'+(d.account.number||'Not detected')+'</td></tr>';
   h+='<tr><td>Meter Number</td><td>'+(d.account.meter||'Not detected')+'</td></tr>';
   h+='<tr><td>Utility</td><td>'+(d.utility.name||'Unknown')+'</td></tr>';
