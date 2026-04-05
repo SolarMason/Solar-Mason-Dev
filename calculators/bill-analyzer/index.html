@@ -3362,6 +3362,19 @@ html { scroll-behavior: smooth; }
 .photo-section-content h2{color:#fff;font-size:1.6rem;margin-bottom:1rem}
 .photo-section-content p{color:rgba(255,255,255,.9);line-height:1.7}
 </style>
+
+<style>
+@media print {
+  body > *:not(#proposalOverlay) { display: none !important; }
+  #proposalOverlay { display: block !important; position: static !important; }
+  #proposalActions { display: none !important; }
+  #proposalContent { padding: 0; }
+  .prop-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .prop-strip { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .prop-footer { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .prop-hl td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
 </head>
 <body>
 
@@ -4635,186 +4648,82 @@ function renderReport(){
 })();
 
 
-/* ═══ PROPOSAL GENERATOR ═══ */
+
+/* ═══ PROPOSAL & SHARE ═══ */
 function generateProposal(){
   if(!billData||!billData.solar_sizing)return;
-  const d=billData,s=d.solar_sizing,u=d.usage,c=d.charges,r=d.rate;
-  const today=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
-  
-  const logoBase64='data:image/webp;base64,UklGRiYrAABXRUJQVlA4WAoAAAAQAAAAUQEAVwAAQUxQSM0RAAAB8Ib/vyo39f+91nutSerotKVFErRQjuLuDUfx4+7u7m7F3d3dCW5tcGvPwd2hniHQ7PVe79eN2XvPnpDPZ3IzIiYA';
-
-  let p='<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Solar Proposal — '+(d.customer.name||'Customer')+' | Solar Mason</title><style>';
-  p+='*{margin:0;padding:0;box-sizing:border-box}';
-  p+='body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1e293b;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
-  p+='.proposal{max-width:800px;margin:0 auto;padding:0}';
-  
+  var d=billData,s=d.solar_sizing,u=d.usage,c=d.charges,r=d.rate;
+  var today=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  var h='';
   // Header
-  p+='.p-header{background:linear-gradient(135deg,#0B2545 0%,#1B5E8A 50%,#2D82BE 100%);color:#fff;padding:2.5rem 2rem;position:relative;overflow:hidden}';
-  p+='.p-header::after{content:"";position:absolute;top:-50%;right:-10%;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,.04)}';
-  p+='.p-logo{height:40px;margin-bottom:1.25rem;filter:brightness(0) invert(1)}';
-  p+='.p-title{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;margin-bottom:.25rem}';
-  p+='.p-subtitle{font-size:.88rem;opacity:.8;font-weight:400}';
-  p+='.p-date{position:absolute;top:2rem;right:2rem;font-size:.78rem;opacity:.6;text-align:right}';
-  p+='.p-date div:first-child{font-weight:700;font-size:.82rem;opacity:.8}';
-  
+  h+='<div class="prop-header" style="background:linear-gradient(135deg,#0B2545,#1B5E8A,#2D82BE);color:#fff;padding:2.5rem 2rem;-webkit-print-color-adjust:exact;print-color-adjust:exact">';
+  h+='<div style="font-size:1.5rem;font-weight:800;margin-bottom:.25rem">Solar System Sizing Analysis</div>';
+  h+='<div style="font-size:.88rem;opacity:.8">Prepared '+today+' for '+(d.customer.name||'Customer')+'</div>';
+  h+='<div style="font-size:.78rem;opacity:.6;margin-top:.5rem">Solar Mason LLC · 570-MY-SOLAR · solarmason.com</div>';
+  h+='</div>';
   // Summary strip
-  p+='.p-strip{display:grid;grid-template-columns:repeat(4,1fr);background:#f0f7ff;border-bottom:2px solid #e0efff}';
-  p+='.p-strip-item{padding:1.25rem 1rem;text-align:center;border-right:1px solid #e0efff}';
-  p+='.p-strip-item:last-child{border-right:none}';
-  p+='.p-strip-val{font-size:1.4rem;font-weight:800;color:#0B2545}';
-  p+='.p-strip-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#64748B;font-weight:600;margin-top:.15rem}';
-  
+  h+='<div class="prop-strip" style="display:grid;grid-template-columns:repeat(4,1fr);background:#f0f7ff;-webkit-print-color-adjust:exact;print-color-adjust:exact">';
+  h+='<div style="padding:1.25rem 1rem;text-align:center;border-right:1px solid #e0efff"><div style="font-size:1.4rem;font-weight:800;color:#0B2545">'+s.systemKw.toFixed(1)+' kW</div><div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#64748B;font-weight:600;margin-top:.15rem">System Size</div></div>';
+  h+='<div style="padding:1.25rem 1rem;text-align:center;border-right:1px solid #e0efff"><div style="font-size:1.4rem;font-weight:800;color:#0B2545">'+s.panels+'</div><div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#64748B;font-weight:600;margin-top:.15rem">Panels</div></div>';
+  h+='<div style="padding:1.25rem 1rem;text-align:center;border-right:1px solid #e0efff"><div style="font-size:1.4rem;font-weight:800;color:#0B2545">'+(u.annualKwh||0).toLocaleString()+'</div><div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#64748B;font-weight:600;margin-top:.15rem">Annual kWh</div></div>';
+  h+='<div style="padding:1.25rem 1rem;text-align:center"><div style="font-size:1.4rem;font-weight:800;color:#0B2545">$'+s.estCost.toLocaleString()+'</div><div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#64748B;font-weight:600;margin-top:.15rem">Est. Cost</div></div>';
+  h+='</div>';
   // Sections
-  p+='.p-section{padding:1.75rem 2rem;border-bottom:1px solid #f1f5f9}';
-  p+='.p-section:last-child{border-bottom:none}';
-  p+='.p-section h2{font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff;display:flex;align-items:center;gap:.5rem}';
-  p+='.p-section h2 span{font-size:1.1rem}';
-  
-  // Table
-  p+='.p-table{width:100%;border-collapse:collapse}';
-  p+='.p-table td{padding:.5rem .75rem;font-size:.85rem;border-bottom:1px solid #f1f5f9;vertical-align:top}';
-  p+='.p-table td:first-child{font-weight:600;color:#475569;width:40%}';
-  p+='.p-table td:last-child{color:#1e293b}';
-  p+='.p-table tr.hl td{background:#f0f7ff;font-weight:700;color:#0B2545}';
-  
-  // Sizing cards
-  p+='.p-sizing{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin:1rem 0}';
-  p+='.p-size-card{border:2px solid #e0efff;border-radius:12px;padding:1.25rem;text-align:center}';
-  p+='.p-size-card.rec{border-color:#2D82BE;background:#f0f7ff}';
-  p+='.p-size-card h4{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:#64748B;margin-bottom:.5rem}';
-  p+='.p-size-card .kw{font-size:1.8rem;font-weight:800;color:#0B2545}';
-  p+='.p-size-card.rec .kw{color:#2D82BE}';
-  p+='.p-size-card .det{font-size:.78rem;color:#64748B;margin-top:.2rem}';
-  
-  // Insight box
-  p+='.p-insight{background:#f0f7ff;border-left:4px solid #2D82BE;border-radius:0 10px 10px 0;padding:1.25rem 1.5rem;margin:1.25rem 0}';
-  p+='.p-insight p{font-size:.88rem;color:#334155;line-height:1.7}';
-  
-  // Footer
-  p+='.p-footer{background:#0B2545;color:#fff;padding:2rem;text-align:center}';
-  p+='.p-footer-brand{font-size:1.1rem;font-weight:700;margin-bottom:.5rem}';
-  p+='.p-footer-contact{font-size:.82rem;opacity:.7;line-height:1.8}';
-  p+='.p-footer-disc{font-size:.68rem;opacity:.4;margin-top:1rem;line-height:1.5;max-width:600px;margin-left:auto;margin-right:auto}';
-  
-  // Close button (not printed)
-  p+='.p-close{position:fixed;top:1rem;right:1rem;width:44px;height:44px;border-radius:50%;background:#0B2545;color:#fff;border:none;font-size:1.2rem;cursor:pointer;z-index:100;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.2)}';
-  p+='.p-actions{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;padding:.75rem;display:flex;gap:.5rem;justify-content:center;z-index:100;box-shadow:0 -4px 12px rgba(0,0,0,.08)}';
-  p+='.p-action{padding:.65rem 1.5rem;border-radius:100px;font-size:.85rem;font-weight:600;cursor:pointer;border:none}';
-  p+='.p-action-primary{background:#2D82BE;color:#fff}';
-  p+='.p-action-secondary{background:#f1f5f9;color:#475569}';
-  p+='@media print{.p-close,.p-actions{display:none!important}body{padding:0}.proposal{max-width:100%}}';
-  p+='@media(max-width:600px){.p-strip{grid-template-columns:repeat(2,1fr)}.p-sizing{grid-template-columns:1fr}.p-header{padding:2rem 1.5rem}.p-section{padding:1.5rem}.p-date{position:static;text-align:left;margin-top:.75rem}}';
-  
-  p+='</style></head><body>';
-  
-  // Close & action buttons
-  p+='<button class="p-close" onclick="window.close()">✕</button>';
-  p+='<div class="p-actions"><button class="p-action p-action-primary" onclick="window.print()">Print / Save PDF</button><button class="p-action p-action-secondary" onclick="window.close()">Close</button></div>';
-  
-  p+='<div class="proposal">';
-  
-  // ═══ HEADER ═══
-  p+='<div class="p-header">';
-  p+='<img src="'+logoBase64+'" class="p-logo" alt="Solar Mason">';
-  p+='<div class="p-title">Solar System Sizing Analysis</div>';
-  p+='<div class="p-subtitle">Preliminary assessment based on utility bill analysis</div>';
-  p+='<div class="p-date"><div>Prepared '+today+'</div><div>For '+(d.customer.name||'Customer')+'</div></div>';
-  p+='</div>';
-  
-  // ═══ SUMMARY STRIP ═══
-  p+='<div class="p-strip">';
-  p+='<div class="p-strip-item"><div class="p-strip-val">'+s.systemKw.toFixed(1)+' kW</div><div class="p-strip-lbl">System Size</div></div>';
-  p+='<div class="p-strip-item"><div class="p-strip-val">'+s.panels+'</div><div class="p-strip-lbl">Panels</div></div>';
-  p+='<div class="p-strip-item"><div class="p-strip-val">'+(u.annualKwh||0).toLocaleString()+'</div><div class="p-strip-lbl">Annual kWh</div></div>';
-  p+='<div class="p-strip-item"><div class="p-strip-val">$'+s.estCost.toLocaleString()+'</div><div class="p-strip-lbl">Est. Cost</div></div>';
-  p+='</div>';
-  
-  // ═══ CUSTOMER ═══
-  p+='<div class="p-section"><h2><span>👤</span> Customer Information</h2><table class="p-table">';
-  p+='<tr><td>Customer</td><td>'+(d.customer.name||'—')+'</td></tr>';
-  p+='<tr><td>Service Address</td><td>'+(d.location.address||'—')+(d.location.cityStateZip?'<br>'+d.location.cityStateZip:'')+'</td></tr>';
-  p+='<tr><td>Account</td><td>'+(d.account.number||'—')+'</td></tr>';
-  p+='<tr><td>Utility</td><td>'+(d.utility.name||'—')+'</td></tr>';
-  p+='<tr><td>Account Type</td><td>'+d.classification.type+'</td></tr>';
-  p+='<tr><td>Rate Class</td><td>'+(r.rateClass||'—')+'</td></tr>';
-  p+='</table></div>';
-  
-  // ═══ USAGE ═══
-  p+='<div class="p-section"><h2><span>⚡</span> Usage Analysis</h2><table class="p-table">';
-  p+='<tr><td>Billing Period</td><td>'+(d.billing_period.start||'?')+' – '+(d.billing_period.end||'?')+' ('+(u.daysBilled||'?')+' days)</td></tr>';
-  p+='<tr><td>Period Usage</td><td>'+(u.billingKwh||'?')+' kWh</td></tr>';
-  p+='<tr><td>Avg Daily Usage</td><td>'+(u.avgKwhDay||Math.round((u.billingKwh||0)/(u.daysBilled||30)))+' kWh/day</td></tr>';
-  if(u.avgMonthlyKwh)p+='<tr><td>Avg Monthly</td><td>'+u.avgMonthlyKwh+' kWh</td></tr>';
-  p+='<tr class="hl"><td>Annual Usage</td><td>'+(u.annualKwh||'?').toLocaleString()+' kWh/year</td></tr>';
-  p+='<tr><td>Basis</td><td>'+u.annualSource+'</td></tr>';
-  p+='</table></div>';
-  
-  // ═══ CHARGES ═══
-  p+='<div class="p-section"><h2><span>💵</span> Current Bill Summary</h2><table class="p-table">';
-  if(c.supply)p+='<tr><td>Supply Charges</td><td>$'+c.supply.toFixed(2)+'</td></tr>';
-  if(c.delivery)p+='<tr><td>Delivery Charges</td><td>$'+c.delivery.toFixed(2)+'</td></tr>';
-  p+='<tr class="hl"><td>Total Bill</td><td>$'+(c.totalBill||0).toFixed(2)+'</td></tr>';
-  if(r.effectiveRate)p+='<tr><td>Effective Rate</td><td>$'+r.effectiveRate+'/kWh</td></tr>';
-  p+='</table></div>';
-  
-  // ═══ SOLAR SIZING ═══
-  p+='<div class="p-section"><h2><span>☀️</span> Solar Sizing Recommendation</h2>';
-  p+='<div class="p-sizing">';
-  [50,75,100].forEach(function(pct){
-    var reqKwh=u.annualKwh*pct/100;
-    var kw=Math.ceil(reqKwh/CONFIG.nepaProductionPerKw*10)/10;
-    var pan=Math.ceil(kw*1000/CONFIG.panelWattage);
-    var rec=(pct===Math.round(s.targetOffset*100));
-    p+='<div class="p-size-card'+(rec?' rec':'')+'">'+'<h4>'+pct+'% Offset'+(rec?' ✓':'')+'</h4><div class="kw">'+kw.toFixed(1)+' kW</div><div class="det">'+pan+' panels</div></div>';
-  });
-  p+='</div>';
-  
-  p+='<table class="p-table" style="margin-top:1rem">';
-  p+='<tr class="hl"><td>Recommended System</td><td>'+s.systemKw.toFixed(1)+' kW ('+s.panels+' × '+s.panelWattage+'W panels)</td></tr>';
-  p+='<tr><td>Target Offset</td><td>'+Math.round(s.targetOffset*100)+'%</td></tr>';
-  p+='<tr><td>Est. Annual Production</td><td>'+s.estAnnualProd.toLocaleString()+' kWh</td></tr>';
-  p+='<tr><td>Array Area</td><td>~'+s.arraySqFt.toLocaleString()+' sq ft</td></tr>';
-  p+='<tr><td>Mount Type</td><td>'+s.mountType.charAt(0).toUpperCase()+s.mountType.slice(1)+'</td></tr>';
-  p+='<tr><td>Est. Cost (before incentives)</td><td>$'+s.estCost.toLocaleString()+'</td></tr>';
-  p+='<tr><td>Est. Annual Savings</td><td>$'+s.annualSavings.toLocaleString()+'/year</td></tr>';
-  p+='<tr><td>Simple Payback</td><td>~'+Math.round(s.estCost/s.annualSavings)+' years</td></tr>';
-  p+='</table>';
-  
+  function sect(title,emoji,rows){var o='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff">'+emoji+' '+title+'</div><table style="width:100%;border-collapse:collapse">';rows.forEach(function(r){var hl=r[2]?'class="prop-hl" style="background:#f0f7ff;-webkit-print-color-adjust:exact;print-color-adjust:exact"':'';o+='<tr '+hl+'><td style="padding:.5rem .75rem;font-size:.85rem;font-weight:600;color:#475569;width:40%;border-bottom:1px solid #f1f5f9;vertical-align:top">'+r[0]+'</td><td style="padding:.5rem .75rem;font-size:.85rem;color:#1e293b;border-bottom:1px solid #f1f5f9;vertical-align:top'+(r[2]?';font-weight:700;color:#0B2545':'')+'">'+r[1]+'</td></tr>';});o+='</table></div>';return o;}
+  h+=sect('Customer Information','👤',[ ['Customer',d.customer.name||'—'], ['Service Address',(d.location.address||'—')+(d.location.cityStateZip?'<br>'+d.location.cityStateZip:'')], ['Account',d.account.number||'—'], ['Utility',d.utility.name||'—'], ['Account Type',d.classification.type], ['Rate Class',r.rateClass||'—'] ]);
+  h+=sect('Usage Analysis','⚡',[ ['Billing Period',(d.billing_period.start||'?')+' – '+(d.billing_period.end||'?')+' ('+(u.daysBilled||'?')+' days)'], ['Period Usage',(u.billingKwh||'?')+' kWh'], ['Annual Usage',(u.annualKwh||'?').toLocaleString()+' kWh/year',true], ['Basis',u.annualSource] ]);
+  h+=sect('Current Bill','💵',[ c.supply?['Supply','$'+c.supply.toFixed(2)]:null, c.delivery?['Delivery','$'+c.delivery.toFixed(2)]:null, ['Total Bill','$'+(c.totalBill||0).toFixed(2),true], r.blendedRate?['Blended Rate','$'+r.blendedRate+'/kWh',true]:null ].filter(Boolean));
+  h+=sect('Solar Recommendation','☀️',[ ['System Size',s.systemKw.toFixed(1)+' kW ('+s.panels+' × '+s.panelWattage+'W panels)',true], ['Target Offset',Math.round(s.targetOffset*100)+'%'], ['Est. Annual Production',s.estAnnualProd.toLocaleString()+' kWh'], ['Est. Cost','$'+s.estCost.toLocaleString()+' ($'+s.costPerWatt.toFixed(2)+'/W)'], ['Solar LCOE','$'+s.solarLCOE.toFixed(4)+'/kWh',true], ['Utility Rate','$'+s.utilityRate.toFixed(4)+'/kWh',true], ['Solar Savings',Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper per kWh'], ['Simple Payback',s.simplePayback+' years'], ['25-Year Savings','$'+s.savings25yr.toLocaleString()+' (with 3% rate escalation)',true], ['25-Year ROI',s.roi25+'%',true] ]);
   // Insight
-  p+='<div class="p-insight"><p>Based on annual usage of <strong>'+(u.annualKwh||0).toLocaleString()+' kWh</strong>, a <strong>'+s.systemKw.toFixed(1)+' kW system</strong> with <strong>'+s.panels+' panels</strong> would offset approximately <strong>'+Math.round(s.targetOffset*100)+'%</strong> of electricity consumption. Estimated annual savings of <strong>$'+s.annualSavings.toLocaleString()+'</strong> with a simple payback of approximately <strong>'+Math.round(s.estCost/s.annualSavings)+' years</strong>.</p>';
-  if(d.classification.type==='Commercial')p+='<p style="margin-top:.75rem"><strong>Commercial ITC:</strong> The 30% federal tax credit (Section 48E) is available for projects beginning construction before July 4, 2026. Combined with MACRS depreciation, net cost after tax benefits could be 45–55% of gross price.</p>';
-  p+='</div></div>';
-  
-  // ═══ ASSUMPTIONS ═══
-  p+='<div class="p-section"><h2><span>📋</span> Assumptions</h2><table class="p-table">';
-  p+='<tr><td>Production Model</td><td>NEPA regional average ('+CONFIG.nepaProductionPerKw+' kWh/kW/year)</td></tr>';
-  p+='<tr><td>Panel Wattage</td><td>'+CONFIG.panelWattage+'W</td></tr>';
-  p+='<tr><td>Cost per Watt</td><td>$'+s.costPerWatt.toFixed(2)+' ('+s.mountType+')</td></tr>';
-  p+='</table><p style="font-size:.78rem;color:#94a3b8;margin-top:.75rem">This is a preliminary estimate. Final system design requires site assessment, structural review, and engineering analysis.</p></div>';
-  
-  // ═══ FOOTER ═══
-  p+='<div class="p-footer">';
-  p+='<div class="p-footer-brand">Solar Mason LLC</div>';
-  p+='<div class="p-footer-contact">570-MY-SOLAR (570-697-6527)<br>solarmason.com<br>engineering@solarmason.com<br>800 James Ave, Suite 209 · Scranton, PA 18510<br>HIC-181628 · CON-9505</div>';
-  p+='<div class="p-footer-disc">This analysis provides preliminary estimates for informational purposes only. Actual solar production, costs, and savings depend on site-specific conditions. This does not constitute engineering advice, financial advice, or a binding proposal. © 2006–2026 Solar Mason LLC. All rights reserved.</div>';
-  p+='</div>';
-  
-  p+='</div></body></html>';
-  
-  var win=window.open('','_blank');
-  if(win){win.document.write(p);win.document.close();}
-  else{alert('Please allow pop-ups to view the proposal.');}
+  h+='<div style="padding:1.25rem 2rem"><div style="background:#f0f7ff;border-left:4px solid #2D82BE;border-radius:0 10px 10px 0;padding:1.25rem 1.5rem"><p style="font-size:.88rem;color:#334155;line-height:1.7;margin:0">Based on annual usage of <strong>'+(u.annualKwh||0).toLocaleString()+' kWh</strong>, a <strong>'+s.systemKw.toFixed(1)+' kW system</strong> produces electricity at <strong>$'+s.solarLCOE.toFixed(4)+'/kWh</strong> — <strong>'+Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper</strong> than your current utility rate of $'+s.utilityRate.toFixed(4)+'/kWh. With rates rising 3% annually, 25-year savings total <strong>$'+s.savings25yr.toLocaleString()+'</strong>.</p></div></div>';
+  // Footer
+  h+='<div class="prop-footer" style="background:#0B2545;color:#fff;padding:2rem;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact">';
+  h+='<div style="font-size:1.1rem;font-weight:700;margin-bottom:.5rem">Solar Mason LLC</div>';
+  h+='<div style="font-size:.82rem;opacity:.7;line-height:1.8">570-MY-SOLAR (570-697-6527) · solarmason.com · engineering@solarmason.com<br>800 James Ave, Suite 209 · Scranton, PA 18510 · HIC-181628 · CON-9505</div>';
+  h+='<div style="font-size:.68rem;opacity:.4;margin-top:1rem;line-height:1.5">This analysis provides preliminary estimates for informational purposes only. Actual solar production, costs, and savings depend on site-specific conditions. This does not constitute engineering advice, financial advice, or a binding proposal. © 2006–2026 Solar Mason LLC.</div>';
+  h+='</div>';
+  // Padding for fixed bottom bar
+  h+='<div style="height:80px"></div>';
+  document.getElementById('proposalContent').innerHTML=h;
+  document.getElementById('proposalOverlay').style.display='block';
+  document.body.style.overflow='hidden';
+  window.scrollTo(0,0);
 }
 
-/* ═══ SHARE ═══ */
-function shareProposal(){
+function closeProposal(){
+  document.getElementById('proposalOverlay').style.display='none';
+  document.body.style.overflow='';
+}
+
+function doPrint(){
+  window.print();
+}
+
+function doShare(){
   if(!billData||!billData.solar_sizing)return;
   var s=billData.solar_sizing,u=billData.usage;
-  var text='Solar Mason Analysis for '+(billData.customer.name||'Customer')+':\n'+s.systemKw.toFixed(1)+' kW system ('+s.panels+' panels)\nAnnual usage: '+(u.annualKwh||0).toLocaleString()+' kWh\nEst. cost: $'+s.estCost.toLocaleString()+'\nAnnual savings: $'+s.annualSavings.toLocaleString()+'\n\nGet your free proposal: solarmason.com';
-  if(navigator.share){navigator.share({title:'Solar Mason — Solar Sizing Analysis',text:text}).catch(function(){});}
-  else{navigator.clipboard.writeText(text).then(function(){alert('Summary copied to clipboard!')}).catch(function(){});}
+  var text='Solar Mason Analysis for '+(billData.customer.name||'Customer')+':\n'+s.systemKw.toFixed(1)+' kW system ('+s.panels+' panels)\nAnnual usage: '+(u.annualKwh||0).toLocaleString()+' kWh\nSolar LCOE: $'+s.solarLCOE.toFixed(4)+'/kWh vs utility $'+s.utilityRate.toFixed(4)+'/kWh\n25-year savings: $'+s.savings25yr.toLocaleString()+'\nROI: '+s.roi25+'%\n\nGet your free proposal: solarmason.com';
+  if(navigator.share){
+    navigator.share({title:'Solar Mason — Solar Sizing Analysis',text:text}).catch(function(){});
+  }else{
+    try{navigator.clipboard.writeText(text);alert('Summary copied to clipboard!');}catch(e){prompt('Copy this summary:',text);}
+  }
 }
 
+function shareProposal(){doShare();}
+
+
 </script>
+
+<!-- PROPOSAL OVERLAY -->
+<div id="proposalOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div id="proposalContent"></div>
+  <div id="proposalActions" style="position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;padding:12px;display:flex;gap:8px;justify-content:center;z-index:10000;box-shadow:0 -4px 12px rgba(0,0,0,.08)">
+    <button onclick="doPrint()" style="padding:10px 24px;border-radius:100px;border:none;background:#2D82BE;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Save as PDF</button>
+    <button onclick="doShare()" style="padding:10px 24px;border-radius:100px;border:none;background:#f1f5f9;color:#475569;font-size:15px;font-weight:600;cursor:pointer">Share</button>
+    <button onclick="closeProposal()" style="padding:10px 24px;border-radius:100px;border:none;background:#f1f5f9;color:#475569;font-size:15px;font-weight:600;cursor:pointer">Close</button>
+  </div>
+</div>
+
 </body>
 </html>
