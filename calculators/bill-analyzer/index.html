@@ -4065,13 +4065,24 @@ function parseBill(text){
   // Avg kWh/day
   m=t.match(/Avg\.?\s*kWh\/Day:?\s*(\d+)/i);if(m)d.usage.avgKwhDay=parseInt(m[1]);
 
-  // Annual usage
+  // Annual usage - try multiple patterns since PDF table extraction varies
   m=t.match(/Annual Total Usage\s*(\d[\d,]+)\s*kWh/i);
+  if(!m)m=t.match(/Annual Total\s*(?:Usage)?\s*(\d[\d,]+)/i);
+  if(!m)m=t.match(/(\d{4,6})\s*kWh\s*(\d{2,4})\s*kWh\s*$/im); // table: "5493 kWh 458 kWh" at end
+  if(!m){
+    // PPL table format: "Mar 2023 - Feb 2024 5493 kWh 458 kWh"
+    m=t.match(/[A-Z][a-z]+\s+\d{4}\s*-\s*[A-Z][a-z]+\s+\d{4}\s*(\d[\d,]+)\s*kWh/i);
+  }
   if(m)d.usage.annualKwh=parseInt(m[1].replace(/,/g,''));
 
-  // Avg monthly
-  m=t.match(/Avg Monthly\s*(\d[\d,]+)\s*kWh/i);
-  if(m)d.usage.avgMonthlyKwh=parseInt(m[1].replace(/,/g,''));
+  // Avg monthly - try multiple patterns
+  m=t.match(/Avg(?:erage)?\s*Monthly\s*(\d[\d,]+)\s*kWh/i);
+  if(!m){
+    // If we found annual, the next number after it might be avg monthly
+    var annualPos=t.search(/Annual Total/i);
+    if(annualPos>-1){m=t.substring(annualPos).match(/(\d{3,5})\s*kWh\s*(\d{2,4})\s*kWh/i);if(m)m=[null,m[2]];}
+  }
+  if(m&&m[1])d.usage.avgMonthlyKwh=parseInt(m[1].replace(/,/g,''));
 
   // Billing period
   m=t.match(/Usage from\s*([A-Za-z]+ \d+)\s*-\s*([A-Za-z]+ \d+)/i);
@@ -4099,9 +4110,14 @@ function parseBill(text){
   m=t.match(/Transmission.*?(\d+\.\d{2})/i);if(m)d.charges.transmission=parseFloat(m[1]);
 
   // ═══ ANNUAL USAGE DETERMINATION ═══
-  if(d.usage.annualKwh){
-    d.usage.annualBasis='exact';d.usage.annualSource='Annual total shown on bill';
-  }else if(d.usage.avgMonthlyKwh){
+  // Priority 1: Direct annual total from bill (most accurate)
+  if(d.usage.annualKwh&&d.usage.annualKwh>1000){
+    d.usage.annualBasis='exact';d.usage.annualSource='Annual total reported directly on bill ('+d.usage.annualKwh.toLocaleString()+' kWh)';
+  // Priority 2: Calculate from avg monthly (if annual not found)
+  }else if(d.usage.avgMonthlyKwh&&d.usage.avgMonthlyKwh>50){
+    d.usage.annualKwh=d.usage.avgMonthlyKwh*12;d.usage.annualBasis='inferred';d.usage.annualSource='Calculated from utility-reported average monthly ('+d.usage.avgMonthlyKwh+' kWh × 12)';
+  // Priority 3: Annualize from single billing period (least accurate)
+  }else if(d.usage.billingKwh&&d.usage.daysBilled){
     d.usage.annualKwh=d.usage.avgMonthlyKwh*12;d.usage.annualBasis='inferred';d.usage.annualSource='Calculated from utility-reported average monthly usage';
   }else if(d.usage.billingKwh&&d.usage.daysBilled){
     d.usage.annualKwh=Math.round(d.usage.billingKwh/d.usage.daysBilled*365);d.usage.annualBasis='estimated';d.usage.annualSource='Estimated by annualizing single billing period (least accurate)';d.flags.push('Annual usage estimated from a single billing period — actual annual usage may differ significantly due to seasonal variation.');
