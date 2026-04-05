@@ -4695,6 +4695,35 @@ function generateProposal(){
   h+=sect('Solar Recommendation','☀️',[ ['System Size',s.systemKw.toFixed(1)+' kW ('+s.panels+' × '+s.panelWattage+'W panels)',true], ['Target Offset',Math.round(s.targetOffset*100)+'%'], ['Est. Annual Production',s.estAnnualProd.toLocaleString()+' kWh'], ['Est. Cost','$'+s.estCost.toLocaleString()+' ($'+s.costPerWatt.toFixed(2)+'/W)'], ['Solar LCOE','$'+s.solarLCOE.toFixed(4)+'/kWh',true], ['Utility Rate','$'+s.utilityRate.toFixed(4)+'/kWh',true], ['Solar Savings',Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper per kWh'], ['Simple Payback',s.simplePayback+' years'], ['25-Year Savings','$'+s.savings25yr.toLocaleString()+' (with 5% rate escalation)',true], ['25-Year ROI',s.roi25+'%',true] ]);
   // Insight
   h+='<div style="padding:1.25rem 2rem"><div style="background:#f0f7ff;border-left:4px solid #2D82BE;border-radius:0 10px 10px 0;padding:1.25rem 1.5rem"><p style="font-size:.88rem;color:#334155;line-height:1.7;margin:0">Based on annual usage of <strong>'+(u.annualKwh||0).toLocaleString()+' kWh</strong>, a <strong>'+s.systemKw.toFixed(1)+' kW system</strong> produces electricity at <strong>$'+s.solarLCOE.toFixed(4)+'/kWh</strong> — <strong>'+Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper</strong> than your current utility rate of $'+s.utilityRate.toFixed(4)+'/kWh. With rates rising 5% annually, 25-year savings total <strong>$'+s.savings25yr.toLocaleString()+'</strong>.</p></div></div>';
+
+  // ═══ ITC SECTION (commercial) ═══
+  if(s.isCommercial&&s.itcValue>0){
+    h+=sect('Federal Tax Credit (Section 48E)','🏛️',[['ITC Rate','30% (with prevailing wage)',true],['ITC Value','-$'+s.itcValue.toLocaleString(),true],['Gross Cost','$'+s.estCost.toLocaleString()],['Net Cost After ITC','$'+s.netCostAfterITC.toLocaleString(),true],['LCOE After ITC','$'+s.solarLCOEafterITC.toFixed(4)+'/kWh',true],['Deadline','Begin construction before July 4, 2026']]);
+  }
+  // ═══ 25-YEAR CHART ═══
+  if(s.yearData){
+    var yd=s.yearData,maxV=yd[24].cumUtil,lcD=s.isCommercial?s.solarLCOEafterITC:s.solarLCOE;
+    h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff">📈 25-Year Cost Projection</div>';
+    var W=640,H=240,L=50,T=20,gw=W-L-10,gh=H-T-30;
+    h+='<div style="overflow-x:auto"><svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:640px;font-family:-apple-system,sans-serif">';
+    for(var g=0;g<=4;g++){var gy=T+(gh*(1-g/4));h+='<line x1="'+L+'" y1="'+gy+'" x2="'+(W-10)+'" y2="'+gy+'" stroke="#e2e8f0"/><text x="'+(L-3)+'" y="'+(gy+3)+'" text-anchor="end" font-size="8" fill="#94a3b8">$'+Math.round(maxV*g/4/1000)+'k</text>';}
+    var uL="M",sL="M";for(var i=0;i<25;i++){var x=L+(gw*i/24),yu=T+(gh*(1-yd[i].cumUtil/maxV)),ys=T+(gh*(1-yd[i].cumSolar/maxV));uL+=(i?" L":" ")+Math.round(x)+","+Math.round(yu);sL+=(i?" L":" ")+Math.round(x)+","+Math.round(ys);}
+    var fill=uL;for(var i=24;i>=0;i--){var x=L+(gw*i/24),ys=T+(gh*(1-yd[i].cumSolar/maxV));fill+=" L"+Math.round(x)+","+Math.round(ys);}fill+="Z";
+    h+='<path d="'+fill+'" fill="rgba(34,197,94,.08)"/>';
+    h+='<path d="'+uL+'" fill="none" stroke="#ef4444" stroke-width="2.5"/>';
+    h+='<path d="'+sL+'" fill="none" stroke="#2D82BE" stroke-width="2.5"/>';
+    for(var i=0;i<25;i+=5){h+='<text x="'+Math.round(L+gw*i/24)+'" y="'+(H-5)+'" text-anchor="middle" font-size="8" fill="#94a3b8">'+(i?("Yr "+i):"Now")+'</text>';}
+    h+='<circle cx="'+(L+5)+'" cy="10" r="3" fill="#ef4444"/><text x="'+(L+11)+'" y="13" font-size="8.5" fill="#64748B">Utility</text>';
+    h+='<circle cx="'+(L+70)+'" cy="10" r="3" fill="#2D82BE"/><text x="'+(L+76)+'" y="13" font-size="8.5" fill="#64748B">Solar</text>';
+    h+='<rect x="'+(L+130)+'" y="7" width="8" height="6" fill="rgba(34,197,94,.3)" rx="1"/><text x="'+(L+141)+'" y="13" font-size="8.5" fill="#22c55e" font-weight="600">Savings</text>';
+    h+='</svg></div></div>';
+    // ═══ YEAR-BY-YEAR TABLE ═══
+    h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff">📊 Year-by-Year Breakdown</div>';
+    h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.72rem;min-width:460px"><thead><tr style="background:#0B2545;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact"><th style="padding:.4rem .3rem;text-align:left">Year</th><th style="padding:.4rem .3rem;text-align:right">Util Rate</th><th style="padding:.4rem .3rem;text-align:right">Solar Rate</th><th style="padding:.4rem .3rem;text-align:right">Annual</th><th style="padding:.4rem .3rem;text-align:right">Cum Util</th><th style="padding:.4rem .3rem;text-align:right">Cum Solar</th><th style="padding:.4rem .3rem;text-align:right">Net</th></tr></thead><tbody>';
+    for(var i=0;i<25;i++){var bg=i%2?"#f8fafc":"#fff";var bp=(yd[i].cumSavings>0&&(i===0||yd[i>0?i-1:0].cumSavings<=0));if(bp)bg="#f0fff4";h+='<tr style="background:'+bg+';-webkit-print-color-adjust:exact"><td style="padding:.3rem;border-bottom:1px solid #f1f5f9;font-weight:'+(bp?700:400)+'">'+yd[i].year+(bp?" ✓":"")+'</td><td style="padding:.3rem;border-bottom:1px solid #f1f5f9;text-align:right;color:#ef4444">$'+yd[i].utilRate.toFixed(3)+'</td><td style="padding:.3rem;border-bottom:1px solid #f1f5f9;text-align:right;color:#2D82BE">$'+lcD.toFixed(3)+'</td><td style="padding:.3rem;border-bottom:1px solid #f1f5f9;text-align:right">$'+yd[i].utilityCost.toLocaleString()+'</td><td style="padding:.3rem;border-bottom:1px solid #f1f5f9;text-align:right;color:#ef4444">$'+yd[i].cumUtil.toLocaleString()+'</td><td style="padding:.3rem;border-bottom:1px solid #f1f5f9;text-align:right;color:#2D82BE">$'+yd[i].cumSolar.toLocaleString()+'</td><td style="padding:.3rem;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:600;color:'+(yd[i].cumSavings>=0?"#22c55e":"#ef4444")+'">$'+yd[i].cumSavings.toLocaleString()+'</td></tr>';}
+    h+='</tbody></table></div></div>';
+  }
+
   // Footer
   h+='<div class="prop-footer" style="background:#0B2545;color:#fff;padding:2rem;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact">';
   h+='<div style="font-size:1.1rem;font-weight:700;margin-bottom:.5rem">Solar Mason LLC</div>';
