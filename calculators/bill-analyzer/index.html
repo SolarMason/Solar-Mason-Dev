@@ -4063,9 +4063,9 @@ function parseBill(text){
 
   // Service address — extract from "Service to:" block
   d.location={state:'PA'};
-  m=t.match(/Service to\s*:?\s*[A-Z][A-Z &,.-]+?\s+(\d+\s+\S+\s+\S+(?:\s+\S+)?(?:,\s*HOUSE METER)?)\s+([A-Z]+),?\s*PA\s*(\d{5})/);
+  m=t.match(/Service to\s*:?\s*[A-Z][A-Z &,.-]+?\s+(\d+\s+\S+\s+\S+(?:\s+\S+)?(?:\s+\S+)?(?:,\s*HOUSE METER)?)\s+([A-Z][A-Z ]+),?\s*PA\s*(\d{5})/);
   if(m){d.location.address=m[1].trim();d.location.city=m[2].trim();d.location.zip=m[3];d.location.cityStateZip=m[2].trim()+', PA '+m[3];}
-  else{m=t.match(/(\d+\s+\S+\s+\S+(?:\s+ST|AVE|BLVD|DR|RD|CT|LN|WAY|PL|CIR)\S*)\s+([A-Z]{3,}),?\s*PA\s*(\d{5})/i);if(m){d.location.address=m[1].trim();d.location.city=m[2].trim();d.location.zip=m[3];d.location.cityStateZip=m[2].trim()+', PA '+m[3];}}
+  else{m=t.match(/(\d+\s+\S+\s+\S+(?:\s+\S+)?(?:\s+(?:ST|AVE|BLVD|DR|RD|CT|LN|WAY|PL|CIR))\S*)\s+([A-Z][A-Z ]{2,}),?\s*PA\s*(\d{5})/i);if(m){d.location.address=m[1].trim();d.location.city=m[2].trim();d.location.zip=m[3];d.location.cityStateZip=m[2].trim()+', PA '+m[3];}}
 
   // Amount due
   // Total bill - try multiple patterns, skip $0.00 balances
