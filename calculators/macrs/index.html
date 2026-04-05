@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Real Estate Financing | Solar Mason</title>
-<meta name="description" content="Financing solutions for solar-enhanced real estate investment and development.">
+<title>MACRS Depreciation Calculator | Solar Mason</title>
+<meta name="description" content="Calculate 5-year accelerated depreciation for commercial solar with ITC basis reduction and bonus depreciation.">
 <link rel="icon" href="https://static.wixstatic.com/media/4dcc05_c778003a773a4844ba6c8806c92c7583~mv2.png/v1/fill/w_32,h_32,al_c,q_85/1.png">
 <style>
 /* ═══════════════════════════════════════════
@@ -3361,7 +3361,9 @@ html { scroll-behavior: smooth; }
 .photo-section-content{position:relative;z-index:1;padding:3rem;max-width:600px}
 .photo-section-content h2{color:#fff;font-size:1.6rem;margin-bottom:1rem}
 .photo-section-content p{color:rgba(255,255,255,.9);line-height:1.7}
+
 </style>
+<link rel="stylesheet" href="/calculators/calc.css">
 </head>
 <body>
 
@@ -3406,7 +3408,6 @@ html { scroll-behavior: smooth; }
         <svg class="nav-chevron" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
       </button>
     </li>
-      <li class="nav-item"><a href="/calculators/" class="nav-trigger" style="text-decoration:none">Calculators</a></li>
   </ul>
 
   <div class="nav-right">
@@ -3873,26 +3874,265 @@ html { scroll-behavior: smooth; }
 
 
 <!-- ════════════ HERO ════════════ -->
-<section class="subpage-hero" style="background-image:url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1920&q=80');min-height:420px">
+<section class="subpage-hero" style="background-image:url('https://static.wixstatic.com/media/11062b_8382e0430efb495d85472609b53759fd~mv2.jpg/v1/fill/w_1920,h_900,al_c,q_85/11062b_8382e0430efb495d85472609b53759fd~mv2.jpg');min-height:420px">
   <div class="subpage-hero-content">
-    <div class="hero-badge">Financing</div>
-    <h1>Real Estate Financing</h1>
-    <p class="hero-subtitle">Financing solutions for solar-enhanced real estate investment and development.</p>
+    <div class="hero-badge">Company</div>
+    <h1>About Solar Mason</h1>
+    <p class="hero-subtitle">Veteran-owned. Engineering excellence. Powering Northeast PA's clean energy future since 2014.</p>
   </div>
 </section>
 
 <!-- ════════════ BREADCRUMB ════════════ -->
-<div class="breadcrumb">
-  <a href="/">Home</a> <span>›</span> Real Estate Financing
+
+
+<div class="breadcrumb"><a href="/">Home</a> <span>›</span> <a href="/calculators/">Calculators</a> <span>›</span> MACRS Depreciation</div>
+
+<div class="calc-page">
+<div class="calc-page-header">
+  <div class="calc-who">Commercial Only</div>
+  <h1>MACRS Depreciation Calculator</h1>
+  <p class="calc-subtitle">Calculate the 5-year accelerated depreciation schedule for commercial solar, including ITC basis reduction and bonus depreciation. <strong>Construction must begin before July 4, 2026.</strong></p>
 </div>
 
-<!-- ════════════ CONTENT ════════════ -->
-<div class="content-section"><div class="glass-card"><h2>Solar Real Estate Financing</h2><p>Ready to elevate your solar business's real estate ambitions? Solar Mason connects commercial property owners and developers with financing solutions that leverage solar energy to enhance property value, reduce operating expenses, and access clean energy incentives.</p></div>
-<div class="glass-grid"><div class="glass-grid-card"><h3>🏢 Commercial Properties</h3><p>Finance solar installations on commercial real estate — office buildings, warehouses, retail centers, and industrial facilities.</p></div>
-<div class="glass-grid-card"><h3>📈 Value Enhancement</h3><p>Solar installations increase property NOI by reducing energy expenses, directly improving capitalization rates and property valuations.</p></div>
-<div class="glass-grid-card"><h3>🏗️ New Development</h3><p>Integrate solar into new construction projects with financing that covers both the building and the energy system.</p></div>
-<div class="glass-grid-card"><h3>💰 C-PACE Integration</h3><p>Combine real estate financing with C-PACE solar financing to minimize equity requirements and maximize leverage on clean energy improvements.</p></div></div>
-<div class="cta-banner"><h2>Explore Real Estate Financing</h2><p>Discover how solar enhances your real estate investment strategy.</p><a href="https://app.solarmason.com/account" class="cta-btn">Apply Now</a></div></div>
+<div class="calc-section" style="border-left:3px solid var(--brand,#2D82BE)">
+  <h2>⚠ Important Tax Notice</h2>
+  <p style="font-size:.92rem;color:#475569;line-height:1.7">MACRS depreciation is only available to <strong>for-profit businesses</strong> that own the solar equipment. To qualify for the ITC that makes MACRS valuable, your project must begin construction (physical work on-site) before <strong>July 4, 2026</strong>. This calculator provides estimates only — consult a tax professional for your specific situation.</p>
+</div>
+
+<div class="calc-section">
+  <h2>System & Cost Information</h2>
+  <div class="calc-row">
+    <div class="calc-field">
+      <label>Total System Cost ($)</label>
+      <input type="number" id="systemCost" value="200000" min="0" step="1000">
+    </div>
+    <div class="calc-field">
+      <label>ITC Rate (%)</label>
+      <select id="itcRate">
+        <option value="30">30% (Base with prevailing wage)</option>
+        <option value="40">40% (Base + domestic content)</option>
+        <option value="50">50% (Base + domestic + energy community)</option>
+        <option value="70">70% (Maximum stacked)</option>
+        <option value="6">6% (Without prevailing wage)</option>
+        <option value="0">0% (No ITC claimed)</option>
+      </select>
+    </div>
+  </div>
+  <div class="calc-row">
+    <div class="calc-field">
+      <label>Business Tax Rate (%)</label>
+      <input type="number" id="taxRate" value="24" min="0" max="50" step="1">
+      <span class="unit">Federal corporate: 21%, S-Corp/LLC pass-through: varies</span>
+    </div>
+    <div class="calc-field">
+      <label>Bonus Depreciation (%)</label>
+      <select id="bonusDepr">
+        <option value="20">20% (2026 rate)</option>
+        <option value="40">40% (2025 rate)</option>
+        <option value="60">60% (2024 rate)</option>
+        <option value="100">100% (2022-2023 rate)</option>
+        <option value="0">0% (No bonus depreciation)</option>
+      </select>
+      <span class="unit">Bonus depreciation is phasing down 20%/year</span>
+    </div>
+  </div>
+  <div class="calc-row">
+    <div class="calc-field">
+      <label>State Tax Rate (%)</label>
+      <input type="number" id="stateTaxRate" value="9.99" min="0" max="15" step="0.01">
+      <span class="unit">PA corporate: 8.99% (2026), CNI: declining</span>
+    </div>
+    <div class="calc-field">
+      <label>Year Placed in Service</label>
+      <select id="serviceYear">
+        <option value="2026">2026</option>
+        <option value="2025">2025</option>
+        <option value="2027">2027</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="calc-btn-wrap">
+  <button class="calc-btn" onclick="calcMACRS()">Calculate Depreciation</button>
+</div>
+
+<div class="calc-results" id="results">
+  <div class="calc-section">
+    <h2>Depreciation Summary</h2>
+    <div class="calc-result-cards">
+      <div class="calc-result-card primary">
+        <div class="result-value" id="rItcValue">—</div>
+        <div class="result-label">ITC Value</div>
+        <div class="result-sublabel" style="color:rgba(255,255,255,.7)" id="rItcPct"></div>
+      </div>
+      <div class="calc-result-card">
+        <div class="result-value" id="rDeprBasis">—</div>
+        <div class="result-label">Depreciable Basis</div>
+      </div>
+      <div class="calc-result-card">
+        <div class="result-value" id="rTotalTaxSav">—</div>
+        <div class="result-label">Total Tax Savings</div>
+        <div class="result-sublabel">ITC + Depreciation</div>
+      </div>
+      <div class="calc-result-card">
+        <div class="result-value" id="rNetCost">—</div>
+        <div class="result-label">Net System Cost</div>
+        <div class="result-sublabel" id="rNetPct"></div>
+      </div>
+    </div>
+
+    <div class="calc-insight">
+      <h3>What This Means</h3>
+      <p id="rInsight"></p>
+    </div>
+
+    <div class="calc-breakdown">
+      <h3>Year-by-Year Depreciation Schedule</h3>
+      <table class="calc-table">
+        <thead>
+          <tr><th>Year</th><th>MACRS Rate</th><th>Depreciation</th><th>Federal Tax Savings</th><th>State Tax Savings</th><th>Total Savings</th></tr>
+        </thead>
+        <tbody id="rSchedule"></tbody>
+      </table>
+    </div>
+
+    <div class="calc-breakdown">
+      <h3>Complete Tax Benefit Summary</h3>
+      <table class="calc-table">
+        <thead><tr><th>Benefit</th><th>Amount</th></tr></thead>
+        <tbody id="rSummary"></tbody>
+      </table>
+    </div>
+
+    <div class="calc-assumptions">
+      <h4>Assumptions & Notes</h4>
+      <p>MACRS rates: Year 1: 20%, Year 2: 32%, Year 3: 19.2%, Year 4: 11.52%, Year 5: 11.52%, Year 6: 5.76%. ITC basis reduction: depreciable basis is reduced by 50% of the ITC claimed. Bonus depreciation applies to the remaining Year 1 amount after applying the standard MACRS percentage. State depreciation treatment varies — PA follows federal MACRS but does not conform to bonus depreciation for state purposes. Consult your CPA for state-specific treatment. Present value calculations not included — actual tax benefit present value will be lower due to time value of money.</p>
+    </div>
+  </div>
+
+  <div class="calc-actions">
+    <button class="calc-action-btn" onclick="window.print()">🖨️ Print Schedule</button>
+  </div>
+
+  
+<div class="calc-cta">
+  <h3>Ready to Go Solar?</h3>
+  <p>Get a custom system design and detailed financial analysis from our engineering team.</p>
+  <div class="calc-cta-btns">
+    <a href="https://app.solarmason.com/account" class="calc-cta-btn calc-cta-btn-primary">Get Your Free Estimate</a>
+    <a href="mailto:engineering@solarmason.com" class="calc-cta-btn calc-cta-btn-secondary">Talk to an Engineer</a>
+  </div>
+  <div class="calc-cta-contact">
+    <span>570-MY-SOLAR (570-697-6527)</span>
+    <a href="https://solarmason.com">solarmason.com</a>
+    <a href="mailto:engineering@solarmason.com">engineering@solarmason.com</a>
+  </div>
+</div>
+
+<div class="calc-disclaimer">
+  <strong>Disclaimer:</strong> This calculator provides estimates for informational purposes only. Actual results will vary based on site-specific conditions, equipment selection, utility rates, and other factors. This tool does not constitute financial, tax, or legal advice. Consult a qualified professional before making investment decisions. Solar Mason provides free, detailed proposals with site-specific analysis.
+</div>
+
+</div>
+</div>
+
+<script>
+function calcMACRS() {
+  var cost = parseFloat(document.getElementById('systemCost').value);
+  var itcPct = parseFloat(document.getElementById('itcRate').value) / 100;
+  var taxRate = parseFloat(document.getElementById('taxRate').value) / 100;
+  var bonusPct = parseFloat(document.getElementById('bonusDepr').value) / 100;
+  var stateRate = parseFloat(document.getElementById('stateTaxRate').value) / 100;
+  var year = parseInt(document.getElementById('serviceYear').value);
+
+  // ITC calculation
+  var itcValue = Math.round(cost * itcPct);
+
+  // Depreciable basis = cost - (50% of ITC)
+  var basisReduction = itcValue * 0.5;
+  var deprBasis = cost - basisReduction;
+
+  // MACRS 5-year rates (half-year convention)
+  var macrsRates = [0.2000, 0.3200, 0.1920, 0.1152, 0.1152, 0.0576];
+
+  // Build schedule
+  var schedule = [];
+  var totalFedSav = 0;
+  var totalStateSav = 0;
+
+  for (var i = 0; i < 6; i++) {
+    var baseDepr = deprBasis * macrsRates[i];
+    var actualDepr;
+
+    if (i === 0 && bonusPct > 0) {
+      // Year 1: Bonus depreciation on the full depreciable basis, 
+      // then regular MACRS on the remainder
+      var bonusDepr = deprBasis * bonusPct;
+      var remaining = deprBasis - bonusDepr;
+      actualDepr = bonusDepr + (remaining * macrsRates[0]);
+    } else if (bonusPct > 0 && i > 0) {
+      // Remaining years: MACRS on (basis - bonus portion)
+      var remaining2 = deprBasis * (1 - bonusPct);
+      actualDepr = remaining2 * macrsRates[i];
+    } else {
+      actualDepr = baseDepr;
+    }
+
+    var fedSav = Math.round(actualDepr * taxRate);
+    var stateSav = Math.round(baseDepr * stateRate); // State typically no bonus
+    totalFedSav += fedSav;
+    totalStateSav += stateSav;
+
+    schedule.push({
+      year: year + i,
+      rate: (macrsRates[i] * 100).toFixed(2) + '%',
+      depr: Math.round(actualDepr),
+      fedSav: fedSav,
+      stateSav: stateSav,
+      totalSav: fedSav + stateSav
+    });
+  }
+
+  var totalDeprSav = totalFedSav + totalStateSav;
+  var totalBenefit = itcValue + totalDeprSav;
+  var netCost = cost - totalBenefit;
+  var netPct = Math.round((netCost / cost) * 100);
+
+  // Populate results
+  document.getElementById('rItcValue').textContent = '$' + itcValue.toLocaleString();
+  document.getElementById('rItcPct').textContent = (itcPct * 100) + '% of $' + cost.toLocaleString();
+  document.getElementById('rDeprBasis').textContent = '$' + Math.round(deprBasis).toLocaleString();
+  document.getElementById('rTotalTaxSav').textContent = '$' + totalBenefit.toLocaleString();
+  document.getElementById('rNetCost').textContent = '$' + Math.round(netCost).toLocaleString();
+  document.getElementById('rNetPct').textContent = netPct + '% of gross cost';
+
+  document.getElementById('rInsight').innerHTML = 'On a <strong>$' + cost.toLocaleString() + '</strong> commercial solar installation, the <strong>' + (itcPct*100) + '% ITC</strong> provides a <strong>$' + itcValue.toLocaleString() + '</strong> tax credit. After reducing the depreciable basis by 50% of the ITC, the remaining <strong>$' + Math.round(deprBasis).toLocaleString() + '</strong> is depreciated over 5 years' + (bonusPct > 0 ? ' with ' + (bonusPct*100) + '% bonus depreciation in Year 1' : '') + '. Combined federal and state depreciation saves an additional <strong>$' + totalDeprSav.toLocaleString() + '</strong> in taxes. Your effective net cost after all tax benefits is approximately <strong>$' + Math.round(netCost).toLocaleString() + '</strong> — just <strong>' + netPct + '%</strong> of the original price.';
+
+  // Schedule table
+  var html = '';
+  var grandTotal = 0;
+  for (var j = 0; j < schedule.length; j++) {
+    var s = schedule[j];
+    grandTotal += s.totalSav;
+    html += '<tr><td>' + s.year + '</td><td>' + s.rate + '</td><td>$' + s.depr.toLocaleString() + '</td><td>$' + s.fedSav.toLocaleString() + '</td><td>$' + s.stateSav.toLocaleString() + '</td><td>$' + s.totalSav.toLocaleString() + '</td></tr>';
+  }
+  html += '<tr class="row-total"><td colspan="3">Total Depreciation Tax Savings</td><td>$' + totalFedSav.toLocaleString() + '</td><td>$' + totalStateSav.toLocaleString() + '</td><td>$' + totalDeprSav.toLocaleString() + '</td></tr>';
+  document.getElementById('rSchedule').innerHTML = html;
+
+  // Summary table
+  document.getElementById('rSummary').innerHTML = 
+    '<tr><td>Gross system cost</td><td>$' + cost.toLocaleString() + '</td></tr>'
+    + '<tr><td>Investment Tax Credit (' + (itcPct*100) + '%)</td><td>-$' + itcValue.toLocaleString() + '</td></tr>'
+    + '<tr><td>Federal depreciation tax savings</td><td>-$' + totalFedSav.toLocaleString() + '</td></tr>'
+    + '<tr><td>State depreciation tax savings</td><td>-$' + totalStateSav.toLocaleString() + '</td></tr>'
+    + '<tr class="row-total"><td>Net cost after all tax benefits</td><td>$' + Math.round(netCost).toLocaleString() + '</td></tr>'
+    + '<tr><td>Effective cost as % of gross</td><td>' + netPct + '%</td></tr>';
+
+  document.getElementById('results').classList.add('visible');
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
 
 <!-- ════════════ CTA ════════════ -->
 <div class="content-section">

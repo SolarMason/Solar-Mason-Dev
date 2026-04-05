@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Real Estate Financing | Solar Mason</title>
-<meta name="description" content="Financing solutions for solar-enhanced real estate investment and development.">
+<title>Solar Loan Payment Calculator | Solar Mason</title>
+<meta name="description" content="Calculate monthly solar loan payments and compare to utility bill savings.">
 <link rel="icon" href="https://static.wixstatic.com/media/4dcc05_c778003a773a4844ba6c8806c92c7583~mv2.png/v1/fill/w_32,h_32,al_c,q_85/1.png">
 <style>
 /* ═══════════════════════════════════════════
@@ -3361,7 +3361,9 @@ html { scroll-behavior: smooth; }
 .photo-section-content{position:relative;z-index:1;padding:3rem;max-width:600px}
 .photo-section-content h2{color:#fff;font-size:1.6rem;margin-bottom:1rem}
 .photo-section-content p{color:rgba(255,255,255,.9);line-height:1.7}
+
 </style>
+<link rel="stylesheet" href="/calculators/calc.css">
 </head>
 <body>
 
@@ -3406,7 +3408,6 @@ html { scroll-behavior: smooth; }
         <svg class="nav-chevron" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
       </button>
     </li>
-      <li class="nav-item"><a href="/calculators/" class="nav-trigger" style="text-decoration:none">Calculators</a></li>
   </ul>
 
   <div class="nav-right">
@@ -3873,26 +3874,108 @@ html { scroll-behavior: smooth; }
 
 
 <!-- ════════════ HERO ════════════ -->
-<section class="subpage-hero" style="background-image:url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1920&q=80');min-height:420px">
+<section class="subpage-hero" style="background-image:url('https://static.wixstatic.com/media/11062b_8382e0430efb495d85472609b53759fd~mv2.jpg/v1/fill/w_1920,h_900,al_c,q_85/11062b_8382e0430efb495d85472609b53759fd~mv2.jpg');min-height:420px">
   <div class="subpage-hero-content">
-    <div class="hero-badge">Financing</div>
-    <h1>Real Estate Financing</h1>
-    <p class="hero-subtitle">Financing solutions for solar-enhanced real estate investment and development.</p>
+    <div class="hero-badge">Company</div>
+    <h1>About Solar Mason</h1>
+    <p class="hero-subtitle">Veteran-owned. Engineering excellence. Powering Northeast PA's clean energy future since 2014.</p>
   </div>
 </section>
 
 <!-- ════════════ BREADCRUMB ════════════ -->
-<div class="breadcrumb">
-  <a href="/">Home</a> <span>›</span> Real Estate Financing
+
+
+<div class="breadcrumb"><a href="/">Home</a> <span>›</span> <a href="/calculators/">Calculators</a> <span>›</span> Loan Payment</div>
+
+<div class="calc-page">
+<div class="calc-page-header">
+  <div class="calc-who">Residential & Commercial</div>
+  <h1>Solar Loan Payment Calculator</h1>
+  <p class="calc-subtitle">Estimate monthly payments, total interest, and compare your loan cost to utility savings.</p>
 </div>
 
-<!-- ════════════ CONTENT ════════════ -->
-<div class="content-section"><div class="glass-card"><h2>Solar Real Estate Financing</h2><p>Ready to elevate your solar business's real estate ambitions? Solar Mason connects commercial property owners and developers with financing solutions that leverage solar energy to enhance property value, reduce operating expenses, and access clean energy incentives.</p></div>
-<div class="glass-grid"><div class="glass-grid-card"><h3>🏢 Commercial Properties</h3><p>Finance solar installations on commercial real estate — office buildings, warehouses, retail centers, and industrial facilities.</p></div>
-<div class="glass-grid-card"><h3>📈 Value Enhancement</h3><p>Solar installations increase property NOI by reducing energy expenses, directly improving capitalization rates and property valuations.</p></div>
-<div class="glass-grid-card"><h3>🏗️ New Development</h3><p>Integrate solar into new construction projects with financing that covers both the building and the energy system.</p></div>
-<div class="glass-grid-card"><h3>💰 C-PACE Integration</h3><p>Combine real estate financing with C-PACE solar financing to minimize equity requirements and maximize leverage on clean energy improvements.</p></div></div>
-<div class="cta-banner"><h2>Explore Real Estate Financing</h2><p>Discover how solar enhances your real estate investment strategy.</p><a href="https://app.solarmason.com/account" class="cta-btn">Apply Now</a></div></div>
+<div class="calc-section">
+  <h2>Loan Details</h2>
+  <div class="calc-row">
+    <div class="calc-field"><label>System Cost ($)</label><input type="number" id="loanAmt" value="35000" min="0" step="500"></div>
+    <div class="calc-field"><label>Down Payment ($)</label><input type="number" id="downPmt" value="0" min="0" step="500"></div>
+  </div>
+  <div class="calc-row">
+    <div class="calc-field"><label>Interest Rate (%)</label><input type="number" id="intRate" value="6.5" min="0" max="25" step="0.1"></div>
+    <div class="calc-field"><label>Loan Term (years)</label><select id="loanTerm"><option value="5">5 years</option><option value="10">10 years</option><option value="12">12 years</option><option value="15" selected>15 years</option><option value="20">20 years</option><option value="25">25 years</option></select></div>
+  </div>
+</div>
+
+<div class="calc-section">
+  <h2>Energy Savings Comparison</h2>
+  <div class="calc-row">
+    <div class="calc-field"><label>Monthly Electric Bill ($)</label><input type="number" id="monthBill" value="200" min="0"></div>
+    <div class="calc-field"><label>Bill Offset (%)</label><input type="number" id="billOffset" value="100" min="0" max="150"><span class="unit">Percentage of bill eliminated by solar</span></div>
+  </div>
+</div>
+
+<div class="calc-btn-wrap"><button class="calc-btn" onclick="calcLoan()">Calculate Payment</button></div>
+
+<div class="calc-results" id="results">
+  <div class="calc-section">
+    <h2>Loan Summary</h2>
+    <div class="calc-result-cards">
+      <div class="calc-result-card primary"><div class="result-value" id="rMonthly">—</div><div class="result-label">Monthly Payment</div></div>
+      <div class="calc-result-card"><div class="result-value" id="rTotal">—</div><div class="result-label">Total Loan Cost</div></div>
+      <div class="calc-result-card"><div class="result-value" id="rInterest">—</div><div class="result-label">Total Interest</div></div>
+      <div class="calc-result-card"><div class="result-value" id="rNet">—</div><div class="result-label">Net Monthly Cost</div><div class="result-sublabel">Payment minus energy savings</div></div>
+    </div>
+    <div class="calc-insight"><h3>What This Means</h3><p id="rInsight"></p></div>
+    <div class="calc-breakdown"><h3>Payment Breakdown</h3><table class="calc-table"><thead><tr><th>Item</th><th>Amount</th></tr></thead><tbody id="rBreak"></tbody></table></div>
+    <div class="calc-assumptions"><h4>Assumptions</h4><p>Standard amortization with fixed interest rate. Actual loan terms, rates, and eligibility depend on your credit profile and lender. Does not include insurance, property tax impacts, or maintenance costs. Energy savings based on current utility rates — actual savings will increase as rates rise over time.</p></div>
+  </div>
+  <div class="calc-actions"><button class="calc-action-btn" onclick="window.print()">🖨️ Print Results</button></div>
+  
+<div class="calc-cta">
+  <h3>Ready to Go Solar?</h3>
+  <p>Get a custom system design and detailed financial analysis from our engineering team.</p>
+  <div class="calc-cta-btns">
+    <a href="https://app.solarmason.com/account" class="calc-cta-btn calc-cta-btn-primary">Get Your Free Estimate</a>
+    <a href="mailto:engineering@solarmason.com" class="calc-cta-btn calc-cta-btn-secondary">Talk to an Engineer</a>
+  </div>
+  <div class="calc-cta-contact">
+    <span>570-MY-SOLAR (570-697-6527)</span>
+    <a href="https://solarmason.com">solarmason.com</a>
+    <a href="mailto:engineering@solarmason.com">engineering@solarmason.com</a>
+  </div>
+</div>
+
+<div class="calc-disclaimer">
+  <strong>Disclaimer:</strong> This calculator provides estimates for informational purposes only. Actual results will vary based on site-specific conditions, equipment selection, utility rates, and other factors. This tool does not constitute financial, tax, or legal advice. Consult a qualified professional before making investment decisions. Solar Mason provides free, detailed proposals with site-specific analysis.
+</div>
+
+</div>
+</div>
+
+<script>
+function calcLoan(){
+  var P=parseFloat(document.getElementById('loanAmt').value)-parseFloat(document.getElementById('downPmt').value);
+  var r=parseFloat(document.getElementById('intRate').value)/100/12;
+  var n=parseInt(document.getElementById('loanTerm').value)*12;
+  var bill=parseFloat(document.getElementById('monthBill').value);
+  var offset=parseFloat(document.getElementById('billOffset').value)/100;
+  var monthly=r>0?P*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1):P/n;
+  monthly=Math.round(monthly*100)/100;
+  var total=Math.round(monthly*n);
+  var interest=Math.round(total-P);
+  var savings=Math.round(bill*offset);
+  var net=Math.round(monthly-savings);
+  document.getElementById('rMonthly').textContent='$'+monthly.toLocaleString();
+  document.getElementById('rTotal').textContent='$'+total.toLocaleString();
+  document.getElementById('rInterest').textContent='$'+interest.toLocaleString();
+  document.getElementById('rNet').textContent=(net<=0?'-':'')+'$'+Math.abs(net).toLocaleString();
+  var cashFlow=net<=0?'positive':'negative';
+  document.getElementById('rInsight').innerHTML='Your monthly loan payment is <strong>$'+monthly.toLocaleString()+'</strong>. With solar eliminating <strong>$'+savings+'/month</strong> from your electric bill, your net monthly cost is <strong>'+(net<=0?'$0 — you are cash-flow positive from day one':'$'+net+'/month')+'</strong>. '+(net<=0?'Solar pays for itself immediately — your energy savings exceed your loan payment by $'+Math.abs(net)+'/month.':'After the loan is paid off in '+document.getElementById('loanTerm').value+' years, you save the full $'+savings+'/month.');
+  document.getElementById('rBreak').innerHTML='<tr><td>Loan amount</td><td>$'+P.toLocaleString()+'</td></tr><tr><td>Down payment</td><td>$'+parseFloat(document.getElementById('downPmt').value).toLocaleString()+'</td></tr><tr><td>Monthly payment</td><td>$'+monthly.toLocaleString()+'</td></tr><tr><td>Total interest paid</td><td>$'+interest.toLocaleString()+'</td></tr><tr><td>Monthly energy savings</td><td>$'+savings.toLocaleString()+'</td></tr><tr class="row-total"><td>Net monthly cost/savings</td><td>'+(net<=0?'-$'+Math.abs(net):'$'+net)+'</td></tr><tr><td>25-year energy savings</td><td>$'+(savings*12*25).toLocaleString()+'</td></tr>';
+  document.getElementById('results').classList.add('visible');
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
 
 <!-- ════════════ CTA ════════════ -->
 <div class="content-section">

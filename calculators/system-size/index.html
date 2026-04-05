@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Real Estate Financing | Solar Mason</title>
-<meta name="description" content="Financing solutions for solar-enhanced real estate investment and development.">
+<title>Solar System Size Calculator | Solar Mason</title>
+<meta name="description" content="Calculate the optimal solar system size for your home or business based on energy usage and location.">
 <link rel="icon" href="https://static.wixstatic.com/media/4dcc05_c778003a773a4844ba6c8806c92c7583~mv2.png/v1/fill/w_32,h_32,al_c,q_85/1.png">
 <style>
 /* ═══════════════════════════════════════════
@@ -3361,7 +3361,9 @@ html { scroll-behavior: smooth; }
 .photo-section-content{position:relative;z-index:1;padding:3rem;max-width:600px}
 .photo-section-content h2{color:#fff;font-size:1.6rem;margin-bottom:1rem}
 .photo-section-content p{color:rgba(255,255,255,.9);line-height:1.7}
+
 </style>
+<link rel="stylesheet" href="/calculators/calc.css">
 </head>
 <body>
 
@@ -3406,7 +3408,6 @@ html { scroll-behavior: smooth; }
         <svg class="nav-chevron" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
       </button>
     </li>
-      <li class="nav-item"><a href="/calculators/" class="nav-trigger" style="text-decoration:none">Calculators</a></li>
   </ul>
 
   <div class="nav-right">
@@ -3873,26 +3874,227 @@ html { scroll-behavior: smooth; }
 
 
 <!-- ════════════ HERO ════════════ -->
-<section class="subpage-hero" style="background-image:url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1920&q=80');min-height:420px">
+<section class="subpage-hero" style="background-image:url('https://static.wixstatic.com/media/11062b_8382e0430efb495d85472609b53759fd~mv2.jpg/v1/fill/w_1920,h_900,al_c,q_85/11062b_8382e0430efb495d85472609b53759fd~mv2.jpg');min-height:420px">
   <div class="subpage-hero-content">
-    <div class="hero-badge">Financing</div>
-    <h1>Real Estate Financing</h1>
-    <p class="hero-subtitle">Financing solutions for solar-enhanced real estate investment and development.</p>
+    <div class="hero-badge">Company</div>
+    <h1>About Solar Mason</h1>
+    <p class="hero-subtitle">Veteran-owned. Engineering excellence. Powering Northeast PA's clean energy future since 2014.</p>
   </div>
 </section>
 
 <!-- ════════════ BREADCRUMB ════════════ -->
-<div class="breadcrumb">
-  <a href="/">Home</a> <span>›</span> Real Estate Financing
+
+
+<div class="breadcrumb"><a href="/">Home</a> <span>›</span> <a href="/calculators/">Calculators</a> <span>›</span> System Size</div>
+
+<div class="calc-page">
+<div class="calc-page-header">
+  <div class="calc-who">Residential & Commercial</div>
+  <h1>Solar System Size Calculator</h1>
+  <p class="calc-subtitle">Determine the optimal solar system size based on your energy usage, roof space, and offset goals.</p>
 </div>
 
-<!-- ════════════ CONTENT ════════════ -->
-<div class="content-section"><div class="glass-card"><h2>Solar Real Estate Financing</h2><p>Ready to elevate your solar business's real estate ambitions? Solar Mason connects commercial property owners and developers with financing solutions that leverage solar energy to enhance property value, reduce operating expenses, and access clean energy incentives.</p></div>
-<div class="glass-grid"><div class="glass-grid-card"><h3>🏢 Commercial Properties</h3><p>Finance solar installations on commercial real estate — office buildings, warehouses, retail centers, and industrial facilities.</p></div>
-<div class="glass-grid-card"><h3>📈 Value Enhancement</h3><p>Solar installations increase property NOI by reducing energy expenses, directly improving capitalization rates and property valuations.</p></div>
-<div class="glass-grid-card"><h3>🏗️ New Development</h3><p>Integrate solar into new construction projects with financing that covers both the building and the energy system.</p></div>
-<div class="glass-grid-card"><h3>💰 C-PACE Integration</h3><p>Combine real estate financing with C-PACE solar financing to minimize equity requirements and maximize leverage on clean energy improvements.</p></div></div>
-<div class="cta-banner"><h2>Explore Real Estate Financing</h2><p>Discover how solar enhances your real estate investment strategy.</p><a href="https://app.solarmason.com/account" class="cta-btn">Apply Now</a></div></div>
+<div class="calc-section">
+  <h2>Your Energy Usage</h2>
+  <div class="calc-row">
+    <div class="calc-field">
+      <label>Monthly Electric Bill ($)</label>
+      <input type="number" id="monthlyBill" value="200" min="0">
+    </div>
+    <div class="calc-field">
+      <label>Electricity Rate ($/kWh)</label>
+      <input type="number" id="elecRate" value="0.14" min="0.01" step="0.01">
+      <span class="unit">PPL average: ~$0.14/kWh</span>
+    </div>
+  </div>
+  <div class="calc-row">
+    <div class="calc-field">
+      <label>Monthly Usage (kWh)</label>
+      <input type="number" id="monthlyKwh" value="1429" min="0">
+      <span class="unit">Auto-calculated from bill ÷ rate</span>
+    </div>
+    <div class="calc-field">
+      <label>Desired Offset (%)</label>
+      <input type="number" id="offsetPct" value="100" min="10" max="150">
+      <span class="unit">100% = eliminate your bill</span>
+    </div>
+  </div>
+</div>
+
+<div class="calc-section">
+  <h2>Location & Conditions</h2>
+  <div class="calc-row">
+    <div class="calc-field">
+      <label>Location</label>
+      <select id="location">
+        <option value="4.2">Northeast PA (Scranton/Wilkes-Barre)</option>
+        <option value="4.3">Central PA (Harrisburg)</option>
+        <option value="4.4">Southeast PA (Philadelphia)</option>
+        <option value="4.1">Western PA (Pittsburgh)</option>
+        <option value="4.5">Southern PA (Lancaster)</option>
+      </select>
+      <span class="unit">Peak sun hours per day</span>
+    </div>
+    <div class="calc-field">
+      <label>Panel Wattage (W)</label>
+      <select id="panelWatt">
+        <option value="400">400W (Standard)</option>
+        <option value="410">410W (Q CELLS Q.PEAK)</option>
+        <option value="420">420W (Premium)</option>
+        <option value="440">440W (High Efficiency)</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="calc-advanced-toggle" onclick="toggleAdv(this)">
+    <svg viewBox="0 0 24 24" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg>
+    Advanced Options
+  </button>
+  <div class="calc-advanced" id="advOptions">
+    <div class="calc-row">
+      <div class="calc-field">
+        <label>System Loss Factor (%)</label>
+        <input type="number" id="lossRate" value="14" min="5" max="25">
+        <span class="unit">Wiring, inverter, soiling, etc.</span>
+      </div>
+      <div class="calc-field">
+        <label>Annual Degradation (%)</label>
+        <input type="number" id="degradation" value="0.5" min="0" max="2" step="0.1">
+        <span class="unit">Typical: 0.5%/year</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="calc-btn-wrap">
+  <button class="calc-btn" onclick="calcSystemSize()">Calculate System Size</button>
+</div>
+
+<div class="calc-results" id="results">
+  <div class="calc-section">
+    <h2>Recommended System</h2>
+    <div class="calc-result-cards">
+      <div class="calc-result-card primary">
+        <div class="result-value" id="rSystemKw">—</div>
+        <div class="result-label">System Size (kW)</div>
+      </div>
+      <div class="calc-result-card">
+        <div class="result-value" id="rPanels">—</div>
+        <div class="result-label">Solar Panels</div>
+        <div class="result-sublabel" id="rPanelSpec"></div>
+      </div>
+      <div class="calc-result-card">
+        <div class="result-value" id="rAnnualKwh">—</div>
+        <div class="result-label">Annual Production (kWh)</div>
+      </div>
+      <div class="calc-result-card">
+        <div class="result-value" id="rOffset">—</div>
+        <div class="result-label">Bill Offset</div>
+      </div>
+    </div>
+
+    <div class="calc-insight">
+      <h3>What This Means</h3>
+      <p id="rInsight"></p>
+    </div>
+
+    <div class="calc-breakdown">
+      <h3>Production Breakdown</h3>
+      <table class="calc-table">
+        <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+        <tbody id="rBreakdown"></tbody>
+      </table>
+    </div>
+
+    <div class="calc-assumptions">
+      <h4>Assumptions</h4>
+      <p>Production estimates based on PVWatts methodology using peak sun hours for your selected location. System losses include inverter efficiency, wiring losses, soiling, snow, shading, and component mismatch. Actual production will vary based on specific site conditions, panel orientation, tilt angle, and shading. Solar Mason provides site-specific production modeling using PVsyst for all project proposals.</p>
+    </div>
+  </div>
+
+  <div class="calc-actions">
+    <button class="calc-action-btn" onclick="window.print()">🖨️ Print Results</button>
+  </div>
+
+  
+<div class="calc-cta">
+  <h3>Ready to Go Solar?</h3>
+  <p>Get a custom system design and detailed financial analysis from our engineering team.</p>
+  <div class="calc-cta-btns">
+    <a href="https://app.solarmason.com/account" class="calc-cta-btn calc-cta-btn-primary">Get Your Free Estimate</a>
+    <a href="mailto:engineering@solarmason.com" class="calc-cta-btn calc-cta-btn-secondary">Talk to an Engineer</a>
+  </div>
+  <div class="calc-cta-contact">
+    <span>570-MY-SOLAR (570-697-6527)</span>
+    <a href="https://solarmason.com">solarmason.com</a>
+    <a href="mailto:engineering@solarmason.com">engineering@solarmason.com</a>
+  </div>
+</div>
+
+<div class="calc-disclaimer">
+  <strong>Disclaimer:</strong> This calculator provides estimates for informational purposes only. Actual results will vary based on site-specific conditions, equipment selection, utility rates, and other factors. This tool does not constitute financial, tax, or legal advice. Consult a qualified professional before making investment decisions. Solar Mason provides free, detailed proposals with site-specific analysis.
+</div>
+
+</div>
+</div>
+
+<script>
+function toggleAdv(btn) {
+  btn.classList.toggle('open');
+  document.getElementById('advOptions').classList.toggle('open');
+}
+
+// Auto-calc kWh from bill
+document.getElementById('monthlyBill').addEventListener('input', function() {
+  var rate = parseFloat(document.getElementById('elecRate').value) || 0.14;
+  document.getElementById('monthlyKwh').value = Math.round(this.value / rate);
+});
+document.getElementById('elecRate').addEventListener('input', function() {
+  var bill = parseFloat(document.getElementById('monthlyBill').value) || 200;
+  document.getElementById('monthlyKwh').value = Math.round(bill / this.value);
+});
+
+function calcSystemSize() {
+  var monthlyKwh = parseFloat(document.getElementById('monthlyKwh').value);
+  var offset = parseFloat(document.getElementById('offsetPct').value) / 100;
+  var sunHours = parseFloat(document.getElementById('location').value);
+  var panelW = parseInt(document.getElementById('panelWatt').value);
+  var loss = parseFloat(document.getElementById('lossRate').value) / 100;
+  var rate = parseFloat(document.getElementById('elecRate').value);
+
+  var annualKwh = monthlyKwh * 12 * offset;
+  var systemKw = annualKwh / (sunHours * 365 * (1 - loss));
+  systemKw = Math.ceil(systemKw * 10) / 10;
+  var panels = Math.ceil((systemKw * 1000) / panelW);
+  var actualKw = (panels * panelW) / 1000;
+  var actualAnnual = Math.round(actualKw * sunHours * 365 * (1 - loss));
+  var actualOffset = Math.round((actualAnnual / (monthlyKwh * 12)) * 100);
+  var annualSavings = Math.round(actualAnnual * rate);
+  var roofSqft = Math.round(panels * 18);
+
+  document.getElementById('rSystemKw').textContent = actualKw.toFixed(1);
+  document.getElementById('rPanels').textContent = panels;
+  document.getElementById('rPanelSpec').textContent = panelW + 'W panels';
+  document.getElementById('rAnnualKwh').textContent = actualAnnual.toLocaleString();
+  document.getElementById('rOffset').textContent = actualOffset + '%';
+
+  document.getElementById('rInsight').innerHTML = 'A <strong>' + actualKw.toFixed(1) + ' kW</strong> system with <strong>' + panels + '</strong> panels will produce approximately <strong>' + actualAnnual.toLocaleString() + ' kWh</strong> per year, offsetting <strong>' + actualOffset + '%</strong> of your electricity usage. At current rates, that saves you approximately <strong>$' + annualSavings.toLocaleString() + '/year</strong> or <strong>$' + Math.round(annualSavings/12).toLocaleString() + '/month</strong>. The panels require approximately <strong>' + roofSqft.toLocaleString() + ' sq ft</strong> of roof or ground space.';
+
+  var tbody = document.getElementById('rBreakdown');
+  tbody.innerHTML = '<tr><td>Annual energy need (at ' + (offset*100) + '% offset)</td><td>' + annualKwh.toLocaleString() + ' kWh</td></tr>'
+    + '<tr><td>Peak sun hours/day</td><td>' + sunHours + ' hours</td></tr>'
+    + '<tr><td>System losses</td><td>' + (loss*100) + '%</td></tr>'
+    + '<tr><td>Panel wattage</td><td>' + panelW + 'W</td></tr>'
+    + '<tr><td>Number of panels</td><td>' + panels + '</td></tr>'
+    + '<tr><td>Roof/ground space needed</td><td>~' + roofSqft.toLocaleString() + ' sq ft</td></tr>'
+    + '<tr><td>Year 1 production</td><td>' + actualAnnual.toLocaleString() + ' kWh</td></tr>'
+    + '<tr><td>Annual savings (at $' + rate + '/kWh)</td><td>$' + annualSavings.toLocaleString() + '</td></tr>'
+    + '<tr class="row-total"><td>25-year savings (estimated)</td><td>$' + (annualSavings * 23).toLocaleString() + '</td></tr>';
+
+  document.getElementById('results').classList.add('visible');
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
 
 <!-- ════════════ CTA ════════════ -->
 <div class="content-section">
