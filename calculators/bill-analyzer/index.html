@@ -4048,7 +4048,14 @@ function parseBill(text){
   else{m=t.match(/(\d+\s+\S+\s+\S+(?:\s+ST|AVE|BLVD|DR|RD|CT|LN|WAY|PL|CIR)\S*)\s+([A-Z]{3,}),?\s*PA\s*(\d{5})/i);if(m){d.location.address=m[1].trim();d.location.city=m[2].trim();d.location.zip=m[3];d.location.cityStateZip=m[2].trim()+', PA '+m[3];}}
 
   // Amount due
-  m=t.match(/Amount Due[\s$]*(\d+\.\d{2})/i);if(m)d.charges.totalBill=parseFloat(m[1]);
+  // Total bill - try multiple patterns, skip $0.00 balances
+  m=t.match(/Amount Due By[^$]*\$(\d+\.\d{2})/i);
+  if(!m)m=t.match(/Amount Due[^\d]*\d{1,2}\/\d{1,2}\/\d{2,4}[^$]*\$(\d+\.\d{2})/i);
+  if(!m)m=t.match(/Amount Due[^$]*\$(\d+\.\d{2})/i);
+  if(!m)m=t.match(/Total[^$]*\$(\d+\.\d{2})\s*$/im);
+  if(m&&parseFloat(m[1])>0)d.charges.totalBill=parseFloat(m[1]);
+  // Fallback: add supply + delivery
+  if(!d.charges.totalBill&&d.charges.supply&&d.charges.delivery)d.charges.totalBill=Math.round((d.charges.supply+d.charges.delivery)*100)/100;
 
   // Due date
   m=t.match(/Due Date[\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/i);if(m)d.account.dueDate=m[1];
