@@ -3982,7 +3982,7 @@ html { scroll-behavior: smooth; }
   <div class="az-opt-row">
     <div class="az-field"><label>Panel Wattage (W)</label><input type="number" id="optPanelW" value="450" min="300" max="600" step="10"></div>
     <div class="az-field"><label>Cost per Watt ($)</label><input type="number" id="optCpw" value="3.00" min="0.50" max="6.00" step="0.10"></div>
-    <div class="az-field"><label>Production Factor (kWh/kW/yr)</label><input type="number" id="optProd" value="1275" min="800" max="1800" step="25"></div>
+    
   </div>
   <div style="text-align:center;margin-top:.75rem"><button onclick="reCalc()" style="padding:.75rem 2rem;border-radius:100px;border:none;background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(45,130,190,.25)">Recalculate</button></div>
   <script>document.getElementById('optMount').addEventListener('change',function(){var v=this.value;var cpw=v==='ground'?2.20:v==='carport'?3.50:3.00;document.getElementById('optCpw').value=cpw.toFixed(2)});</script>
@@ -4198,7 +4198,7 @@ function calculateSizing(){
   // Read user-adjustable values from UI (with CONFIG as fallback)
   var uiPanelW=parseInt(document.getElementById('optPanelW').value)||CONFIG.panelWattage;
   var uiCpw=parseFloat(document.getElementById('optCpw').value)||CONFIG.roofMountCostPerWatt;
-  var uiProd=parseInt(document.getElementById('optProd').value)||CONFIG.nepaProductionPerKw;
+  var uiProd=CONFIG.nepaProductionPerKw;
   const cpw=uiCpw;
   const requiredKwh=billData.usage.annualKwh*offset;
   const systemKw=Math.ceil(requiredKwh/uiProd*10)/10;
