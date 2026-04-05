@@ -4060,10 +4060,15 @@ function parseBill(text){
   // Due date
   m=t.match(/Due Date[\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/i);if(m)d.account.dueDate=m[1];
 
-  // Usage - kWh
-  m=t.match(/(\d{2,6})\s*kWh/i);
-  if(!m)m=t.match(/Kilowatt-?\s*Hours\s*(\d+)/i);
-  if(!m)m=t.match(/Total Delivered:?\s*(\d+)/i);
+  // Usage - billing period kWh (NOT annual)
+  // Priority: Total Delivered > Kilowatt-Hours table > kWh near billing period
+  m=t.match(/Total Delivered:?\s*(\d{2,5})/i);
+  if(!m)m=t.match(/Kilowatt-?\s*Hours\s*(\d{2,5})\b/i);
+  if(!m){
+    // Look for kWh near billing dates, skip numbers >2000 (likely annual)
+    var kwhMatches=t.match(/(\d{2,5})\s*kWh/gi);
+    if(kwhMatches){for(var k=0;k<kwhMatches.length;k++){var val=parseInt(kwhMatches[k]);if(val>50&&val<3000){m=[null,String(val)];break;}}}
+  }
   if(m)d.usage.billingKwh=parseInt(m[1]);
 
   // Days billed
