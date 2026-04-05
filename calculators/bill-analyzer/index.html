@@ -3893,8 +3893,8 @@ html { scroll-behavior: smooth; }
 <div class="content-section" style="max-width:1000px">
 <style>
 /* Analyzer Styles */
-.az-upload{border:3px dashed rgba(45,130,190,.3);border-radius:20px;padding:3rem 2rem;text-align:center;background:rgba(255,255,255,.5);backdrop-filter:blur(16px);cursor:pointer;transition:all .3s;margin-bottom:2rem}
-.az-upload:hover,.az-upload.dragover{border-color:var(--brand,#2D82BE);background:rgba(45,130,190,.05);transform:translateY(-2px)}
+.az-upload{border:2px dashed rgba(45,130,190,.25);border-radius:18px;padding:2.5rem 2rem;text-align:center;background:rgba(255,255,255,.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.6);cursor:pointer;transition:all .3s;margin-bottom:1.5rem}
+.az-upload:hover,.az-upload.dragover{border-color:var(--brand,#2D82BE);background:rgba(255,255,255,.9);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.08)}
 .az-upload-icon{font-size:3rem;margin-bottom:.75rem}
 .az-upload h3{font-size:1.1rem;font-weight:700;color:var(--navy,#0B2545);margin-bottom:.35rem}
 .az-upload p{font-size:.88rem;color:#64748B}
@@ -3917,7 +3917,7 @@ html { scroll-behavior: smooth; }
 .az-lbl{font-size:.72rem;color:#64748B;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-top:.2rem}
 .az-sub{font-size:.68rem;color:#94a3b8;margin-top:.1rem}
 /* Report Sections */
-.az-section{background:rgba(255,255,255,.7);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.6);border-radius:16px;padding:1.75rem;margin-bottom:1.25rem}
+.az-section{background:rgba(255,255,255,.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.6);border-radius:18px;padding:1.75rem;margin-bottom:1.25rem}
 .az-section h3{font-size:1.05rem;font-weight:700;color:var(--navy,#0B2545);margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid rgba(45,130,190,.1)}
 .az-table{width:100%;border-collapse:collapse}
 .az-table td{padding:.5rem .75rem;font-size:.88rem;color:#334155;border-bottom:1px solid rgba(0,0,0,.04)}
@@ -3936,7 +3936,7 @@ html { scroll-behavior: smooth; }
 .az-size-card .sz-panels{font-size:.88rem;color:var(--brand);font-weight:600;margin-top:.25rem}
 .az-size-card .sz-detail{font-size:.78rem;color:#94a3b8;margin-top:.25rem}
 .az-size-card.recommended .sz-kw{color:var(--brand,#2D82BE)}
-.calc-cta{background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);border-radius:18px;padding:2.5rem;text-align:center;margin:2rem 0}
+.calc-cta{background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);border-radius:18px;padding:2rem;text-align:center;margin:2rem 0}
 .calc-cta h3{color:#fff;font-size:1.3rem;font-weight:700;margin-bottom:.5rem}
 .calc-cta p{color:rgba(255,255,255,.85);font-size:.95rem;margin-bottom:1rem}
 .calc-cta a{display:inline-block;padding:.75rem 2rem;border-radius:100px;background:#fff;color:var(--brand,#2D82BE);font-weight:600;text-decoration:none;margin:.25rem}
@@ -3959,14 +3959,14 @@ html { scroll-behavior: smooth; }
 <div class="az-status" id="status">⏳ Analyzing your utility bill...</div>
 
 <!-- OPTIONS -->
-<div class="az-options glass-card" id="optionsPanel" style="display:none">
+<div class="az-options" id="optionsPanel" style="display:none;background:rgba(255,255,255,.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.6);border-radius:18px;padding:1.75rem;margin-bottom:1.25rem">
   <h3 style="font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:1rem">Refinement Options</h3>
   <div class="az-opt-row">
     <div class="az-field"><label>Target Offset</label><select id="optOffset"><option value="100" selected>100% — Eliminate bill</option><option value="75">75% — Major reduction</option><option value="50">50% — Partial offset</option></select></div>
     <div class="az-field"><label>Account Type Override</label><select id="optType"><option value="auto">Auto-detect</option><option value="residential">Residential</option><option value="commercial">Commercial</option></select></div>
     <div class="az-field"><label>Mount Preference</label><select id="optMount"><option value="roof">Roof Mount</option><option value="ground">Ground Mount</option><option value="carport">Solar Carport</option></select></div>
   </div>
-  <div style="text-align:center;margin-top:.75rem"><button class="calc-btn" onclick="reCalc()" style="padding:.75rem 2rem;font-size:.9rem">Recalculate</button></div>
+  <div style="text-align:center;margin-top:.75rem"><button onclick="reCalc()" style="padding:.75rem 2rem;border-radius:100px;border:none;background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(45,130,190,.25)">Recalculate</button></div>
 </div>
 
 <!-- REPORT -->
@@ -4279,9 +4279,10 @@ function renderReport(){
   h+='<div class="az-section" style="opacity:.6"><h3>Incentives Available in Your Region</h3><p style="font-size:.88rem;color:#64748B">Future version will automatically scan incentive databases and program sources for '+(d.location.cityStateZip||'your area')+'. Check our <a href="/solar-pv-incentive-search/" style="color:var(--brand)">Solar PV Incentive Directory</a> for current programs.</p></div>';
 
   // ═══ ACTIONS ═══
-  h+='<div class="az-actions">
-  <button class="az-action-btn" onclick="generateProposal()" style="background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);color:#fff;border:none;padding:.75rem 2rem;font-size:.9rem">📄 View Proposal</button>
-  <button class="az-action-btn" onclick="shareProposal()">📤 Share</button>
+  h+='<div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;margin:1.5rem 0">
+  <button onclick="generateProposal()" style="padding:.85rem 2.5rem;border-radius:100px;border:none;background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(45,130,190,.3)">📄 View Proposal</button>
+  <button onclick="shareProposal()" style="padding:.85rem 2rem;border-radius:100px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.7);font-size:.9rem;font-weight:600;color:#475569;cursor:pointer">📤 Share</button>
+  <button onclick="window.print()" style="padding:.85rem 2rem;border-radius:100px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.7);font-size:.9rem;font-weight:600;color:#475569;cursor:pointer">🖨️ Print</button>
 </div>';
 
   // ═══ CTA ═══
