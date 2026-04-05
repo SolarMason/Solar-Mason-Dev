@@ -3361,6 +3361,183 @@ html { scroll-behavior: smooth; }
 .photo-section-content{position:relative;z-index:1;padding:3rem;max-width:600px}
 .photo-section-content h2{color:#fff;font-size:1.6rem;margin-bottom:1rem}
 .photo-section-content p{color:rgba(255,255,255,.9);line-height:1.7}
+
+
+/* ═══════════════════════════════════════
+   INCENTIVE DIRECTORY — ACCORDION SYSTEM
+═══════════════════════════════════════ */
+.dir-section { margin-bottom: 2.5rem; }
+.dir-section-header {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1.5rem 2rem;
+  background: var(--glass-white, rgba(255,255,255,0.72));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.55));
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  user-select: none;
+}
+.dir-section-header:hover {
+  background: var(--glass-white-strong, rgba(255,255,255,0.88));
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  transform: translateY(-1px);
+}
+.dir-section-header.active {
+  border-radius: 16px 16px 0 0;
+  border-bottom: 1px solid rgba(45,130,190,0.15);
+  background: var(--glass-white-strong, rgba(255,255,255,0.88));
+}
+.dir-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(45,130,190,0.12), rgba(45,130,190,0.06));
+  border: 1px solid rgba(45,130,190,0.15);
+}
+.dir-section-header.active .dir-icon {
+  background: linear-gradient(135deg, var(--brand, #2D82BE), var(--brand-dark, #1B5E8A));
+  border-color: transparent;
+  color: #fff;
+}
+.dir-section-info { flex: 1; }
+.dir-section-title {
+  font-size: 1.15rem; font-weight: 700;
+  color: var(--navy, #0B2545);
+  margin-bottom: 0.2rem;
+}
+.dir-section-count {
+  font-size: 0.82rem; color: #64748B;
+  font-weight: 500;
+}
+.dir-chevron {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: rgba(45,130,190,0.08);
+  transition: transform 0.3s, background 0.3s;
+  flex-shrink: 0;
+}
+.dir-section-header.active .dir-chevron {
+  transform: rotate(180deg);
+  background: rgba(45,130,190,0.15);
+}
+.dir-chevron svg { width: 16px; height: 16px; stroke: var(--brand, #2D82BE); stroke-width: 2.5; fill: none; }
+
+.dir-section-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--glass-white-subtle, rgba(255,255,255,0.45));
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.55));
+  border-top: none;
+  border-radius: 0 0 16px 16px;
+}
+.dir-section-body.open { max-height: 5000px; }
+.dir-section-body-inner { padding: 1.5rem 2rem 2rem; }
+
+/* Individual program entries */
+.program-entry {
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(255,255,255,0.7);
+  border-radius: 14px;
+  transition: all 0.25s;
+}
+.program-entry:last-child { margin-bottom: 0; }
+.program-entry:hover {
+  background: rgba(255,255,255,0.85);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
+}
+.program-entry h4 {
+  font-size: 1.05rem; font-weight: 700;
+  color: var(--navy, #0B2545);
+  margin-bottom: 0.75rem;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.program-entry h4 .tag {
+  font-size: 0.65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 100px;
+  display: inline-block;
+}
+.tag-active { background: rgba(34,197,94,0.12); color: #15803d; }
+.tag-expired { background: rgba(239,68,68,0.12); color: #dc2626; }
+.tag-limited { background: rgba(234,179,8,0.12); color: #a16207; }
+.tag-deadline { background: rgba(45,130,190,0.12); color: #1B5E8A; }
+
+.program-meta {
+  display: flex; flex-wrap: wrap; gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.program-meta-item {
+  font-size: 0.82rem;
+  color: #475569;
+  display: flex; align-items: center; gap: 0.35rem;
+}
+.program-meta-item strong {
+  color: var(--navy, #0B2545);
+  font-weight: 600;
+}
+.program-desc {
+  font-size: 0.92rem;
+  color: #475569;
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+}
+.program-link {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.85rem; font-weight: 600;
+  color: var(--brand, #2D82BE);
+  text-decoration: none;
+  transition: gap 0.2s;
+}
+.program-link:hover { gap: 0.6rem; }
+
+/* Alert banner */
+.dir-alert {
+  padding: 1.25rem 1.75rem;
+  border-radius: 14px;
+  margin-bottom: 2rem;
+  display: flex; align-items: flex-start; gap: 1rem;
+  border: 1px solid rgba(239,68,68,0.2);
+  background: linear-gradient(135deg, rgba(239,68,68,0.06), rgba(239,68,68,0.02));
+}
+.dir-alert-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: rgba(239,68,68,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+.dir-alert h3 { font-size: 0.95rem; font-weight: 700; color: #dc2626; margin-bottom: 0.35rem; }
+.dir-alert p { font-size: 0.88rem; color: #64748B; line-height: 1.65; }
+
+/* Section intro text */
+.dir-intro {
+  font-size: 0.95rem;
+  color: #64748B;
+  line-height: 1.7;
+  margin-bottom: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dir-section-header { padding: 1.25rem 1.25rem; gap: 0.75rem; }
+  .dir-icon { width: 40px; height: 40px; font-size: 1.2rem; }
+  .dir-section-title { font-size: 1rem; }
+  .dir-section-body-inner { padding: 1rem 1.25rem 1.5rem; }
+  .program-entry { padding: 1.25rem; }
+  .program-meta { flex-direction: column; gap: 0.4rem; }
+}
+
 </style>
 </head>
 <body>
@@ -3880,306 +4057,426 @@ html { scroll-behavior: smooth; }
 </section>
 
 <!-- ════════════ BREADCRUMB ════════════ -->
+
+
 <div class="breadcrumb">
   <a href="/">Home</a> <span>›</span> Solar PV Incentive Directory
 </div>
 
-<!-- ════════════ CONTENT ════════════ -->
+<div class="content-section" style="max-width:960px">
 
-<div class="content-section">
-
-<!-- ═══ IMPORTANT NOTICE ═══ -->
-<div class="glass-card" style="border-left:4px solid #E24B4A">
-  <h2 style="color:#E24B4A">⚠ Important: 2026 Federal ITC Update</h2>
-  <p>The <strong>One Big Beautiful Bill Act</strong>, signed July 4, 2025, ended the 30% Residential Clean Energy Credit (Section 25D) on <strong>December 31, 2025</strong>. Homeowners who installed systems before that date may still claim unused credits. The <strong>Commercial ITC (Section 48E)</strong> remains available for projects that begin construction by <strong>July 4, 2026</strong>. Homeowners can still access commercial tax benefits indirectly through solar leases and PPAs where a third-party business entity owns the system.</p>
+<!-- ALERT -->
+<div class="dir-alert">
+  <div class="dir-alert-icon">⚠</div>
+  <div>
+    <h3>2026 Federal ITC Update</h3>
+    <p>The <strong>One Big Beautiful Bill Act</strong> (signed July 4, 2025) ended the 30% Residential Clean Energy Credit on <strong>December 31, 2025</strong>. The <strong>Commercial ITC (Section 48E)</strong> remains available — construction must begin by <strong>July 4, 2026</strong>. Homeowners can still access commercial tax benefits through solar leases and PPAs.</p>
+  </div>
 </div>
 
-<!-- ═══ FEDERAL PROGRAMS ═══ -->
-<div class="glass-card">
-  <h2>🏛️ Federal Incentive Programs</h2>
-  <p>Federal incentives remain the most powerful tools for reducing commercial solar costs. Programs can be stacked for combined savings of 45–70% of total system cost.</p>
+<div style="height:0.5rem"></div>
+
+<!-- ═══════════ SECTION 1: FEDERAL ═══════════ -->
+<div class="dir-section">
+  <div class="dir-section-header active" onclick="toggleSection(this)">
+    <div class="dir-icon">🏛️</div>
+    <div class="dir-section-info">
+      <div class="dir-section-title">Federal Incentive Programs</div>
+      <div class="dir-section-count">6 programs — tax credits, depreciation, grants & direct pay</div>
+    </div>
+    <div class="dir-chevron"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+  </div>
+  <div class="dir-section-body open">
+    <div class="dir-section-body-inner">
+      <p class="dir-intro">Federal incentives remain the most powerful tools for reducing commercial solar costs. Programs can be stacked for combined savings of 45–70% of total system cost.</p>
+
+      <div class="program-entry">
+        <h4>Section 48E — Commercial Investment Tax Credit <span class="tag tag-deadline">Deadline: July 4, 2026</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Value:</strong> 30% base credit (with prevailing wage/apprenticeship)</div>
+          <div class="program-meta-item"><strong>Without compliance:</strong> 6%</div>
+        </div>
+        <p class="program-desc">Dollar-for-dollar reduction in federal tax liability for commercial solar installations. Eligible for businesses, commercial properties, and third-party owned residential systems (leases/PPAs). Construction must begin by July 4, 2026, with completion within 4 calendar years.</p>
+        <p class="program-desc"><strong>Bonus adders:</strong> +10% domestic content, +10% energy community, +10–20% low-income community — up to 70% total stacked credit.</p>
+        <a href="https://www.irs.gov/credits-deductions/commercial-clean-energy-credits" class="program-link">IRS Commercial Clean Energy Credits <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>MACRS 5-Year Accelerated Depreciation <span class="tag tag-active">Active</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Value:</strong> Depreciate ~85% of system cost over 5 years</div>
+          <div class="program-meta-item"><strong>Bonus:</strong> 20% first-year depreciation</div>
+        </div>
+        <p class="program-desc">For-profit businesses that own solar equipment can depreciate the adjusted basis (after 50% ITC reduction) over 5 years using the MACRS schedule. Combined with the 30% ITC, businesses recover approximately 45–55% of gross system cost through tax benefits alone.</p>
+        <a href="https://www.irs.gov/publications/p946" class="program-link">IRS Publication 946: Depreciation <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>IRS Direct Pay (Elective Pay) — Section 6417 <span class="tag tag-active">Active through 2027</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Value:</strong> Full 30% ITC as a cash payment from the IRS</div>
+          <div class="program-meta-item"><strong>No tax liability needed</strong></div>
+        </div>
+        <p class="program-desc">Tax-exempt entities — 501(c)(3) nonprofits, municipalities, public schools, tribal nations, churches, and rural electric cooperatives — can receive the ITC as a direct cash refund. Pre-registration required via the IRS Clean Energy Credits portal before placing the system in service.</p>
+        <a href="https://www.irs.gov/credits-deductions/elective-pay-and-transferability" class="program-link">IRS Elective Pay Portal <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>USDA REAP Grant — Rural Energy for America Program <span class="tag tag-active">Funding through 2027</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Value:</strong> Grants covering 25–50% of project costs</div>
+          <div class="program-meta-item"><strong>Stackable with 30% ITC</strong></div>
+        </div>
+        <p class="program-desc">Available to rural small businesses and agricultural producers in areas with population under 50,000. Many NEPA communities qualify. Quarterly application deadlines. Combined with the 30% ITC, qualifying businesses can offset up to 80% of total system cost. Loan guarantees also available.</p>
+        <a href="https://www.rd.usda.gov/programs-services/energy-programs/rural-energy-america-program-renewable-energy-systems-energy-efficiency-improvement-guaranteed-loans" class="program-link">USDA REAP Program <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>Section 48E — Standalone Battery Storage Credit <span class="tag tag-active">Active</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Value:</strong> 30% ITC on battery systems ≥3 kWh</div>
+          <div class="program-meta-item"><strong>Solar co-location not required</strong></div>
+        </div>
+        <p class="program-desc">Commercial battery storage qualifies for the full 30% ITC independently — no solar array required. Battery-only projects are not subject to the accelerated solar deadline and remain eligible under the original IRA timeline through the early 2030s.</p>
+        <a href="https://www.energy.gov/eere/solar/homeowners-guide-federal-tax-credit-solar-photovoltaics" class="program-link">DOE Energy Storage Guide <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>Section 25D — Residential Clean Energy Credit <span class="tag tag-expired">Expired 12/31/2025</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Status:</strong> No longer available for new installations</div>
+          <div class="program-meta-item"><strong>Carryover:</strong> Unused 2025 credits can still be claimed</div>
+        </div>
+        <p class="program-desc">The 30% residential ITC was terminated by the One Big Beautiful Bill Act. Homeowners who installed before 12/31/2025 can carry forward unused credits on IRS Form 5695. For new installations, homeowners can access the commercial 48E credit indirectly through solar leases and PPAs where a third-party company owns the system.</p>
+        <a href="https://www.irs.gov/credits-deductions/residential-clean-energy-credit" class="program-link">IRS Residential Credit (Reference) <span>→</span></a>
+      </div>
+
+    </div>
+  </div>
 </div>
 
-<div class="glass-grid">
-
-  <div class="glass-grid-card">
-    <h3>Section 48E — Commercial Investment Tax Credit</h3>
-    <p><strong>Value:</strong> 30% base credit (with prevailing wage/apprenticeship compliance), reduced to 6% without</p>
-    <p><strong>Eligible:</strong> Businesses, commercial properties, third-party owned residential systems (leases/PPAs)</p>
-    <p><strong>Deadline:</strong> Construction must begin by July 4, 2026. Projects must be placed in service within 4 years.</p>
-    <p><strong>Bonus Adders:</strong> +10% domestic content, +10% energy community, +10–20% low-income community — up to 70% total</p>
-    <p><a href="https://www.irs.gov/credits-deductions/commercial-clean-energy-credits" style="color:var(--brand)">IRS Commercial Clean Energy Credits →</a></p>
+<!-- ═══════════ SECTION 2: PA STATE ═══════════ -->
+<div class="dir-section">
+  <div class="dir-section-header" onclick="toggleSection(this)">
+    <div class="dir-icon">🏛️</div>
+    <div class="dir-section-info">
+      <div class="dir-section-title">Pennsylvania State Programs</div>
+      <div class="dir-section-count">6 programs — SRECs, net metering, AEPS & efficiency rebates</div>
+    </div>
+    <div class="dir-chevron"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
   </div>
+  <div class="dir-section-body">
+    <div class="dir-section-body-inner">
+      <p class="dir-intro">Pennsylvania's incentive landscape centers on SRECs, net metering, and the Alternative Energy Portfolio Standards. There is no statewide solar tax credit, sales tax exemption, or property tax exemption.</p>
 
-  <div class="glass-grid-card">
-    <h3>MACRS 5-Year Accelerated Depreciation</h3>
-    <p><strong>Value:</strong> Depreciate ~85% of system cost over 5 years (after ITC basis reduction). 20% bonus depreciation in year one under current law.</p>
-    <p><strong>Eligible:</strong> For-profit businesses that own solar equipment</p>
-    <p><strong>Impact:</strong> Combined with the 30% ITC, businesses recover approximately 45–55% of gross system cost through tax benefits alone.</p>
-    <p><a href="https://www.irs.gov/publications/p946" style="color:var(--brand)">IRS Publication 946: Depreciation →</a></p>
+      <div class="program-entry">
+        <h4>PA Solar Renewable Energy Credits (SRECs) <span class="tag tag-active">Active</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Value:</strong> $25–$40 per SREC (1 SREC = 1 MWh)</div>
+          <div class="program-meta-item"><strong>Annual income:</strong> $250–$480/year typical residential</div>
+        </div>
+        <p class="program-desc">All grid-connected solar PV systems physically located in Pennsylvania (Act 40 of 2017) earn one SREC per megawatt-hour of production. Credits are traded via PJM-GATS and sold through aggregators like SRECTrade. Lifetime value of $6,000–$14,000+ over 25 years. SRECs are taxable income.</p>
+        <p class="program-desc"><strong>How to enroll:</strong> Register through PA PUC's PennAEPS certification → set up a PJM-GATS account → SRECs auto-issued as system produces.</p>
+        <a href="https://www.srectrade.com" class="program-link" style="margin-right:1.5rem">SRECTrade — Register & Sell <span>→</span></a>
+        <a href="https://www.pjm-eis.com/getting-started" class="program-link">PJM-GATS Registration <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>PA Net Metering <span class="tag tag-active">Active — All IOUs</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Rate:</strong> Full retail rate credits</div>
+          <div class="program-meta-item"><strong>Residential limit:</strong> 50 kW</div>
+          <div class="program-meta-item"><strong>Commercial limit:</strong> 3 MW</div>
+        </div>
+        <p class="program-desc">Excess solar production earns credits at the full retail electricity rate. Credits roll over monthly; year-end excess compensated at the utility's price-to-compare rate. All PA investor-owned utilities must offer net metering: PPL, PECO, Duquesne Light, Penn Power, Met-Ed, Penelec, and West Penn Power.</p>
+        <a href="https://www.puc.pa.gov/electric/electric-competition/alternative-energy/" class="program-link">PA PUC Alternative Energy <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>Alternative Energy Portfolio Standards (AEPS) <span class="tag tag-active">Active</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Type:</strong> Regulatory mandate</div>
+          <div class="program-meta-item"><strong>Impact:</strong> Creates SREC market demand</div>
+        </div>
+        <p class="program-desc">Requires PA electric distribution companies to source a percentage of electricity from Tier I (including solar) and Tier II alternative energy sources. The solar carve-out specifically drives demand for solar photovoltaic SRECs — this is the legal foundation that gives SRECs their market value.</p>
+        <a href="https://www.puc.pa.gov/electric/electric-competition/alternative-energy/" class="program-link">PA PUC AEPS Info <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>PA Solar for All Program <span class="tag tag-active">Launched 2025</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Value:</strong> Free or reduced-cost solar installations</div>
+          <div class="program-meta-item"><strong>Goal:</strong> 14,000 PA homes over 5 years</div>
+        </div>
+        <p class="program-desc">State-driven initiative for low- to moderate-income households. Eligible homeowners receive significantly reduced installation costs or free solar installations. Rolling applications accepted.</p>
+        <a href="https://www.dep.pa.gov/Citizens/solar" class="program-link">PA DEP Solar Programs <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>PA Home Energy Efficiency Rebates <span class="tag tag-active">IRA-funded</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>For:</strong> Low/middle-income households</div>
+          <div class="program-meta-item"><strong>Covers:</strong> Heat pumps, insulation, panels, wiring</div>
+        </div>
+        <p class="program-desc">While not solar-specific, these rebates reduce overall home energy consumption — maximizing the value of any solar installation. Covers heat pumps, heat pump water heaters, heat pump dryers, electric cooktops, insulation, electrical panels, and wiring upgrades.</p>
+        <a href="https://www.dep.pa.gov/Citizens/energy" class="program-link">PA DEP Energy Programs <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>Property & Sales Tax — No Solar Exemption <span class="tag tag-limited">No exemption</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Property tax:</strong> No statewide exemption</div>
+          <div class="program-meta-item"><strong>Sales tax:</strong> 6% applies to solar equipment</div>
+        </div>
+        <p class="program-desc">Pennsylvania does not offer statewide property tax or sales tax exemptions for solar energy systems. Solar installations that increase your assessed home value will increase property taxes. Some local jurisdictions may offer exemptions — check with your county assessor's office.</p>
+        <a href="https://www.revenue.pa.gov" class="program-link">PA Department of Revenue <span>→</span></a>
+      </div>
+
+    </div>
   </div>
-
-  <div class="glass-grid-card">
-    <h3>IRS Direct Pay (Elective Pay) — Section 6417</h3>
-    <p><strong>Value:</strong> Full 30% ITC received as a direct cash payment from the IRS — no tax liability needed</p>
-    <p><strong>Eligible:</strong> 501(c)(3) nonprofits, municipalities, public schools, tribal nations, churches, rural electric cooperatives</p>
-    <p><strong>Deadline:</strong> Available through December 31, 2027. Pre-registration required via the IRS Clean Energy Credits portal.</p>
-    <p><a href="https://www.irs.gov/credits-deductions/elective-pay-and-transferability" style="color:var(--brand)">IRS Elective Pay Information →</a></p>
-  </div>
-
-  <div class="glass-grid-card">
-    <h3>USDA REAP Grant — Rural Energy for America Program</h3>
-    <p><strong>Value:</strong> Grants covering 25–50% of project costs. Loan guarantees also available. Can be combined with the 30% ITC.</p>
-    <p><strong>Eligible:</strong> Rural small businesses and agricultural producers in areas with population under 50,000. Many NEPA communities qualify.</p>
-    <p><strong>Timeline:</strong> Quarterly application deadlines. REAP funding available for fiscal years 2025, 2026, and 2027.</p>
-    <p><a href="https://www.rd.usda.gov/programs-services/energy-programs/rural-energy-america-program-renewable-energy-systems-energy-efficiency-improvement-guaranteed-loans" style="color:var(--brand)">USDA REAP Program Details →</a></p>
-  </div>
-
-  <div class="glass-grid-card">
-    <h3>Section 48E — Battery Storage Credit</h3>
-    <p><strong>Value:</strong> 30% ITC on standalone battery storage systems (≥3 kWh capacity). Not required to be co-located with solar.</p>
-    <p><strong>Eligible:</strong> Commercial entities including third-party residential installers. Batteries not subject to the accelerated solar deadline.</p>
-    <p><strong>Note:</strong> Battery-only projects remain eligible under the original IRA timeline through the early 2030s.</p>
-    <p><a href="https://www.energy.gov/eere/solar/homeowners-guide-federal-tax-credit-solar-photovoltaics" style="color:var(--brand)">DOE Solar Tax Credit Guide →</a></p>
-  </div>
-
-  <div class="glass-grid-card">
-    <h3>Section 25D — Residential Clean Energy Credit (EXPIRED)</h3>
-    <p><strong>Status:</strong> <span style="color:#E24B4A;font-weight:600">Expired December 31, 2025</span></p>
-    <p><strong>Carryover:</strong> Homeowners who installed before the deadline can carry forward unused 2025 credits to future tax years on IRS Form 5695.</p>
-    <p><strong>Alternative:</strong> Homeowners can still access the 30% commercial ITC through solar leases and PPAs where a third-party company owns the system and passes savings through lower monthly payments.</p>
-    <p><a href="https://www.irs.gov/credits-deductions/residential-clean-energy-credit" style="color:var(--brand)">IRS Residential Credit (Reference) →</a></p>
-  </div>
-
 </div>
 
-<!-- ═══ PENNSYLVANIA STATE PROGRAMS ═══ -->
-<div class="glass-card">
-  <h2>🏛️ Pennsylvania State Programs</h2>
-  <p>Pennsylvania's incentive landscape centers around SRECs, net metering, and the Alternative Energy Portfolio Standards. There is no statewide solar tax credit, sales tax exemption, or property tax exemption — making SRECs and net metering the primary state-level financial drivers.</p>
+<!-- ═══════════ SECTION 3: UTILITY ═══════════ -->
+<div class="dir-section">
+  <div class="dir-section-header" onclick="toggleSection(this)">
+    <div class="dir-icon">⚡</div>
+    <div class="dir-section-info">
+      <div class="dir-section-title">Utility-Specific Programs (NEPA Region)</div>
+      <div class="dir-section-count">6 utilities — net metering enrollment & commercial rebates</div>
+    </div>
+    <div class="dir-chevron"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+  </div>
+  <div class="dir-section-body">
+    <div class="dir-section-body-inner">
+      <p class="dir-intro">NEPA is served primarily by PPL Electric and First Energy subsidiaries. All PA investor-owned utilities must offer net metering. Contact your utility for current rebate availability.</p>
+
+      <div class="program-entry">
+        <h4>PPL Electric Utilities — Net Metering & Interconnection</h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Coverage:</strong> 29 counties — Lackawanna, Luzerne, Monroe, Pike, Wayne, Northampton + more</div>
+        </div>
+        <p class="program-desc">1:1 retail rate credits for excess solar generation. Bidirectional meter provided at no charge. Interconnection application required for residential (up to 50 kW) and commercial (up to 3 MW) systems.</p>
+        <a href="https://www.pplelectric.com/savings-and-energy/distributed-generation-and-net-metering" class="program-link">PPL Net Metering & Interconnection <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>PPL Electric — Commercial Solar Rebates</h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Type:</strong> Commercial energy efficiency & solar rebates</div>
+          <div class="program-meta-item"><strong>Status:</strong> Check current funding cycle</div>
+        </div>
+        <p class="program-desc">PPL Business Savings offers rebates for qualifying commercial solar installations. Amounts and availability vary by program cycle — contact PPL directly or check their Business Savings portal for current offerings.</p>
+        <a href="https://www.pplelectricbusinesssavings.com/ppl-business/incentives/overview/" class="program-link">PPL Business Savings Incentives <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>First Energy (Met-Ed / Penelec / Penn Power)</h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Coverage:</strong> Western, northern, and southeastern PA</div>
+        </div>
+        <p class="program-desc">Standard PA PUC-mandated net metering with retail rate credits across all three First Energy subsidiaries. Commercial solar rebates available through First Energy's energy efficiency programs.</p>
+        <a href="https://www.energysavepa-bizsolutions.com/segment-solar" class="program-link">First Energy Solar Rebate Program <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>PECO Energy</h4>
+        <div class="program-meta"><div class="program-meta-item"><strong>Coverage:</strong> Southeastern PA including Philadelphia</div></div>
+        <p class="program-desc">Among the strongest net metering policies in PA. Full retail rate credits for excess generation. Online interconnection application for residential and commercial systems.</p>
+        <a href="https://www.peco.com/ways-to-save/solar-energy" class="program-link">PECO Solar Energy <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>Duquesne Light Company</h4>
+        <div class="program-meta"><div class="program-meta-item"><strong>Coverage:</strong> Allegheny & Beaver counties (Pittsburgh area)</div></div>
+        <p class="program-desc">Standard PA PUC-mandated net metering with retail rate credits. Technical review required for all distributed generation interconnection applications.</p>
+        <a href="https://www.duquesnelight.com/energy-money-savings/renewable-energy" class="program-link">Duquesne Light Renewable Energy <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>West Penn Power</h4>
+        <div class="program-meta"><div class="program-meta-item"><strong>Coverage:</strong> Western & central PA (First Energy subsidiary)</div></div>
+        <p class="program-desc">PA PUC-mandated net metering with standard retail rate credits. Commercial rebates may be available through the parent First Energy commercial program.</p>
+        <a href="https://www.firstenergycorp.com/west-penn-power.html" class="program-link">West Penn Power <span>→</span></a>
+      </div>
+
+    </div>
+  </div>
 </div>
 
-<div class="glass-grid">
-
-  <div class="glass-grid-card">
-    <h3>PA Solar Renewable Energy Credits (SRECs)</h3>
-    <p><strong>Value:</strong> One SREC earned per megawatt-hour (1,000 kWh) of solar production. Current market price: $25–$40 per SREC. Typical residential system earns 9–12 SRECs/year ($250–$480/year).</p>
-    <p><strong>Eligible:</strong> All grid-connected solar PV systems physically located in Pennsylvania (Act 40 of 2017 requirement)</p>
-    <p><strong>How to Enroll:</strong> Register through the PA PUC's PennAEPS certification process, then set up a PJM-GATS account for SREC tracking and sales.</p>
-    <p><strong>Lifetime Value:</strong> $6,000–$14,000+ over a 25-year system life at current market rates</p>
-    <p><a href="https://www.srectrade.com" style="color:var(--brand)">SRECTrade — Register & Sell SRECs →</a></p>
-    <p><a href="https://www.pjm-eis.com/getting-started" style="color:var(--brand)">PJM-GATS Registration →</a></p>
+<!-- ═══════════ SECTION 4: LOCAL ═══════════ -->
+<div class="dir-section">
+  <div class="dir-section-header" onclick="toggleSection(this)">
+    <div class="dir-icon">📍</div>
+    <div class="dir-section-info">
+      <div class="dir-section-title">Local & Municipal Programs</div>
+      <div class="dir-section-count">2 programs — city rebates & community solar campaigns</div>
+    </div>
+    <div class="dir-chevron"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
   </div>
+  <div class="dir-section-body">
+    <div class="dir-section-body-inner">
 
-  <div class="glass-grid-card">
-    <h3>PA Net Metering</h3>
-    <p><strong>Value:</strong> Full retail rate credits for excess solar production up to 100% of annual consumption. Credits roll over monthly. Year-end excess compensated at utility's price-to-compare rate.</p>
-    <p><strong>Eligible:</strong> All customers of PA investor-owned utilities with residential systems up to 50 kW or commercial systems up to 3 MW</p>
-    <p><strong>Utilities:</strong> PPL Electric, PECO Energy, Duquesne Light, Penn Power, Met-Ed, Penelec, West Penn Power</p>
-    <p><strong>Administered by:</strong> PA Public Utility Commission (PUC)</p>
-    <p><a href="https://www.puc.pa.gov/electric/electric-competition/alternative-energy/" style="color:var(--brand)">PA PUC Alternative Energy Info →</a></p>
+      <div class="program-entry">
+        <h4>Philadelphia Solar Rebate Program <span class="tag tag-limited">Limited funding</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Residential:</strong> $0.20/watt rebate</div>
+          <div class="program-meta-item"><strong>Commercial:</strong> $0.10/watt rebate</div>
+          <div class="program-meta-item"><strong>Example:</strong> 6 kW system = ~$1,200 rebate</div>
+        </div>
+        <p class="program-desc">One-time rebate for new solar installations approved for Permission to Operate by PECO. System must remain operational for 36 months and produce ≥80% of projected output. Funding is limited — verify current availability before applying.</p>
+        <a href="https://www.phila.gov/programs/solar-rebate-program/" class="program-link">City of Philadelphia Solar Rebate <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>Solarize Campaigns (Various PA Communities)</h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Savings:</strong> 10–20% below market through group purchasing</div>
+          <div class="program-meta-item"><strong>Type:</strong> Community-organized bulk buys</div>
+        </div>
+        <p class="program-desc">Community-based group purchasing programs that negotiate bulk pricing for solar installations within a specific municipality or region. Campaigns launch periodically — check with your local government or regional planning commission.</p>
+        <a href="https://www.energy.gov/eere/solar/solarize-guidebook" class="program-link">DOE Solarize Guidebook <span>→</span></a>
+      </div>
+
+    </div>
   </div>
-
-  <div class="glass-grid-card">
-    <h3>PA Alternative Energy Portfolio Standards (AEPS)</h3>
-    <p><strong>What it does:</strong> Requires PA electric distribution companies to source a percentage of electricity from Tier I (including solar) and Tier II alternative energy sources. Creates the market demand that gives SRECs their value.</p>
-    <p><strong>Solar carve-out:</strong> Specific percentage must come from solar photovoltaic sources, driving SREC demand</p>
-    <p><strong>Impact:</strong> The AEPS is the legal foundation for the entire PA SREC market</p>
-    <p><a href="https://www.puc.pa.gov/electric/electric-competition/alternative-energy/" style="color:var(--brand)">PA PUC AEPS Information →</a></p>
-  </div>
-
-  <div class="glass-grid-card">
-    <h3>PA Solar for All Program</h3>
-    <p><strong>Value:</strong> Free or reduced-cost solar installations for low- to moderate-income households</p>
-    <p><strong>Goal:</strong> Equip 14,000 Pennsylvania homes with solar energy over 5 years</p>
-    <p><strong>Eligible:</strong> Low- and moderate-income households meeting program income thresholds</p>
-    <p><strong>Status:</strong> Launched 2025, applications accepted on a rolling basis</p>
-    <p><a href="https://www.dep.pa.gov/Citizens/solar" style="color:var(--brand)">PA DEP Solar Programs →</a></p>
-  </div>
-
-  <div class="glass-grid-card">
-    <h3>PA Home Energy Efficiency Rebates (IRA-funded)</h3>
-    <p><strong>Value:</strong> Rebates for energy efficiency upgrades for low- and middle-income households including heat pumps, water heaters, insulation, electrical panels, and wiring</p>
-    <p><strong>Eligible:</strong> Pennsylvania residents meeting income thresholds</p>
-    <p><strong>Note:</strong> While not solar-specific, these rebates reduce overall home energy consumption, maximizing the value of a solar installation</p>
-    <p><a href="https://www.dep.pa.gov/Citizens/energy" style="color:var(--brand)">PA DEP Energy Programs →</a></p>
-  </div>
-
-  <div class="glass-grid-card">
-    <h3>PA Property Tax — No Solar Exemption</h3>
-    <p><strong>Status:</strong> Pennsylvania does <strong>not</strong> offer a statewide property tax exemption for solar energy systems. Solar installations that increase your home's assessed value will increase your property taxes.</p>
-    <p><strong>Note:</strong> Some local jurisdictions may offer exemptions — check with your county assessor's office</p>
-    <p><strong>Sales Tax:</strong> Pennsylvania also charges sales tax on solar equipment purchases — there is no statewide sales tax exemption for solar</p>
-    <p><a href="https://www.revenue.pa.gov" style="color:var(--brand)">PA Department of Revenue →</a></p>
-  </div>
-
 </div>
 
-<!-- ═══ UTILITY-SPECIFIC PROGRAMS ═══ -->
-<div class="glass-card">
-  <h2>⚡ Utility-Specific Programs (NEPA Region)</h2>
-  <p>Northeast Pennsylvania is served primarily by PPL Electric and First Energy subsidiaries. Both offer net metering and have participated in commercial solar rebate programs. Contact your specific utility for current program availability and enrollment.</p>
+<!-- ═══════════ SECTION 5: SREC PLATFORMS ═══════════ -->
+<div class="dir-section">
+  <div class="dir-section-header" onclick="toggleSection(this)">
+    <div class="dir-icon">📈</div>
+    <div class="dir-section-info">
+      <div class="dir-section-title">SREC Trading & Registration Platforms</div>
+      <div class="dir-section-count">4 platforms — registration, tracking & monetization</div>
+    </div>
+    <div class="dir-chevron"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+  </div>
+  <div class="dir-section-body">
+    <div class="dir-section-body-inner">
+      <p class="dir-intro">Solar Mason assists all clients with SREC registration and can manage your SREC sales on your behalf. These platforms handle the tracking and trading of Pennsylvania SRECs.</p>
+
+      <div class="program-entry">
+        <h4>SRECTrade</h4>
+        <p class="program-desc">The leading SREC aggregator and marketplace. Handles registration, verification, listing, and payment. Offers spot sales, forward contracts, and fully managed SREC accounts with automated reporting.</p>
+        <a href="https://www.srectrade.com" class="program-link">SRECTrade.com <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>PJM-EIS GATS (Generation Attribute Tracking System)</h4>
+        <p class="program-desc">The official tracking system for renewable energy certificates in the PJM region (all of PA). Required for SREC generation and trading. Register your system, report generation data, and SRECs are automatically issued.</p>
+        <a href="https://www.pjm-eis.com/getting-started" class="program-link">PJM-EIS GATS Registration <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>PA PUC — PennAEPS Certification</h4>
+        <p class="program-desc">The PA Public Utility Commission's certification portal. Required before your system can generate SRECs. Submit interconnection agreement, equipment specs, and installer credentials for PUC review.</p>
+        <a href="https://www.pennaeps.com" class="program-link">PennAEPS Portal <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>Sol Systems</h4>
+        <p class="program-desc">National SREC broker and clean energy finance company. Offers SREC monetization, long-term contracts, and portfolio management for commercial and residential system owners in PA and other SREC markets.</p>
+        <a href="https://www.solsystems.com" class="program-link">Sol Systems <span>→</span></a>
+      </div>
+
+    </div>
+  </div>
 </div>
 
-<div class="glass-grid">
-
-  <div class="glass-grid-card">
-    <h3>PPL Electric Utilities — Net Metering</h3>
-    <p><strong>Service Area:</strong> 29 counties in eastern and central PA including Lackawanna, Luzerne, Monroe, Pike, Wayne, and Northampton counties</p>
-    <p><strong>Net Metering:</strong> 1:1 retail rate credits for excess generation. Bidirectional meter provided at no charge.</p>
-    <p><strong>Interconnection:</strong> Application required for systems up to 50 kW (residential) or 3 MW (commercial)</p>
-    <p><a href="https://www.pplelectric.com/savings-and-energy/distributed-generation-and-net-metering" style="color:var(--brand)">PPL Net Metering & Interconnection →</a></p>
+<!-- ═══════════ SECTION 6: FINANCING ═══════════ -->
+<div class="dir-section">
+  <div class="dir-section-header" onclick="toggleSection(this)">
+    <div class="dir-icon">💰</div>
+    <div class="dir-section-info">
+      <div class="dir-section-title">Commercial Financing Programs</div>
+      <div class="dir-section-count">2 programs — C-PACE & SBA loans</div>
+    </div>
+    <div class="dir-chevron"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
   </div>
+  <div class="dir-section-body">
+    <div class="dir-section-body-inner">
 
-  <div class="glass-grid-card">
-    <h3>PPL Electric — Commercial Solar Rebates</h3>
-    <p><strong>Program:</strong> PPL Business Savings commercial energy efficiency and solar rebate program</p>
-    <p><strong>Value:</strong> Rebates available for qualifying commercial solar installations — amounts and availability vary by program cycle</p>
-    <p><strong>Status:</strong> Check current funding availability directly with PPL</p>
-    <p><a href="https://www.pplelectricbusinesssavings.com/ppl-business/incentives/overview/" style="color:var(--brand)">PPL Business Savings Incentives →</a></p>
+      <div class="program-entry">
+        <h4>C-PACE (Commercial Property Assessed Clean Energy) <span class="tag tag-active">Active</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>Financing:</strong> 100%, zero upfront cost</div>
+          <div class="program-meta-item"><strong>Terms:</strong> Up to 25 years</div>
+          <div class="program-meta-item"><strong>Transfers with property sale</strong></div>
+        </div>
+        <p class="program-desc">Assessment attached to the property, not the borrower — no personal guarantee. Eligible for commercial, industrial, multifamily (5+ units), and agricultural properties in participating PA municipalities. Assessment may be tax-deductible, and you retain full ITC and MACRS benefits.</p>
+        <a href="https://www.paceprepared.com" class="program-link">PACE Prepared — National Directory <span>→</span></a>
+      </div>
+
+      <div class="program-entry">
+        <h4>SBA 7(a) & 504 Solar Loans <span class="tag tag-active">Active</span></h4>
+        <div class="program-meta">
+          <div class="program-meta-item"><strong>7(a) limit:</strong> Up to $5 million</div>
+          <div class="program-meta-item"><strong>Terms:</strong> Up to 25 years</div>
+          <div class="program-meta-item"><strong>Down payment:</strong> 10–20%</div>
+        </div>
+        <p class="program-desc">Government-backed small business loans with competitive fixed or variable rates. SBA 504 program offers below-market rates for major capital investments. Preserves full ITC and MACRS eligibility for the system owner.</p>
+        <a href="https://www.sba.gov/funding-programs/loans" class="program-link">SBA Loan Programs <span>→</span></a>
+      </div>
+
+    </div>
   </div>
-
-  <div class="glass-grid-card">
-    <h3>First Energy (Met-Ed / Penelec / Penn Power) — Net Metering</h3>
-    <p><strong>Service Area:</strong> Portions of western, northern, and southeastern PA through Met-Ed, Penelec, and Penn Power subsidiaries</p>
-    <p><strong>Net Metering:</strong> 1:1 credits at retail rate. Standard interconnection process for residential and commercial systems.</p>
-    <p><strong>Rebates:</strong> First Energy has offered commercial solar rebates through its energy efficiency programs</p>
-    <p><a href="https://www.energysavepa-bizsolutions.com/segment-solar" style="color:var(--brand)">First Energy Solar Rebate Program →</a></p>
-  </div>
-
-  <div class="glass-grid-card">
-    <h3>PECO Energy — Net Metering</h3>
-    <p><strong>Service Area:</strong> Southeastern PA including Philadelphia and surrounding counties</p>
-    <p><strong>Net Metering:</strong> Among the strongest net metering policies in PA. Full retail rate credits for excess generation.</p>
-    <p><strong>Interconnection:</strong> Online application process for residential and commercial solar systems</p>
-    <p><a href="https://www.peco.com/ways-to-save/solar-energy" style="color:var(--brand)">PECO Solar Energy Information →</a></p>
-  </div>
-
-  <div class="glass-grid-card">
-    <h3>Duquesne Light Company — Net Metering</h3>
-    <p><strong>Service Area:</strong> Allegheny and Beaver counties (Pittsburgh area)</p>
-    <p><strong>Net Metering:</strong> Standard PA PUC-mandated net metering program with retail rate credits</p>
-    <p><strong>Interconnection:</strong> Application and technical review required for all distributed generation</p>
-    <p><a href="https://www.duquesnelight.com/energy-money-savings/renewable-energy" style="color:var(--brand)">Duquesne Light Renewable Energy →</a></p>
-  </div>
-
-  <div class="glass-grid-card">
-    <h3>West Penn Power — Net Metering</h3>
-    <p><strong>Service Area:</strong> Western and central PA</p>
-    <p><strong>Net Metering:</strong> PA PUC-mandated net metering with standard retail rate credits</p>
-    <p><strong>Parent Company:</strong> First Energy subsidiary — solar rebates may be available through First Energy's commercial program</p>
-    <p><a href="https://www.firstenergycorp.com/west-penn-power.html" style="color:var(--brand)">West Penn Power →</a></p>
-  </div>
-
 </div>
 
-<!-- ═══ LOCAL PROGRAMS ═══ -->
-<div class="glass-card">
-  <h2>📍 Local & Municipal Programs</h2>
-  <p>Some Pennsylvania municipalities offer additional solar incentives. Most are concentrated in the Philadelphia metro area, but local programs can emerge in any jurisdiction. Contact your local government for the latest offerings.</p>
-</div>
-
-<div class="glass-grid">
-
-  <div class="glass-grid-card">
-    <h3>Philadelphia Solar Rebate Program</h3>
-    <p><strong>Value:</strong> One-time rebate of $0.20/watt (residential) and $0.10/watt (commercial). A 6 kW residential system receives a ~$1,200 rebate.</p>
-    <p><strong>Requirements:</strong> System must be approved for Permission to Operate by PECO. Must remain operational for 36 months and produce ≥80% of projected output.</p>
-    <p><strong>Status:</strong> Program funding is limited — check current availability</p>
-    <p><a href="https://www.phila.gov/programs/solar-rebate-program/" style="color:var(--brand)">City of Philadelphia Solar Rebate →</a></p>
+<!-- ═══════════ SECTION 7: RESOURCES ═══════════ -->
+<div class="dir-section">
+  <div class="dir-section-header" onclick="toggleSection(this)">
+    <div class="dir-icon">📚</div>
+    <div class="dir-section-info">
+      <div class="dir-section-title">Additional Resources & Research Tools</div>
+      <div class="dir-section-count">7 trusted sources for staying current on incentive changes</div>
+    </div>
+    <div class="dir-chevron"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
   </div>
+  <div class="dir-section-body">
+    <div class="dir-section-body-inner">
+      <p class="dir-intro">The solar incentive landscape changes rapidly. Solar Mason monitors all federal, state, and local incentive changes and keeps our clients informed. These sources provide comprehensive, up-to-date information.</p>
 
-  <div class="glass-grid-card">
-    <h3>Solarize Campaigns (Various PA Communities)</h3>
-    <p><strong>What:</strong> Community-based group purchasing programs that negotiate bulk pricing for solar installations within a specific municipality or region</p>
-    <p><strong>Value:</strong> 10–20% below market rate through volume discounts negotiated by the community group</p>
-    <p><strong>Status:</strong> Campaigns launch periodically in different PA communities — check with your local government or regional planning commission</p>
-    <p><a href="https://www.energy.gov/eere/solar/solarize-guidebook" style="color:var(--brand)">DOE Solarize Guidebook →</a></p>
+      <div class="program-entry">
+        <h4>DSIRE — Database of State Incentives for Renewables & Efficiency</h4>
+        <p class="program-desc">The most comprehensive national database of renewable energy incentives and policies. Search by state, technology, and incentive type. Operated by N.C. Clean Energy Technology Center at NC State University.</p>
+        <a href="https://www.dsireusa.org" class="program-link">DSIRE Database <span>→</span></a>
+      </div>
+      <div class="program-entry">
+        <h4>U.S. Department of Energy — Solar Energy Technologies Office</h4>
+        <p class="program-desc">Federal solar program information, homeowner and business guides, and research on emerging solar technologies and policies.</p>
+        <a href="https://www.energy.gov/eere/solar/solar-energy-technologies-office" class="program-link">DOE Solar Office <span>→</span></a>
+      </div>
+      <div class="program-entry">
+        <h4>IRS — Clean Energy Tax Credit Information</h4>
+        <p class="program-desc">Official tax credit forms, instructions, eligibility requirements, and guidance for both commercial (48E) and legacy residential (25D) solar tax credits.</p>
+        <a href="https://www.irs.gov/credits-deductions/residential-clean-energy-credit" class="program-link">IRS Clean Energy Credits <span>→</span></a>
+      </div>
+      <div class="program-entry">
+        <h4>PA Public Utility Commission</h4>
+        <p class="program-desc">Net metering rules, AEPS compliance, utility regulation, interconnection standards, and SREC program administration for Pennsylvania.</p>
+        <a href="https://www.puc.pa.gov" class="program-link">PA PUC <span>→</span></a>
+      </div>
+      <div class="program-entry">
+        <h4>PA Department of Environmental Protection</h4>
+        <p class="program-desc">State energy programs, Solar for All initiative, efficiency rebates, and environmental compliance resources.</p>
+        <a href="https://www.dep.pa.gov" class="program-link">PA DEP <span>→</span></a>
+      </div>
+      <div class="program-entry">
+        <h4>EnergySage — PA Solar Market Data</h4>
+        <p class="program-desc">Real solar quote data, installer comparisons, incentive calculators, and Pennsylvania-specific market analysis from the DOE-funded solar marketplace.</p>
+        <a href="https://www.energysage.com/local-data/solar-rebates-incentives/pa/" class="program-link">EnergySage PA Incentives <span>→</span></a>
+      </div>
+      <div class="program-entry">
+        <h4>USDA Rural Development</h4>
+        <p class="program-desc">REAP grants, rural energy loan guarantees, and agricultural energy programs for qualifying rural businesses and producers.</p>
+        <a href="https://www.rd.usda.gov" class="program-link">USDA Rural Development <span>→</span></a>
+      </div>
+
+    </div>
   </div>
-
-</div>
-
-<!-- ═══ SREC TRADING PLATFORMS ═══ -->
-<div class="glass-card">
-  <h2>📈 SREC Trading & Registration Platforms</h2>
-  <p>These platforms facilitate the registration, tracking, and sale of Pennsylvania Solar Renewable Energy Credits. Solar Mason assists all clients with SREC registration and can manage your SREC sales on your behalf.</p>
-</div>
-
-<div class="glass-grid">
-
-  <div class="glass-grid-card">
-    <h3>SRECTrade</h3>
-    <p><strong>What:</strong> The leading SREC aggregator and marketplace. Handles registration, verification, listing, and payment for PA SREC sellers.</p>
-    <p><strong>Services:</strong> Spot sales, forward contracts, and fully managed SREC accounts. Automated reporting and payment.</p>
-    <p><a href="https://www.srectrade.com" style="color:var(--brand)">SRECTrade.com →</a></p>
-  </div>
-
-  <div class="glass-grid-card">
-    <h3>PJM-EIS GATS (Generation Attribute Tracking System)</h3>
-    <p><strong>What:</strong> The official tracking system for renewable energy certificates in the PJM region (which includes all of PA). Required for SREC generation and trading.</p>
-    <p><strong>Process:</strong> Register your solar system, report generation data, and SRECs are automatically issued to your account.</p>
-    <p><a href="https://www.pjm-eis.com/getting-started" style="color:var(--brand)">PJM-EIS GATS Registration →</a></p>
-  </div>
-
-  <div class="glass-grid-card">
-    <h3>PA PUC — PennAEPS Certification</h3>
-    <p><strong>What:</strong> The PA Public Utility Commission's Alternative Energy Portfolio Standards certification. Required before your system can generate SRECs.</p>
-    <p><strong>Process:</strong> Submit system documentation including interconnection agreement, equipment specs, and installer credentials for PUC review.</p>
-    <p><a href="https://www.pennaeps.com" style="color:var(--brand)">PennAEPS Certification Portal →</a></p>
-  </div>
-
-  <div class="glass-grid-card">
-    <h3>Sol Systems</h3>
-    <p><strong>What:</strong> National SREC broker and clean energy finance company offering SREC management services in Pennsylvania and other SREC markets.</p>
-    <p><strong>Services:</strong> SREC monetization, long-term SREC contracts, and portfolio management for commercial and residential system owners.</p>
-    <p><a href="https://www.solsystems.com" style="color:var(--brand)">Sol Systems →</a></p>
-  </div>
-
-</div>
-
-<!-- ═══ COMMERCIAL FINANCING INCENTIVES ═══ -->
-<div class="glass-card">
-  <h2>💰 Commercial Financing & C-PACE</h2>
-  <p>Beyond tax credits, commercial solar projects can leverage specialized clean energy financing programs that reduce or eliminate upfront costs.</p>
-</div>
-
-<div class="glass-grid">
-
-  <div class="glass-grid-card">
-    <h3>C-PACE (Commercial Property Assessed Clean Energy)</h3>
-    <p><strong>Value:</strong> 100% financing with no upfront cost. Assessment attached to property, not borrower. Terms up to 25 years. Transfers with property sale.</p>
-    <p><strong>Eligible:</strong> Commercial, industrial, multifamily (5+ units), and agricultural properties in participating PA municipalities</p>
-    <p><strong>Administrator:</strong> Multiple C-PACE administrators operate in PA including Sustainable Real Estate Solutions (SRS) and Greenworks Lending</p>
-    <p><a href="https://www.paceprepared.com" style="color:var(--brand)">PACE Prepared — National PACE Directory →</a></p>
-  </div>
-
-  <div class="glass-grid-card">
-    <h3>SBA 7(a) & 504 Solar Loans</h3>
-    <p><strong>Value:</strong> Government-backed loans with favorable terms. 7(a) up to $5M, 504 for major capital investments. Terms up to 25 years at competitive rates.</p>
-    <p><strong>Eligible:</strong> Small businesses meeting SBA size standards</p>
-    <p><strong>Advantage:</strong> Lower down payments (10–20%) versus conventional commercial loans</p>
-    <p><a href="https://www.sba.gov/funding-programs/loans" style="color:var(--brand)">SBA Loan Programs →</a></p>
-  </div>
-
-</div>
-
-<!-- ═══ ADDITIONAL RESOURCES ═══ -->
-<div class="glass-card">
-  <h2>📚 Additional Resources</h2>
-  <p>Stay current with the rapidly evolving solar incentive landscape through these trusted sources. Solar Mason monitors all federal, state, and local incentive changes and keeps our clients informed.</p>
-  <ul>
-    <li><a href="https://www.dsireusa.org" style="color:var(--brand)"><strong>DSIRE</strong></a> — Database of State Incentives for Renewables & Efficiency (most comprehensive national database)</li>
-    <li><a href="https://www.energy.gov/eere/solar/homeowners-guide-federal-tax-credit-solar-photovoltaics" style="color:var(--brand)"><strong>U.S. Department of Energy</strong></a> — Federal solar tax credit guide</li>
-    <li><a href="https://www.irs.gov/credits-deductions/residential-clean-energy-credit" style="color:var(--brand)"><strong>IRS</strong></a> — Official tax credit forms and instructions</li>
-    <li><a href="https://www.puc.pa.gov" style="color:var(--brand)"><strong>PA Public Utility Commission</strong></a> — Net metering rules, AEPS, and utility regulation</li>
-    <li><a href="https://www.dep.pa.gov" style="color:var(--brand)"><strong>PA Department of Environmental Protection</strong></a> — State energy programs and Solar for All</li>
-    <li><a href="https://www.energysage.com/local-data/solar-rebates-incentives/pa/" style="color:var(--brand)"><strong>EnergySage — PA Incentives</strong></a> — Market data, installer comparisons, and incentive calculator</li>
-    <li><a href="https://www.rd.usda.gov" style="color:var(--brand)"><strong>USDA Rural Development</strong></a> — REAP grants and rural energy programs</li>
-  </ul>
 </div>
 
 </div>
-
 
 <!-- ════════════ CTA ════════════ -->
 <div class="content-section">
@@ -4460,6 +4757,30 @@ html { scroll-behavior: smooth; }
   tick();
   setInterval(tick, 1000);
 })();
+
+
+/* ─── ACCORDION DIRECTORY ─────────────────────── */
+function toggleSection(header) {
+  var body = header.nextElementSibling;
+  var isOpen = header.classList.contains('active');
+  
+  // Close all sections
+  document.querySelectorAll('.dir-section-header.active').forEach(function(h) {
+    h.classList.remove('active');
+    h.nextElementSibling.classList.remove('open');
+  });
+  
+  // Open clicked section (if it wasn't already open)
+  if (!isOpen) {
+    header.classList.add('active');
+    body.classList.add('open');
+    // Smooth scroll to section
+    setTimeout(function() {
+      header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+}
+
 </script>
 </body>
 </html>
