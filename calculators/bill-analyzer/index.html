@@ -4220,12 +4220,27 @@ function calculateSizing(){
   var simplePayback=estCost/(estProd*utilityRate);
   var roi25=Math.round((savings25-estCost)/estCost*100);
   
+  // Commercial ITC: 30% if within deadline
+  var isCommercial=(billData.classification.type==='Commercial');
+  var itcRate=isCommercial?0.30:0;
+  var itcValue=Math.round(estCost*itcRate);
+  var netCostAfterITC=estCost-itcValue;
+  var solarLCOEafterITC=netCostAfterITC/totalProd25;
+  var roiBase=isCommercial?netCostAfterITC:estCost;
+  var roi25adj=Math.round((savings25-roiBase)/roiBase*100);
+  var paybackAdj=roiBase/(estProd*utilityRate);
+  // Build year-over-year data
+  var yearData=[];for(var y=0;y<25;y++){var yr=new Date().getFullYear()+y;var uRate=utilityRate*Math.pow(1+annualEsc,y);var prod=estProd*Math.pow(0.995,y);var uCost=Math.round(prod*uRate);var sCost=y===0?roiBase:0;yearData.push({year:yr,utilRate:uRate,solarLCOE:solarLCOEafterITC,utilityCost:uCost,solarCost:sCost,cumUtil:0,cumSolar:0});}
+  var cu=0,cs=roiBase;for(var y=0;y<25;y++){cu+=yearData[y].utilityCost;yearData[y].cumUtil=cu;yearData[y].cumSolar=cs;yearData[y].cumSavings=cu-cs;}
+  
   billData.solar_sizing={
     targetOffset:offset,mountType:mount,requiredKwh,systemKw:actualKw,panels,
     estAnnualProd:estProd,arraySqFt,estCost,annualSavings:Math.round(estProd*utilityRate),costPerWatt:cpw,
     productionFactor:uiProd,panelWattage:uiPanelW,
-    solarLCOE:solarLCOE,utilityRate:utilityRate,savings25yr:Math.round(savings25),
-    simplePayback:Math.round(simplePayback*10)/10,roi25:roi25,totalProd25:Math.round(totalProd25)
+    solarLCOE:solarLCOE,solarLCOEafterITC:solarLCOEafterITC,utilityRate:utilityRate,savings25yr:Math.round(savings25),
+    simplePayback:Math.round(paybackAdj*10)/10,roi25:roi25adj,totalProd25:Math.round(totalProd25),
+    isCommercial:isCommercial,itcRate:itcRate,itcValue:itcValue,netCostAfterITC:netCostAfterITC,
+    yearData:yearData,annualEsc:annualEsc
   };
 }
 
@@ -4308,9 +4323,12 @@ function renderReport(){
   h+='<tr><td>Array Area Needed</td><td>~'+s.arraySqFt.toLocaleString()+' sq ft</td></tr>';
   h+='<tr><td>Mount Type</td><td>'+s.mountType.charAt(0).toUpperCase()+s.mountType.slice(1)+'</td></tr>';
   h+='<tr><td>Estimated Cost (before incentives)</td><td>$'+s.estCost.toLocaleString()+' ($'+s.costPerWatt.toFixed(2)+'/W)</td></tr>';
+  if(s.isCommercial&&s.itcValue>0){h+='<tr class="highlight"><td>30% Commercial ITC (Section 48E)</td><td>-$'+s.itcValue.toLocaleString()+'</td></tr>';h+='<tr class="highlight"><td>Net Cost After ITC</td><td>$'+s.netCostAfterITC.toLocaleString()+'</td></tr>';}
   h+='<tr><td>Est. Annual Savings (Year 1)</td><td>$'+s.annualSavings.toLocaleString()+'/year</td></tr>';
   h+='<tr><td>25-Year Production</td><td>'+s.totalProd25.toLocaleString()+' kWh</td></tr>';
-  h+='<tr class="highlight"><td>Solar LCOE</td><td>$'+(s.solarLCOE).toFixed(4)+'/kWh</td></tr>';
+  h+='<tr><td>Solar LCOE (before incentives)</td><td>$'+(s.solarLCOE).toFixed(4)+'/kWh</td></tr>';
+  if(s.isCommercial)h+='<tr class="highlight"><td>Solar LCOE (after 30% ITC)</td><td>$'+(s.solarLCOEafterITC).toFixed(4)+'/kWh</td></tr>';
+  if(!s.isCommercial)h+='<tr class="highlight"><td>Solar LCOE</td><td>$'+(s.solarLCOE).toFixed(4)+'/kWh</td></tr>';
   h+='<tr class="highlight"><td>Current Utility Rate</td><td>$'+(s.utilityRate).toFixed(4)+'/kWh</td></tr>';
   h+='<tr><td>Your Savings per kWh</td><td>$'+(s.utilityRate-s.solarLCOE).toFixed(4)+'/kWh ('+Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper)</td></tr>';
   h+='<tr><td>Simple Payback</td><td>'+s.simplePayback+' years</td></tr>';
