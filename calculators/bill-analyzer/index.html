@@ -3982,7 +3982,7 @@ html { scroll-behavior: smooth; }
   <div class="az-opt-row">
     <div class="az-field"><label>Panel Wattage (W)</label><input type="number" id="optPanelW" value="450" min="300" max="600" step="10"></div>
     <div class="az-field"><label>Cost per Watt ($)</label><input type="number" id="optCpw" value="3.00" min="0.50" max="6.00" step="0.10"></div>
-    
+    <div class="az-field"><label>Utility Rate Increase (%/yr)</label><input type="number" id="optEsc" value="5" min="1" max="10" step="0.5"><span class="u">Recent PA avg: 5–7%/year</span></div>
   </div>
   <div style="text-align:center;margin-top:.75rem"><button onclick="reCalc()" style="padding:.75rem 2rem;border-radius:100px;border:none;background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(45,130,190,.25)">Recalculate</button></div>
   <script>document.getElementById('optMount').addEventListener('change',function(){var v=this.value;var cpw=v==='ground'?2.20:v==='carport'?3.50:3.00;document.getElementById('optCpw').value=cpw.toFixed(2)});</script>
@@ -4215,7 +4215,7 @@ function calculateSizing(){
   // True utility rate for comparison
   var utilityRate=parseFloat(billData.rate.blendedRate||billData.rate.effectiveRate||0.18);
   // 25-year savings with 3% annual utility rate escalation
-  var savings25=0,annualEsc=0.03;
+  var annualEsc=(parseFloat(document.getElementById('optEsc').value)||5)/100;var savings25=0;
   for(var y=0;y<25;y++){var yearRate=utilityRate*Math.pow(1+annualEsc,y);savings25+=estProd*Math.pow(0.995,y)*yearRate;}
   var simplePayback=estCost/(estProd*utilityRate);
   var roi25=Math.round((savings25-estCost)/estCost*100);
@@ -4314,7 +4314,7 @@ function renderReport(){
   h+='<tr class="highlight"><td>Current Utility Rate</td><td>$'+(s.utilityRate).toFixed(4)+'/kWh</td></tr>';
   h+='<tr><td>Your Savings per kWh</td><td>$'+(s.utilityRate-s.solarLCOE).toFixed(4)+'/kWh ('+Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper)</td></tr>';
   h+='<tr><td>Simple Payback</td><td>'+s.simplePayback+' years</td></tr>';
-  h+='<tr><td>25-Year Savings (with 3% rate escalation)</td><td>$'+s.savings25yr.toLocaleString()+'</td></tr>';
+  h+='<tr><td>25-Year Savings (with 5% rate escalation)</td><td>$'+s.savings25yr.toLocaleString()+'</td></tr>';
   h+='<tr class="highlight"><td>25-Year ROI</td><td>'+s.roi25+'%</td></tr>';
   h+='</table></div>';
 
@@ -4324,7 +4324,7 @@ function renderReport(){
   h+=(u.annualBasis==='exact'?' (confirmed directly from the bill).':u.annualBasis==='inferred'?' (based on the average monthly usage shown on the bill).':' (estimated from a single billing period — actual annual usage may vary seasonally).');
   h+='</p><p>To offset <strong>'+Math.round(s.targetOffset*100)+'%</strong> of that usage with solar, the property would need a <strong>'+s.systemKw.toFixed(1)+' kW solar system</strong> with approximately <strong>'+s.panels+' panels</strong>. ';
   h+='This estimate uses a NEPA regional average of <strong>'+CONFIG.nepaProductionPerKw+' kWh per kW per year</strong> as the production basis.</p>';
-  h+='<p>Your current blended electricity rate is <strong>$'+(s.utilityRate).toFixed(4)+'/kWh</strong>. Solar produces electricity at a levelized cost of just <strong>$'+(s.solarLCOE).toFixed(4)+'/kWh</strong> over 25 years — <strong>'+Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper</strong> than your utility. With utility rates rising ~3% annually, your 25-year savings total <strong>$'+s.savings25yr.toLocaleString()+'</strong> — a <strong>'+s.roi25+'% return on investment</strong>. Simple payback: <strong>'+s.simplePayback+' years</strong>.</p>';
+  h+='<p>Your current blended electricity rate is <strong>$'+(s.utilityRate).toFixed(4)+'/kWh</strong>. Solar produces electricity at a levelized cost of just <strong>$'+(s.solarLCOE).toFixed(4)+'/kWh</strong> over 25 years — <strong>'+Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper</strong> than your utility. With utility rates rising ~5% annually, your 25-year savings total <strong>$'+s.savings25yr.toLocaleString()+'</strong> — a <strong>'+s.roi25+'% return on investment</strong>. Simple payback: <strong>'+s.simplePayback+' years</strong>.</p>';
   if(d.classification.type==='Commercial')h+='<p><strong>Commercial project:</strong> The 30% federal ITC (Section 48E) is available for projects that begin construction before July 4, 2026. Combined with MACRS depreciation, the net cost after tax benefits could be 45-55% of the gross price.</p>';
   h+='</div>';
 
@@ -4674,9 +4674,9 @@ function generateProposal(){
   h+=sect('Customer Information','👤',[ ['Customer',d.customer.name||'—'], ['Service Address',(d.location.address||'—')+(d.location.cityStateZip?'<br>'+d.location.cityStateZip:'')], ['Account',d.account.number||'—'], ['Utility',d.utility.name||'—'], ['Account Type',d.classification.type], ['Rate Class',r.rateClass||'—'] ]);
   h+=sect('Usage Analysis','⚡',[ ['Billing Period',(d.billing_period.start||'?')+' – '+(d.billing_period.end||'?')+' ('+(u.daysBilled||'?')+' days)'], ['Period Usage',(u.billingKwh||'?')+' kWh'], ['Annual Usage',(u.annualKwh||'?').toLocaleString()+' kWh/year',true], ['Basis',u.annualSource] ]);
   h+=sect('Current Bill','💵',[ c.supply?['Supply','$'+c.supply.toFixed(2)]:null, c.delivery?['Delivery','$'+c.delivery.toFixed(2)]:null, ['Total Bill','$'+(c.totalBill||0).toFixed(2),true], r.blendedRate?['Blended Rate','$'+r.blendedRate+'/kWh',true]:null ].filter(Boolean));
-  h+=sect('Solar Recommendation','☀️',[ ['System Size',s.systemKw.toFixed(1)+' kW ('+s.panels+' × '+s.panelWattage+'W panels)',true], ['Target Offset',Math.round(s.targetOffset*100)+'%'], ['Est. Annual Production',s.estAnnualProd.toLocaleString()+' kWh'], ['Est. Cost','$'+s.estCost.toLocaleString()+' ($'+s.costPerWatt.toFixed(2)+'/W)'], ['Solar LCOE','$'+s.solarLCOE.toFixed(4)+'/kWh',true], ['Utility Rate','$'+s.utilityRate.toFixed(4)+'/kWh',true], ['Solar Savings',Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper per kWh'], ['Simple Payback',s.simplePayback+' years'], ['25-Year Savings','$'+s.savings25yr.toLocaleString()+' (with 3% rate escalation)',true], ['25-Year ROI',s.roi25+'%',true] ]);
+  h+=sect('Solar Recommendation','☀️',[ ['System Size',s.systemKw.toFixed(1)+' kW ('+s.panels+' × '+s.panelWattage+'W panels)',true], ['Target Offset',Math.round(s.targetOffset*100)+'%'], ['Est. Annual Production',s.estAnnualProd.toLocaleString()+' kWh'], ['Est. Cost','$'+s.estCost.toLocaleString()+' ($'+s.costPerWatt.toFixed(2)+'/W)'], ['Solar LCOE','$'+s.solarLCOE.toFixed(4)+'/kWh',true], ['Utility Rate','$'+s.utilityRate.toFixed(4)+'/kWh',true], ['Solar Savings',Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper per kWh'], ['Simple Payback',s.simplePayback+' years'], ['25-Year Savings','$'+s.savings25yr.toLocaleString()+' (with 5% rate escalation)',true], ['25-Year ROI',s.roi25+'%',true] ]);
   // Insight
-  h+='<div style="padding:1.25rem 2rem"><div style="background:#f0f7ff;border-left:4px solid #2D82BE;border-radius:0 10px 10px 0;padding:1.25rem 1.5rem"><p style="font-size:.88rem;color:#334155;line-height:1.7;margin:0">Based on annual usage of <strong>'+(u.annualKwh||0).toLocaleString()+' kWh</strong>, a <strong>'+s.systemKw.toFixed(1)+' kW system</strong> produces electricity at <strong>$'+s.solarLCOE.toFixed(4)+'/kWh</strong> — <strong>'+Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper</strong> than your current utility rate of $'+s.utilityRate.toFixed(4)+'/kWh. With rates rising 3% annually, 25-year savings total <strong>$'+s.savings25yr.toLocaleString()+'</strong>.</p></div></div>';
+  h+='<div style="padding:1.25rem 2rem"><div style="background:#f0f7ff;border-left:4px solid #2D82BE;border-radius:0 10px 10px 0;padding:1.25rem 1.5rem"><p style="font-size:.88rem;color:#334155;line-height:1.7;margin:0">Based on annual usage of <strong>'+(u.annualKwh||0).toLocaleString()+' kWh</strong>, a <strong>'+s.systemKw.toFixed(1)+' kW system</strong> produces electricity at <strong>$'+s.solarLCOE.toFixed(4)+'/kWh</strong> — <strong>'+Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper</strong> than your current utility rate of $'+s.utilityRate.toFixed(4)+'/kWh. With rates rising 5% annually, 25-year savings total <strong>$'+s.savings25yr.toLocaleString()+'</strong>.</p></div></div>';
   // Footer
   h+='<div class="prop-footer" style="background:#0B2545;color:#fff;padding:2rem;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact">';
   h+='<div style="font-size:1.1rem;font-weight:700;margin-bottom:.5rem">Solar Mason LLC</div>';
