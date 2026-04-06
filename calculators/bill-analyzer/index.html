@@ -4236,6 +4236,20 @@ function calculateSizing(){
   var yearData=[];for(var y=0;y<25;y++){var yr=new Date().getFullYear()+y;var uRate=utilityRate*Math.pow(1+annualEsc,y);var prod=estProd*Math.pow(0.995,y);var uCost=Math.round(prod*uRate);var sCost=y===0?roiBase:0;yearData.push({year:yr,utilRate:uRate,solarLCOE:solarLCOEafterITC,utilityCost:uCost,solarCost:sCost,cumUtil:0,cumSolar:0});}
   var cu=0,cs=roiBase;for(var y=0;y<25;y++){cu+=yearData[y].utilityCost;yearData[y].cumUtil=cu;yearData[y].cumSolar=cs;yearData[y].cumSavings=cu-cs;}
   
+  // Environmental impact (EPA: 0.855 lbs CO2/kWh avg US grid)
+  var co2PerYear=Math.round(estProd*0.000855*100)/100; // metric tons/year
+  var co2Lifetime=Math.round(co2PerYear*25*10)/10;
+  var treesEquiv=Math.round(co2PerYear/0.06); // 1 tree absorbs ~0.06 tons/year
+  var carsEquiv=Math.round(co2PerYear/4.6*10)/10; // avg car = 4.6 tons/year
+  var homesEquiv=Math.round(estProd/10500*10)/10; // avg US home = 10,500 kWh/year
+  // PA SREC estimate (1 SREC per 1000 kWh)
+  var annualSRECs=Math.round(estProd/1000*10)/10;
+  var srecPrice=35; // conservative PA SREC estimate
+  var annualSRECincome=Math.round(annualSRECs*srecPrice);
+  var srecIncome25=Math.round(annualSRECincome*25);
+  // Property value increase (~$20/W per LBNL study)
+  var propertyValueIncrease=Math.round(actualKw*1000*20);
+
   billData.solar_sizing={
     targetOffset:offset,mountType:mount,requiredKwh,systemKw:actualKw,panels,
     estAnnualProd:estProd,arraySqFt,estCost,annualSavings:Math.round(estProd*utilityRate),costPerWatt:cpw,
@@ -4243,7 +4257,10 @@ function calculateSizing(){
     solarLCOE:solarLCOE,solarLCOEafterITC:solarLCOEafterITC,utilityRate:utilityRate,savings25yr:Math.round(savings25),
     simplePayback:Math.round(paybackAdj*10)/10,roi25:roi25adj,totalProd25:Math.round(totalProd25),
     isCommercial:isCommercial,itcRate:itcRate,itcValue:itcValue,netCostAfterITC:netCostAfterITC,
-    yearData:yearData,annualEsc:annualEsc
+    yearData:yearData,annualEsc:annualEsc,
+    co2PerYear:co2PerYear,co2Lifetime:co2Lifetime,treesEquiv:treesEquiv,carsEquiv:carsEquiv,homesEquiv:homesEquiv,
+    annualSRECs:annualSRECs,srecPrice:srecPrice,annualSRECincome:annualSRECincome,srecIncome25:srecIncome25,
+    propertyValueIncrease:propertyValueIncrease
   };
 }
 
@@ -4729,6 +4746,79 @@ function generateProposal(){
     h+='<div style="margin-top:.75rem;padding:.75rem 1rem;background:#f8fafc;border-radius:8px;font-size:.7rem;color:#64748B;line-height:1.6;-webkit-print-color-adjust:exact;print-color-adjust:exact"><strong>Legend:</strong> U.Rate = Utility Rate ($/kWh you pay the electric company) · S.Rate = Solar Rate (your solar LCOE $/kWh) · U.A.C. = Utility Accumulated Cost (total spent on grid electricity to date) · S.A.C. = Solar Accumulated Cost (total invested in solar to date) · Net = U.A.C. minus S.A.C. (positive = savings, ✓ = breakeven year)</div>';
     h+='</div></div>';
   }
+
+
+  // ═══ ENVIRONMENTAL IMPACT ═══
+  h+=sect('Environmental Impact','🌍',[
+    ['CO\u2082 Offset (Annual)',s.co2PerYear+' metric tons/year',true],
+    ['CO\u2082 Offset (25 Years)',s.co2Lifetime+' metric tons',true],
+    ['Equivalent Trees Planted',s.treesEquiv.toLocaleString()+' trees'],
+    ['Cars Removed from Road',s.carsEquiv+' cars/year'],
+    ['Homes Powered',s.homesEquiv+' average US homes']
+  ]);
+
+  // ═══ PA SREC INCOME ═══
+  h+=sect('PA Solar Renewable Energy Credits (SRECs)','💰',[
+    ['Annual SRECs Generated',s.annualSRECs+' SRECs (1 per 1,000 kWh)'],
+    ['Est. SREC Price','$'+s.srecPrice+'/SREC (conservative PA market)'],
+    ['Annual SREC Income','$'+s.annualSRECincome.toLocaleString()+'/year',true],
+    ['25-Year SREC Income','$'+s.srecIncome25.toLocaleString(),true],
+    ['Note','SRECs are tradeable certificates. Prices vary by market. Register at PA GATS to sell SRECs.']
+  ]);
+
+  // ═══ PROPERTY VALUE ═══
+  h+=sect('Property Value Impact','🏠',[
+    ['Est. Value Increase','$'+s.propertyValueIncrease.toLocaleString(),true],
+    ['Basis','~$20/watt installed (Lawrence Berkeley National Lab study)'],
+    ['Note','Solar homes sell for approximately 4.1% more than comparable non-solar homes (Zillow Research).']
+  ]);
+
+  // ═══ EQUIPMENT SPECIFICATIONS ═══
+  h+=sect('Equipment Specifications','🔧',[
+    ['Solar Panels','Q CELLS Q.Peak Duo BLK ML-G10+ '+s.panelWattage+'W'],
+    ['Panel Count',s.panels+' panels'],
+    ['Inverter System','Enphase IQ8A Microinverters (one per panel)'],
+    ['Monitoring','Enphase Enlighten 24/7 monitoring platform'],
+    ['Racking','IronRidge or SEMS Avans (site-specific selection)'],
+    ['Panel Warranty','25-year product and performance warranty'],
+    ['Inverter Warranty','25-year Enphase warranty'],
+    ['Workmanship','10-year Solar Mason installation warranty']
+  ]);
+
+  // ═══ NET METERING ═══
+  h+=sect('Net Metering','⚡',[
+    ['How It Works','Excess solar production is exported to the grid and credited to your account at the full retail rate.'],
+    ['Utility','Your utility ('+(d.utility.name||'PPL Electric')+') provides net metering under PA Act 129.'],
+    ['Monthly Credits','When you produce more than you use, credits roll forward month-to-month.'],
+    ['Annual True-Up','Any remaining credits are settled annually, typically at the utility avoided cost rate.'],
+    ['System Sizing','Systems are sized to offset up to 100%-110% of annual usage for maximum net metering benefit.']
+  ]);
+
+  // ═══ FINANCING OPTIONS ═══
+  h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff">💳 Financing Options</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:1rem">'+
+    '<div style="background:#f8fafc;border-radius:12px;padding:1rem;text-align:center;border:1px solid #e2e8f0"><div style="font-weight:700;color:#0B2545;margin-bottom:.25rem">Cash Purchase</div><div style="font-size:.78rem;color:#64748B">Best ROI, own system outright, maximize tax benefits</div></div>'+
+    '<div style="background:#f0f7ff;border-radius:12px;padding:1rem;text-align:center;border:1px solid #d0e7ff"><div style="font-weight:700;color:#2D82BE;margin-bottom:.25rem">Solar Loan</div><div style="font-size:.78rem;color:#64748B">$0 down options, own system, fixed monthly payments</div></div>'+
+    '<div style="background:#f8fafc;border-radius:12px;padding:1rem;text-align:center;border:1px solid #e2e8f0"><div style="font-weight:700;color:#0B2545;margin-bottom:.25rem">Lease / PPA</div><div style="font-size:.78rem;color:#64748B">No upfront cost, fixed rate, provider maintains system</div></div>'+
+    '</div>';
+  h+='<div style="font-size:.8rem;color:#64748B">Solar Mason can help you evaluate the best financing option for your project. <a href="https://app.solarmason.com/account" style="color:#2D82BE">Request a financing consultation</a>.</div></div>';
+
+  // ═══ ABOUT SOLAR MASON ═══
+  h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff">🏢 About Solar Mason</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;font-size:.85rem;color:#475569;line-height:1.7">';
+  h+='<div><strong style="color:#0B2545">Solar Mason LLC</strong> is a full-service solar engineering, procurement, and construction (EPC) company headquartered in Scranton, PA. Since 2006, we have designed and installed solar systems across Northeast Pennsylvania for residential, commercial, and agricultural customers.<br><br><strong>Licenses:</strong> HIC-181628 · CON-9505</div>';
+  h+='<div><strong style="color:#0B2545">Our Commitment</strong><br>Every Solar Mason project is backed by professional PE-stamped engineering, tier-1 equipment (Q CELLS + Enphase), and a dedicated project team. We handle everything from initial design through permitting, installation, inspection, and utility interconnection.<br><br><strong>Contact:</strong> 570-MY-SOLAR · engineering@solarmason.com</div>';
+  h+='</div></div>';
+
+  // ═══ NEXT STEPS ═══
+  h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1.25rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff">🚀 Next Steps</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">';
+  h+='<div style="text-align:center;padding:1.25rem;background:#f0f7ff;border-radius:14px;border:1px solid #d0e7ff"><div style="font-size:1.8rem;margin-bottom:.5rem">1</div><div style="font-weight:700;color:#0B2545;margin-bottom:.25rem">Site Survey</div><div style="font-size:.78rem;color:#64748B">We assess your roof or ground area, shading, structural capacity, and electrical panel.</div></div>';
+  h+='<div style="text-align:center;padding:1.25rem;background:#f0f7ff;border-radius:14px;border:1px solid #d0e7ff"><div style="font-size:1.8rem;margin-bottom:.5rem">2</div><div style="font-weight:700;color:#0B2545;margin-bottom:.25rem">Custom Design</div><div style="font-size:.78rem;color:#64748B">Our engineers create a detailed system design with production modeling and financial analysis.</div></div>';
+  h+='<div style="text-align:center;padding:1.25rem;background:#f0f7ff;border-radius:14px;border:1px solid #d0e7ff"><div style="font-size:1.8rem;margin-bottom:.5rem">3</div><div style="font-weight:700;color:#0B2545;margin-bottom:.25rem">Install & Power On</div><div style="font-size:.78rem;color:#64748B">We handle permitting, installation, inspection, and utility interconnection. You start saving.</div></div>';
+  h+='</div>';
+  h+='<div style="text-align:center;margin-top:1.25rem"><a href="https://app.solarmason.com/account" style="display:inline-block;padding:.75rem 2rem;border-radius:100px;background:linear-gradient(135deg,#2D82BE,#1B5E8A);color:#fff;font-weight:600;text-decoration:none">Get Started</a></div></div>';
+
 
   // Footer
   h+='<div class="prop-footer" style="background:#0B2545;color:#fff;padding:2rem;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact">';
