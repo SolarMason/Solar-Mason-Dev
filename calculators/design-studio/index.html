@@ -4493,16 +4493,41 @@ async function initCesium() {
   viewer.scene.skyAtmosphere.show = false;
   viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#e2e8f0');
 
-  // Load Google Photorealistic 3D Tiles
+  // Load Google Photorealistic 3D Tiles directly from Google (no Cesium Ion)
+  console.log('[DS-3D] Requesting Google 3D Tiles root with key', DS_CONFIG.GOOGLE_MAPS_KEY.slice(0, 8) + '…');
+  const tilesUrl = `https://tile.googleapis.com/v1/3dtiles/root.json?key=${DS_CONFIG.GOOGLE_MAPS_KEY}`;
+
+  // Quick preflight: test-fetch root.json to get a clear error message if Map Tiles API is off
   try {
-    const tileset = await Cesium.createGooglePhotorealistic3DTileset({
-      key: DS_CONFIG.GOOGLE_MAPS_KEY,
-      showCreditsOnScreen: true  // Google requires attribution
+    const preflight = await fetch(tilesUrl);
+    if (!preflight.ok) {
+      const body = await preflight.text();
+      console.error('[DS-3D] Google tiles preflight failed', preflight.status, body);
+      let msg = `Google 3D Tiles returned HTTP ${preflight.status}.`;
+      if (preflight.status === 403) {
+        msg += ' Most likely cause: Map Tiles API is not enabled on this project, billing is not enabled, or the API key does not allow the Map Tiles API (check API restrictions on the key).';
+      } else if (preflight.status === 400) {
+        msg += ' The request was rejected. Check the API key and that the Map Tiles API is correctly enabled.';
+      }
+      throw new Error(msg);
+    }
+    console.log('[DS-3D] Preflight OK, loading tileset into Cesium');
+  } catch (fe) {
+    if (fe.message && fe.message.startsWith('Google 3D Tiles returned')) throw fe;
+    console.error('[DS-3D] Preflight network error', fe);
+    throw new Error('Could not reach tile.googleapis.com — check network or HTTP referrer restrictions on the API key: ' + fe.message);
+  }
+
+  try {
+    const tileset = await Cesium.Cesium3DTileset.fromUrl(tilesUrl, {
+      showCreditsOnScreen: true
     });
     viewer.scene.primitives.add(tileset);
     DS_STATE.cesiumTileset = tileset;
+    console.log('[DS-3D] Tileset added to scene');
   } catch (e) {
-    throw new Error('Failed to load Google 3D Tiles — confirm Map Tiles API is enabled: ' + (e.message || e));
+    console.error('[DS-3D] Cesium tileset creation failed', e);
+    throw new Error('Cesium could not load the 3D tileset: ' + (e.message || e));
   }
 
   // Fly to the project location
