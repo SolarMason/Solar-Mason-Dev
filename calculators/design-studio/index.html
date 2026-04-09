@@ -3894,66 +3894,75 @@ html { scroll-behavior: smooth; }
 <div class="content-section" style="max-width:1280px">
 
 <style>
-/* ═══ DESIGN STUDIO STYLES ═══ */
+/* ═══ DESIGN STUDIO V2 STYLES ═══ */
 .ds-wrap{display:grid;grid-template-columns:380px 1fr;gap:1.25rem;margin-bottom:2rem}
 @media(max-width:900px){.ds-wrap{grid-template-columns:1fr}}
-.ds-panel{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:18px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,.03)}
+.ds-panel{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:18px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,.03);margin-bottom:1rem}
 .ds-panel h3{font-size:1rem;font-weight:800;color:#0B2545;margin:0 0 1rem 0;padding-bottom:.65rem;border-bottom:2px solid rgba(45,130,190,.12);display:flex;align-items:center;gap:.5rem}
 .ds-panel h3 .step{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#2D82BE,#1B5E8A);color:#fff;font-size:.78rem;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
-
-/* Address input */
 .ds-addr{position:relative;margin-bottom:.75rem}
 .ds-addr input{width:100%;padding:.9rem 1rem .9rem 2.5rem;border:1px solid rgba(0,0,0,.1);border-radius:12px;font-size:.95rem;color:#0B2545;background:#f8fafc}
 .ds-addr input:focus{outline:none;border-color:#2D82BE;background:#fff;box-shadow:0 0 0 3px rgba(45,130,190,.08)}
 .ds-addr::before{content:"📍";position:absolute;left:.85rem;top:50%;transform:translateY(-50%);font-size:1rem}
 .ds-addr-hint{font-size:.72rem;color:#94a3b8;margin-top:.4rem}
-
-/* Map container */
-.ds-map-wrap{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(0,0,0,.08);background:#e5e7eb;min-height:540px}
-#ds-map{width:100%;height:540px;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;color:#64748B;font-size:.95rem;text-align:center;padding:2rem}
+.ds-map-wrap{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(0,0,0,.08);background:#e5e7eb;min-height:600px}
+#ds-map{width:100%;height:600px;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;color:#64748B;font-size:.95rem;text-align:center;padding:2rem}
 .ds-map-placeholder{display:flex;flex-direction:column;gap:.75rem;align-items:center}
 .ds-map-placeholder .icon{font-size:3rem;opacity:.5}
-.ds-map-overlay{position:absolute;top:.85rem;left:.85rem;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);padding:.5rem .85rem;border-radius:10px;font-size:.78rem;font-weight:600;color:#0B2545;display:none}
+.ds-map-overlay{position:absolute;top:.85rem;left:.85rem;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);padding:.55rem .9rem;border-radius:10px;font-size:.78rem;font-weight:600;color:#0B2545;display:none;max-width:320px}
 .ds-map-overlay.show{display:block}
-
-/* Segment cards */
-.ds-segments{display:flex;flex-direction:column;gap:.5rem;max-height:300px;overflow-y:auto}
+.ds-map-tools{position:absolute;top:.85rem;right:.85rem;display:flex;flex-direction:column;gap:.4rem}
+.ds-tool-btn{background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:.55rem .85rem;font-size:.78rem;font-weight:600;color:#0B2545;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:all .2s}
+.ds-tool-btn:hover{background:#fff;border-color:#2D82BE;color:#2D82BE}
+.ds-tool-btn.active{background:#2D82BE;color:#fff;border-color:#2D82BE}
+.ds-legend{position:absolute;bottom:.85rem;left:.85rem;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);padding:.6rem .85rem;border-radius:10px;font-size:.72rem;color:#0B2545;display:none}
+.ds-legend.show{display:block}
+.ds-legend-title{font-weight:700;font-size:.7rem;margin-bottom:.35rem;color:#64748B;text-transform:uppercase;letter-spacing:.04em}
+.ds-legend-bar{width:180px;height:10px;border-radius:5px;background:linear-gradient(to right,#ef4444,#f59e0b,#eab308,#84cc16,#22c55e);margin-bottom:.2rem}
+.ds-legend-labels{display:flex;justify-content:space-between;font-size:.68rem;color:#64748B}
+.ds-segments{display:flex;flex-direction:column;gap:.5rem;max-height:240px;overflow-y:auto}
 .ds-seg{padding:.75rem;border:1px solid rgba(0,0,0,.08);border-radius:10px;background:#f8fafc;cursor:pointer;transition:all .2s}
 .ds-seg:hover{border-color:#2D82BE;background:#fff}
 .ds-seg.active{border-color:#2D82BE;background:rgba(45,130,190,.05);box-shadow:0 0 0 2px rgba(45,130,190,.15)}
 .ds-seg-head{display:flex;justify-content:space-between;font-size:.82rem;font-weight:700;color:#0B2545;margin-bottom:.25rem}
-.ds-seg-meta{display:flex;gap:.75rem;font-size:.72rem;color:#64748B}
+.ds-seg-meta{display:flex;gap:.75rem;font-size:.72rem;color:#64748B;flex-wrap:wrap}
 .ds-seg-meta span::before{content:"•";margin-right:.35rem;color:#cbd5e1}
 .ds-seg-meta span:first-child::before{display:none}
-
-/* Form controls */
 .ds-row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem}
 .ds-field label{display:block;font-size:.7rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.25rem}
 .ds-field input,.ds-field select{width:100%;padding:.55rem .7rem;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:.85rem;color:#0B2545;background:#f8fafc}
 .ds-field input:focus,.ds-field select:focus{outline:none;border-color:#2D82BE;background:#fff}
-
-/* Stats */
+.ds-slider-wrap{background:linear-gradient(135deg,rgba(45,130,190,.06),rgba(45,130,190,.02));border:1px solid rgba(45,130,190,.15);border-radius:12px;padding:1rem 1.1rem;margin-bottom:.85rem}
+.ds-slider-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.5rem}
+.ds-slider-head label{font-size:.72rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em}
+.ds-slider-val{font-size:1.5rem;font-weight:900;color:#0B2545;line-height:1}
+.ds-slider-val .unit{font-size:.7rem;color:#94a3b8;font-weight:600;margin-left:.25rem}
+.ds-slider{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;background:rgba(45,130,190,.15);outline:none;margin:.35rem 0}
+.ds-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#2D82BE,#1B5E8A);cursor:pointer;border:3px solid #fff;box-shadow:0 3px 10px rgba(45,130,190,.35)}
+.ds-slider::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#2D82BE,#1B5E8A);cursor:pointer;border:3px solid #fff;box-shadow:0 3px 10px rgba(45,130,190,.35)}
+.ds-slider-meta{display:flex;justify-content:space-between;font-size:.7rem;color:#64748B;font-weight:600;margin-top:.25rem}
+.ds-obst-buttons{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem}
+.ds-mini-btn{padding:.55rem .75rem;border-radius:10px;border:1px solid rgba(45,130,190,.2);background:#fff;color:#2D82BE;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s}
+.ds-mini-btn:hover{background:#2D82BE;color:#fff}
+.ds-mini-btn.active{background:#ef4444;color:#fff;border-color:#ef4444}
+.ds-mini-btn-danger{border-color:rgba(239,68,68,.3);color:#dc2626}
+.ds-mini-btn-danger:hover{background:#ef4444;color:#fff}
+.ds-obst-list{margin-top:.5rem;font-size:.75rem;color:#64748B}
 .ds-stats{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.75rem}
 .ds-stat{padding:.65rem .75rem;background:linear-gradient(135deg,rgba(45,130,190,.06),rgba(45,130,190,.02));border:1px solid rgba(45,130,190,.1);border-radius:10px}
 .ds-stat-label{font-size:.65rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.04em}
 .ds-stat-value{font-size:1.1rem;font-weight:800;color:#0B2545;margin-top:.15rem}
 .ds-stat-unit{font-size:.7rem;color:#94a3b8;margin-left:.2rem;font-weight:600}
-
-/* Buttons */
 .ds-btn{display:inline-block;padding:.8rem 1.4rem;border-radius:100px;border:none;background:linear-gradient(135deg,#2D82BE,#1B5E8A);color:#fff;font-size:.88rem;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;transition:all .3s;box-shadow:0 4px 14px rgba(45,130,190,.22)}
 .ds-btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(45,130,190,.32)}
 .ds-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .ds-btn-sec{background:#fff;color:#2D82BE;border:1px solid rgba(45,130,190,.2);box-shadow:none}
 .ds-btn-full{width:100%;display:block}
-
-/* Status pill */
 .ds-status{display:inline-flex;align-items:center;gap:.4rem;padding:.25rem .65rem;border-radius:100px;font-size:.7rem;font-weight:700;margin-bottom:.75rem}
 .ds-status.waiting{background:#fef3c7;color:#92400e}
 .ds-status.ready{background:#d1fae5;color:#065f46}
 .ds-status.error{background:#fee2e2;color:#991b1b}
 .ds-status::before{content:"●"}
-
-/* Results panel */
 .ds-results{display:none;margin-top:1.25rem}
 .ds-results.show{display:block}
 .ds-results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem;margin-bottom:1rem}
@@ -3961,49 +3970,81 @@ html { scroll-behavior: smooth; }
 .ds-result-label{font-size:.7rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem}
 .ds-result-value{font-size:1.5rem;font-weight:900;color:#0B2545;line-height:1.1}
 .ds-result-sub{font-size:.72rem;color:#94a3b8;margin-top:.2rem}
-
-/* API status banner */
-.ds-api-banner{background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(245,158,11,.02));border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:.85rem}
+.ds-chart-wrap{margin-top:1.5rem;padding:1.25rem;background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:14px}
+.ds-chart-title{font-size:.95rem;font-weight:800;color:#0B2545;margin:0 0 .85rem 0;display:flex;align-items:center;gap:.5rem}
+.ds-monthly-chart{width:100%;height:auto;display:block}
+.ds-monthly-table{width:100%;border-collapse:collapse;margin-top:1rem;font-size:.82rem}
+.ds-monthly-table th{background:#0B2545;color:#fff;padding:.6rem .65rem;text-align:left;font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em}
+.ds-monthly-table th:first-child{border-top-left-radius:8px}
+.ds-monthly-table th:last-child{border-top-right-radius:8px;text-align:right}
+.ds-monthly-table td{padding:.5rem .65rem;border-bottom:1px solid #f1f5f9;color:#475569}
+.ds-monthly-table td:last-child,.ds-monthly-table td:nth-child(2),.ds-monthly-table td:nth-child(3){text-align:right;font-variant-numeric:tabular-nums}
+.ds-monthly-table tr:nth-child(even) td{background:#f8fafc}
+.ds-monthly-table tr.total td{background:#0B2545;color:#fff;font-weight:800}
+.ds-api-banner{background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(16,185,129,.02));border:1px solid rgba(16,185,129,.25);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:.85rem}
 .ds-api-banner .icon{font-size:1.4rem;flex-shrink:0}
-.ds-api-banner h4{font-size:.9rem;font-weight:700;color:#92400e;margin:0 0 .3rem 0}
-.ds-api-banner p{font-size:.82rem;color:#78350f;line-height:1.5;margin:0}
+.ds-api-banner h4{font-size:.9rem;font-weight:700;color:#065f46;margin:0 0 .3rem 0}
+.ds-api-banner p{font-size:.82rem;color:#047857;line-height:1.5;margin:0}
 </style>
 
-<!-- ═══ API STATUS BANNER ═══ -->
-<div class="ds-api-banner" id="ds-api-banner" style="background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(16,185,129,.02));border-color:rgba(16,185,129,.25)">
+<div class="ds-api-banner">
   <div class="icon">🚀</div>
   <div>
-    <h4 style="color:#065f46">All Systems Live — NREL PVWatts + Google Solar API</h4>
-    <p style="color:#047857">Start typing an address in the search box — Google Places will autocomplete. On selection: satellite view loads, Google Solar API detects roof segments (tilt, azimuth, max panel count), NREL PVWatts calculates location-specific production, and NREL returns your local utility rate. The blue overlay on the map shows where Google's solar model places panels on your roof.</p>
+    <h4>Design Studio — Full OpenSolar-Style Workflow Active</h4>
+    <p>Type an address → Google Places autocompletes → Google Solar API detects every roof segment and renders each individual panel at its exact coordinates, color-coded by annual energy production (red=low, green=high). Drag the slider to add/remove panels in real-time. Draw red obstruction zones to exclude areas (chimneys, vents, skylights). NREL PVWatts calculates location-specific production + monthly breakdown.</p>
   </div>
 </div>
 
-<!-- ═══ MAIN LAYOUT ═══ -->
 <div class="ds-wrap">
 
-  <!-- LEFT PANEL: Controls -->
+  <!-- LEFT PANEL -->
   <div>
-    <!-- Step 1: Address -->
-    <div class="ds-panel" style="margin-bottom:1rem">
+    <!-- Address -->
+    <div class="ds-panel">
       <h3><span class="step">1</span> Project Address</h3>
       <div class="ds-addr">
         <input type="text" id="ds-addr-input" placeholder="Start typing an address..." autocomplete="off">
       </div>
-      <div class="ds-addr-hint">✅ Google Places autocomplete + Google Solar API + NREL PVWatts all active.</div>
+      <div class="ds-addr-hint">✅ Google Places + Google Solar + NREL PVWatts all active</div>
     </div>
 
-    <!-- Step 2: Roof Segments -->
-    <div class="ds-panel" style="margin-bottom:1rem">
-      <h3><span class="step">2</span> Roof Segments</h3>
+    <!-- Panel Slider (NEW) -->
+    <div class="ds-panel">
+      <h3><span class="step">2</span> Panel Layout</h3>
       <div class="ds-status waiting" id="ds-seg-status">Awaiting roof analysis</div>
+
+      <div class="ds-slider-wrap">
+        <div class="ds-slider-head">
+          <label>Panels Placed</label>
+          <div class="ds-slider-val"><span id="ds-slider-val">0</span><span class="unit">of <span id="ds-slider-max">0</span> max</span></div>
+        </div>
+        <input type="range" class="ds-slider" id="ds-slider" min="0" max="0" value="0">
+        <div class="ds-slider-meta">
+          <span>0</span>
+          <span id="ds-slider-pct">Fill % will show here</span>
+          <span id="ds-slider-maxlabel">0</span>
+        </div>
+      </div>
+
       <div class="ds-segments" id="ds-segments">
-        <div style="text-align:center;padding:1rem;color:#94a3b8;font-size:.82rem">Select an address to analyze roof segments with the Google Solar API.</div>
+        <div style="text-align:center;padding:1rem;color:#94a3b8;font-size:.82rem">Select an address to analyze roof segments.</div>
       </div>
     </div>
 
-    <!-- Step 3: System Config -->
-    <div class="ds-panel" style="margin-bottom:1rem">
-      <h3><span class="step">3</span> System Configuration</h3>
+    <!-- Obstructions (NEW) -->
+    <div class="ds-panel">
+      <h3><span class="step">3</span> Obstructions &amp; Keep-Out Zones</h3>
+      <p style="font-size:.8rem;color:#64748B;line-height:1.5;margin:0 0 .75rem 0">Click "Draw Obstruction" then click points on the map to outline chimneys, vents, skylights, or any area to exclude. Any panels inside will be removed automatically.</p>
+      <div class="ds-obst-buttons">
+        <button class="ds-mini-btn" id="ds-draw-obst" onclick="toggleDrawObstruction()">✏️ Draw Obstruction</button>
+        <button class="ds-mini-btn ds-mini-btn-danger" onclick="clearObstructions()">🗑 Clear All</button>
+      </div>
+      <div class="ds-obst-list" id="ds-obst-list"><em>No obstructions drawn</em></div>
+    </div>
+
+    <!-- System Config -->
+    <div class="ds-panel">
+      <h3><span class="step">4</span> System Configuration</h3>
       <div class="ds-row">
         <div class="ds-field">
           <label>Panel Wattage</label>
@@ -4015,60 +4056,20 @@ html { scroll-behavior: smooth; }
           </select>
         </div>
         <div class="ds-field">
-          <label>Panel Count</label>
-          <input type="number" id="ds-count" value="20" min="1" max="500">
-        </div>
-      </div>
-      <div class="ds-row">
-        <div class="ds-field">
-          <label>Tilt (°)</label>
-          <input type="number" id="ds-tilt" value="25" min="0" max="60">
-        </div>
-        <div class="ds-field">
-          <label>Azimuth (°)</label>
-          <input type="number" id="ds-azimuth" value="180" min="0" max="360">
-        </div>
-      </div>
-      <div class="ds-row">
-        <div class="ds-field">
-          <label>System Losses (%)</label>
-          <input type="number" id="ds-losses" value="14" min="0" max="30" step="0.5">
-        </div>
-        <div class="ds-field">
           <label>Array Type</label>
           <select id="ds-array">
-            <option value="0">Fixed (open rack)</option>
-            <option value="1" selected>Fixed (roof mount)</option>
-            <option value="2">1-axis tracking</option>
-            <option value="3">1-axis backtracking</option>
-            <option value="4">2-axis tracking</option>
+            <option value="0">Fixed (open)</option>
+            <option value="1" selected>Fixed (roof)</option>
+            <option value="2">1-axis track</option>
           </select>
         </div>
       </div>
-      <div class="ds-stats">
-        <div class="ds-stat"><div class="ds-stat-label">System Size</div><div class="ds-stat-value" id="ds-kw">9.00<span class="ds-stat-unit">kW DC</span></div></div>
-        <div class="ds-stat"><div class="ds-stat-label">Array Area</div><div class="ds-stat-value" id="ds-area">360<span class="ds-stat-unit">sq ft</span></div></div>
-      </div>
-    </div>
-
-    <!-- Step 4: Financials -->
-    <div class="ds-panel" style="margin-bottom:1rem">
-      <h3><span class="step">4</span> Financial Inputs</h3>
       <div class="ds-row">
-        <div class="ds-field">
-          <label>Cost per Watt</label>
-          <input type="number" id="ds-cpw" value="3.00" min="1" max="6" step="0.05">
-        </div>
-        <div class="ds-field">
-          <label>Utility Rate ($/kWh)</label>
-          <input type="number" id="ds-rate" value="0.17" min="0.05" max="0.50" step="0.01">
-        </div>
+        <div class="ds-field"><label>Tilt (°)</label><input type="number" id="ds-tilt" value="25" min="0" max="60"></div>
+        <div class="ds-field"><label>Azimuth (°)</label><input type="number" id="ds-azimuth" value="180" min="0" max="360"></div>
       </div>
       <div class="ds-row">
-        <div class="ds-field">
-          <label>Rate Escalation (%)</label>
-          <input type="number" id="ds-esc" value="5" min="0" max="15" step="0.5">
-        </div>
+        <div class="ds-field"><label>Losses (%)</label><input type="number" id="ds-losses" value="14" min="0" max="30" step="0.5"></div>
         <div class="ds-field">
           <label>Project Type</label>
           <select id="ds-type">
@@ -4077,29 +4078,49 @@ html { scroll-behavior: smooth; }
           </select>
         </div>
       </div>
+      <div class="ds-stats">
+        <div class="ds-stat"><div class="ds-stat-label">System Size</div><div class="ds-stat-value" id="ds-kw">0.00<span class="ds-stat-unit">kW DC</span></div></div>
+        <div class="ds-stat"><div class="ds-stat-label">Active Panels</div><div class="ds-stat-value" id="ds-active-count">0<span class="ds-stat-unit">panels</span></div></div>
+      </div>
     </div>
 
-    <!-- Action buttons -->
+    <!-- Financials -->
+    <div class="ds-panel">
+      <h3><span class="step">5</span> Financial Inputs</h3>
+      <div class="ds-row">
+        <div class="ds-field"><label>Cost per Watt</label><input type="number" id="ds-cpw" value="3.00" min="1" max="6" step="0.05"></div>
+        <div class="ds-field"><label>Rate ($/kWh)</label><input type="number" id="ds-rate" value="0.17" min="0.05" max="0.50" step="0.01"></div>
+      </div>
+      <div class="ds-row">
+        <div class="ds-field"><label>Rate Escalation (%)</label><input type="number" id="ds-esc" value="5" min="0" max="15" step="0.5"></div>
+        <div class="ds-field"><label>Federal ITC (%)</label><input type="number" id="ds-itc" value="30" min="0" max="50"></div>
+      </div>
+    </div>
+
     <button class="ds-btn ds-btn-full" id="ds-calc" onclick="runDesignStudio()">⚡ Calculate &amp; Model</button>
     <button class="ds-btn ds-btn-sec ds-btn-full" id="ds-pdf" onclick="exportProposal()" style="margin-top:.6rem;display:none">📄 Export Proposal PDF</button>
   </div>
 
-  <!-- RIGHT PANEL: Map + Results -->
+  <!-- RIGHT PANEL -->
   <div>
     <div class="ds-panel">
-      <h3><span class="step">🗺</span> Satellite View &amp; Roof Overlay</h3>
+      <h3><span class="step">🗺</span> Satellite View · Roof Analysis · Panel Placement</h3>
       <div class="ds-map-wrap">
         <div id="ds-map">
           <div class="ds-map-placeholder">
             <div class="icon">🛰️</div>
-            <div><strong>Map will load here</strong></div>
-            <div style="font-size:.78rem;opacity:.7;max-width:320px">Google Maps satellite view with Google Solar API roof overlay will appear once API keys are configured.</div>
+            <div><strong>Enter an address to begin</strong></div>
+            <div style="font-size:.78rem;opacity:.7;max-width:320px">Satellite imagery, automatic roof detection, and panel placement will load once you select an address.</div>
           </div>
         </div>
-        <div class="ds-map-overlay" id="ds-map-overlay">Select an address</div>
+        <div class="ds-map-overlay" id="ds-map-overlay"></div>
+        <div class="ds-legend" id="ds-legend">
+          <div class="ds-legend-title">Panel Energy (kWh/yr)</div>
+          <div class="ds-legend-bar"></div>
+          <div class="ds-legend-labels"><span id="ds-legend-min">0</span><span id="ds-legend-max">0</span></div>
+        </div>
       </div>
 
-      <!-- Results -->
       <div class="ds-results" id="ds-results">
         <h3 style="margin-top:1.5rem"><span class="step">📊</span> Modeling Results</h3>
         <div class="ds-results-grid">
@@ -4107,10 +4128,16 @@ html { scroll-behavior: smooth; }
           <div class="ds-result"><div class="ds-result-label">Annual Production</div><div class="ds-result-value" id="r-prod">—</div><div class="ds-result-sub">kWh/year (NREL)</div></div>
           <div class="ds-result"><div class="ds-result-label">Specific Yield</div><div class="ds-result-value" id="r-yield">—</div><div class="ds-result-sub">kWh/kW/year</div></div>
           <div class="ds-result"><div class="ds-result-label">System Cost</div><div class="ds-result-value" id="r-cost">—</div><div class="ds-result-sub">before incentives</div></div>
-          <div class="ds-result"><div class="ds-result-label">Net Cost (post-ITC)</div><div class="ds-result-value" id="r-net">—</div><div class="ds-result-sub">after 30% credit</div></div>
-          <div class="ds-result"><div class="ds-result-label">Year 1 Savings</div><div class="ds-result-value" id="r-save">—</div><div class="ds-result-sub">estimated</div></div>
-          <div class="ds-result"><div class="ds-result-label">Payback Period</div><div class="ds-result-value" id="r-pb">—</div><div class="ds-result-sub">years</div></div>
+          <div class="ds-result"><div class="ds-result-label">Net Cost</div><div class="ds-result-value" id="r-net">—</div><div class="ds-result-sub">after ITC</div></div>
+          <div class="ds-result"><div class="ds-result-label">Year 1 Savings</div><div class="ds-result-value" id="r-save">—</div><div class="ds-result-sub">at current rate</div></div>
+          <div class="ds-result"><div class="ds-result-label">Payback</div><div class="ds-result-value" id="r-pb">—</div><div class="ds-result-sub">years</div></div>
           <div class="ds-result"><div class="ds-result-label">25-Year Savings</div><div class="ds-result-value" id="r-25">—</div><div class="ds-result-sub">with escalation</div></div>
+        </div>
+
+        <div class="ds-chart-wrap">
+          <div class="ds-chart-title">📈 Monthly Production Breakdown (PVWatts)</div>
+          <div id="ds-monthly-chart"></div>
+          <div id="ds-monthly-table-wrap"></div>
         </div>
       </div>
     </div>
@@ -4120,118 +4147,130 @@ html { scroll-behavior: smooth; }
 
 <script>
 // ═════════════════════════════════════════════════════════════
-// DESIGN STUDIO - Solar Modeling Engine
-// ═════════════════════════════════════════════════════════════
-// API CONFIGURATION — REPLACE THESE VALUES WHEN KEYS ARRIVE
+// DESIGN STUDIO V2 - Full OpenSolar-style Modeling Engine
 // ═════════════════════════════════════════════════════════════
 const DS_CONFIG = {
   NREL_API_KEY: '0PGhcfmSpiSOCwOReHNneLzVlOh3BrF3zV4F5GoW',
   GOOGLE_MAPS_KEY: 'AIzaSyA8cHa1iux7107r26z3zQnHHg0CPH-AC0w',
-
-  // Feature flags — flip to true once keys are live
-  USE_GOOGLE_PLACES: true,
-  USE_GOOGLE_SOLAR: true,
-  USE_NREL_PVWATTS: true,
-
-  // PVWatts defaults
   PVWATTS_VERSION: 'v8',
-  MODULE_TYPE: 1,  // 0=standard, 1=premium, 2=thin-film
-
-  // Cost assumptions
+  MODULE_TYPE: 1,
   ITC_RATE: 0.30,
-  MACRS_NET_BENEFIT_PCT: 0.22,  // ~22% effective benefit from 5-yr MACRS at 21% corp rate
+  MACRS_NET_BENEFIT_PCT: 0.22
 };
 
-// State
 const DS_STATE = {
   address: null,
   coords: null,
-  roofSegments: [],
-  selectedSegment: null,
   map: null,
+  roofSegments: [],
+  allPanels: [],        // Full array from Google Solar, sorted by energy desc
+  renderedPanels: [],   // google.maps.Polygon instances currently on map
+  disabledPanels: new Set(),  // Indices disabled by obstructions
+  obstructions: [],     // google.maps.Polygon instances
+  drawingManager: null,
+  panelCapacityW: 400,
+  panelWidthM: 1.045,
+  panelHeightM: 1.879,
+  maxPanels: 0,
+  selectedCount: 0,
   results: null
 };
 
 // ═════════════════════════════════════════════════════════════
-// STUB 1: Google Places Autocomplete
+// GOOGLE PLACES AUTOCOMPLETE
 // ═════════════════════════════════════════════════════════════
 function initGooglePlaces() {
-  if (!DS_CONFIG.USE_GOOGLE_PLACES || typeof google === 'undefined') return;
+  if (typeof google === 'undefined' || !google.maps) return;
   const input = document.getElementById('ds-addr-input');
-  const autocomplete = new google.maps.places.Autocomplete(input, {
+  const ac = new google.maps.places.Autocomplete(input, {
     types: ['address'],
     componentRestrictions: { country: 'us' },
     fields: ['formatted_address', 'geometry']
   });
-  autocomplete.addListener('place_changed', async () => {
-    const place = autocomplete.getPlace();
+  ac.addListener('place_changed', async () => {
+    const place = ac.getPlace();
     if (!place.geometry) return;
     DS_STATE.address = place.formatted_address;
     DS_STATE.coords = {
       lat: place.geometry.location.lat(),
       lng: place.geometry.location.lng()
     };
-    document.getElementById('ds-seg-status').className = 'ds-status waiting';
-    document.getElementById('ds-seg-status').textContent = 'Loading satellite + roof analysis...';
+    setStatus('waiting', 'Loading satellite + roof analysis...');
     initMap();
     await fetchSolarInsights();
-
-    // Auto-fetch utility rate from NREL
-    try {
-      const params = new URLSearchParams({
-        api_key: DS_CONFIG.NREL_API_KEY,
-        address: place.formatted_address
-      });
-      const res = await fetch(`https://developer.nrel.gov/api/utility_rates/v3.json?${params}`);
-      const data = await res.json();
-      if (data.outputs && data.outputs.residential) {
-        document.getElementById('ds-rate').value = data.outputs.residential.toFixed(3);
-      }
-    } catch (e) { console.warn('[DS] Rate fetch failed:', e); }
+    await fetchUtilityRate();
   });
 }
 
 // ═════════════════════════════════════════════════════════════
-// STUB 2: Google Maps Initialization
+// INITIALIZE MAP
 // ═════════════════════════════════════════════════════════════
 function initMap() {
-  if (!DS_CONFIG.USE_GOOGLE_PLACES || typeof google === 'undefined' || !DS_STATE.coords) return;
-
-  // Clear any placeholder content
+  if (!DS_STATE.coords) return;
   const mapEl = document.getElementById('ds-map');
   mapEl.innerHTML = '';
-  mapEl.style.cssText = 'width:100%;height:540px';
+  mapEl.style.cssText = 'width:100%;height:600px';
 
   DS_STATE.map = new google.maps.Map(mapEl, {
     center: DS_STATE.coords,
-    zoom: 20,
+    zoom: 21,
     mapTypeId: 'satellite',
     tilt: 0,
-    disableDefaultUI: false,
-    zoomControl: true,
-    mapTypeControl: true,
+    rotateControl: false,
     streetViewControl: false,
-    fullscreenControl: true
+    fullscreenControl: true,
+    mapTypeControl: true
   });
 
   new google.maps.Marker({
     position: DS_STATE.coords,
     map: DS_STATE.map,
-    title: DS_STATE.address
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 6,
+      fillColor: '#2D82BE',
+      fillOpacity: 1,
+      strokeColor: '#fff',
+      strokeWeight: 2
+    }
+  });
+
+  // Initialize drawing manager for obstructions
+  DS_STATE.drawingManager = new google.maps.drawing.DrawingManager({
+    drawingMode: null,
+    drawingControl: false,
+    polygonOptions: {
+      fillColor: '#ef4444',
+      fillOpacity: 0.45,
+      strokeColor: '#dc2626',
+      strokeWeight: 2.5,
+      clickable: true,
+      editable: false,
+      zIndex: 100
+    }
+  });
+  DS_STATE.drawingManager.setMap(DS_STATE.map);
+
+  google.maps.event.addListener(DS_STATE.drawingManager, 'polygoncomplete', (polygon) => {
+    DS_STATE.obstructions.push(polygon);
+    DS_STATE.drawingManager.setDrawingMode(null);
+    document.getElementById('ds-draw-obst').classList.remove('active');
+    document.getElementById('ds-draw-obst').innerHTML = '✏️ Draw Obstruction';
+    applyObstructions();
+    updateObstructionList();
   });
 
   document.getElementById('ds-map-overlay').classList.add('show');
   document.getElementById('ds-map-overlay').innerHTML =
-    `📍 ${DS_STATE.address}<br><span style="font-weight:400;font-size:.72rem">Lat: ${DS_STATE.coords.lat.toFixed(4)}, Lng: ${DS_STATE.coords.lng.toFixed(4)}</span>`;
+    `📍 ${DS_STATE.address}<br><span style="font-weight:400;font-size:.72rem;color:#64748B">Lat: ${DS_STATE.coords.lat.toFixed(5)}, Lng: ${DS_STATE.coords.lng.toFixed(5)}</span>`;
 }
 
 // ═════════════════════════════════════════════════════════════
-// STUB 3: Google Solar API - Building Insights
+// FETCH GOOGLE SOLAR API DATA
 // ═════════════════════════════════════════════════════════════
 async function fetchSolarInsights() {
-  if (!DS_CONFIG.USE_GOOGLE_SOLAR || !DS_STATE.coords) return;
+  if (!DS_STATE.coords) return;
 
-  // Try HIGH quality first, fall back to MEDIUM then LOW
   const qualityLevels = ['HIGH', 'MEDIUM', 'LOW'];
   let data = null;
 
@@ -4245,139 +4284,320 @@ async function fetchSolarInsights() {
       const res = await fetch(url);
       if (res.ok) {
         data = await res.json();
-        console.log(`[DS] Solar API ${quality} quality data received`);
+        console.log(`[DS] Solar API ${quality} quality received`);
         break;
       }
     } catch (e) { continue; }
   }
 
   if (!data || !data.solarPotential) {
-    document.getElementById('ds-seg-status').className = 'ds-status error';
-    document.getElementById('ds-seg-status').textContent = 'Roof not in Google Solar coverage';
+    setStatus('error', 'Roof not in Google Solar coverage');
     document.getElementById('ds-segments').innerHTML =
-      '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:.82rem">This location is not yet covered by Google Solar API. You can still use manual configuration — tilt/azimuth/panel count below.</div>';
+      '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:.82rem">This location is not yet in Google Solar API coverage. You can still model manually — adjust tilt, azimuth, and hit Calculate.</div>';
     return;
   }
 
+  const sp = data.solarPotential;
+
+  // Store panel specs
+  DS_STATE.panelCapacityW = sp.panelCapacityWatts || 400;
+  DS_STATE.panelWidthM = sp.panelWidthMeters || 1.045;
+  DS_STATE.panelHeightM = sp.panelHeightMeters || 1.879;
+  DS_STATE.maxPanels = sp.maxArrayPanelsCount || 0;
+
   // Parse roof segments
-  DS_STATE.roofSegments = (data.solarPotential.roofSegmentStats || []).map((seg, i) => ({
+  DS_STATE.roofSegments = (sp.roofSegmentStats || []).map((seg, i) => ({
     id: i,
     pitchDeg: seg.pitchDegrees || 0,
     azimuthDeg: seg.azimuthDegrees || 180,
     areaMeters2: (seg.stats && seg.stats.areaMeters2) || 0,
     sunshineHours: (seg.stats && seg.stats.sunshineQuantiles) ? seg.stats.sunshineQuantiles[5] : 0,
-    maxPanels: Math.floor(((seg.stats && seg.stats.areaMeters2) || 0) / 1.7),
-    center: seg.center,
-    boundingBox: seg.boundingBox
-  })).filter(s => s.maxPanels > 0).sort((a, b) => b.maxPanels - a.maxPanels);
+    center: seg.center
+  }));
 
-  // Store max panel config for overlay
-  DS_STATE.maxPanelCount = data.solarPotential.maxArrayPanelsCount || 0;
-  DS_STATE.maxAreaM2 = data.solarPotential.maxArrayAreaMeters2 || 0;
-  DS_STATE.panelConfigs = data.solarPotential.solarPanelConfigs || [];
-  DS_STATE.panelCapacityW = data.solarPotential.panelCapacityWatts || 400;
-  DS_STATE.panelHeightM = data.solarPotential.panelHeightMeters || 1.879;
-  DS_STATE.panelWidthM = data.solarPotential.panelWidthMeters || 1.045;
+  // Parse all individual panels (sorted by yearly energy desc — Google already sorts these)
+  DS_STATE.allPanels = (sp.solarPanels || []).map((p, idx) => ({
+    idx,
+    center: p.center,
+    orientation: p.orientation || 'LANDSCAPE',
+    yearlyEnergyDcKwh: p.yearlyEnergyDcKwh || 0,
+    segmentIndex: p.segmentIndex || 0
+  }));
+
+  // Also pre-compute a "best config" count from solarPanelConfigs
+  const configs = sp.solarPanelConfigs || [];
+  const bestConfig = configs.length ? configs[configs.length - 1] : null;
+  const suggestedCount = bestConfig ? bestConfig.panelsCount : Math.min(DS_STATE.maxPanels, 24);
 
   renderSegments();
-  drawPanelOverlay();
-}
 
-// Draw solar panels on the map from Google Solar API panel configs
-function drawPanelOverlay() {
-  if (!DS_STATE.map || !DS_STATE.panelConfigs || !DS_STATE.panelConfigs.length) return;
+  // Set up slider
+  const slider = document.getElementById('ds-slider');
+  slider.min = 0;
+  slider.max = DS_STATE.maxPanels;
+  slider.value = suggestedCount;
+  DS_STATE.selectedCount = suggestedCount;
+  document.getElementById('ds-slider-max').textContent = DS_STATE.maxPanels.toLocaleString();
+  document.getElementById('ds-slider-maxlabel').textContent = DS_STATE.maxPanels.toLocaleString();
 
-  // Clear any existing panels
-  if (DS_STATE.panelMarkers) DS_STATE.panelMarkers.forEach(m => m.setMap(null));
-  DS_STATE.panelMarkers = [];
-
-  // Use the config closest to user's requested count (default: largest)
-  const targetCount = parseInt(document.getElementById('ds-count').value) || 20;
-  let config = DS_STATE.panelConfigs[DS_STATE.panelConfigs.length - 1]; // default: max
-  for (const c of DS_STATE.panelConfigs) {
-    if (c.panelsCount >= targetCount) { config = c; break; }
+  // Auto-populate tilt/azimuth from dominant segment
+  if (DS_STATE.roofSegments.length) {
+    const dom = DS_STATE.roofSegments.reduce((a, b) => a.areaMeters2 > b.areaMeters2 ? a : b);
+    document.getElementById('ds-tilt').value = Math.round(dom.pitchDeg);
+    document.getElementById('ds-azimuth').value = Math.round(dom.azimuthDeg);
   }
 
-  if (!config || !config.roofSegmentSummaries) return;
-
-  // Draw bounding boxes of roof segments being used
-  config.roofSegmentSummaries.forEach((sum, idx) => {
-    const seg = DS_STATE.roofSegments.find(s => s.id === sum.segmentIndex) || DS_STATE.roofSegments[idx];
-    if (!seg || !seg.boundingBox) return;
-
-    const bounds = {
-      north: Math.max(seg.boundingBox.ne.latitude, seg.boundingBox.sw.latitude),
-      south: Math.min(seg.boundingBox.ne.latitude, seg.boundingBox.sw.latitude),
-      east: Math.max(seg.boundingBox.ne.longitude, seg.boundingBox.sw.longitude),
-      west: Math.min(seg.boundingBox.ne.longitude, seg.boundingBox.sw.longitude)
-    };
-
-    const rect = new google.maps.Rectangle({
-      strokeColor: '#2D82BE',
-      strokeOpacity: 0.9,
-      strokeWeight: 2,
-      fillColor: '#2D82BE',
-      fillOpacity: 0.35,
-      map: DS_STATE.map,
-      bounds: bounds,
-      clickable: false
-    });
-    DS_STATE.panelMarkers.push(rect);
-  });
+  setStatus('ready', `${DS_STATE.roofSegments.length} segments · ${DS_STATE.maxPanels} max panels`);
+  renderPanels();
+  showLegend();
 }
 
+// ═════════════════════════════════════════════════════════════
+// RENDER SEGMENT CARDS
+// ═════════════════════════════════════════════════════════════
 function renderSegments() {
   const container = document.getElementById('ds-segments');
   if (!DS_STATE.roofSegments.length) return;
 
-  container.innerHTML = DS_STATE.roofSegments.map((s, i) => `
-    <div class="ds-seg ${i === 0 ? 'active' : ''}" onclick="selectSegment(${i})">
-      <div class="ds-seg-head">
-        <span>Segment ${i + 1}</span>
-        <span>${s.maxPanels} panels max</span>
-      </div>
-      <div class="ds-seg-meta">
-        <span>${s.pitchDeg.toFixed(0)}° tilt</span>
-        <span>${s.azimuthDeg.toFixed(0)}° azimuth</span>
-        <span>${Math.round(s.areaMeters2 * 10.764)} sq ft</span>
-      </div>
-    </div>
-  `).join('');
-
-  document.getElementById('ds-seg-status').className = 'ds-status ready';
-  document.getElementById('ds-seg-status').textContent = `${DS_STATE.roofSegments.length} roof segments detected`;
-
-  selectSegment(0);
+  container.innerHTML = DS_STATE.roofSegments.map((s, i) => {
+    const sqft = Math.round(s.areaMeters2 * 10.764);
+    return `
+      <div class="ds-seg ${i === 0 ? 'active' : ''}" onclick="selectSegment(${i})">
+        <div class="ds-seg-head">
+          <span>Segment ${i + 1}</span>
+          <span>${sqft.toLocaleString()} sq ft</span>
+        </div>
+        <div class="ds-seg-meta">
+          <span>${s.pitchDeg.toFixed(0)}° pitch</span>
+          <span>${s.azimuthDeg.toFixed(0)}° az</span>
+          <span>${Math.round(s.sunshineHours).toLocaleString()} sun hrs</span>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 function selectSegment(idx) {
-  DS_STATE.selectedSegment = DS_STATE.roofSegments[idx];
-  document.querySelectorAll('.ds-seg').forEach((el, i) => {
-    el.classList.toggle('active', i === idx);
-  });
-
-  // Auto-populate tilt/azimuth from selected segment
-  document.getElementById('ds-tilt').value = Math.round(DS_STATE.selectedSegment.pitchDeg);
-  document.getElementById('ds-azimuth').value = Math.round(DS_STATE.selectedSegment.azimuthDeg);
-  document.getElementById('ds-count').value = Math.min(DS_STATE.selectedSegment.maxPanels, 40);
-  updateSystemStats();
+  const seg = DS_STATE.roofSegments[idx];
+  if (!seg) return;
+  document.querySelectorAll('.ds-seg').forEach((el, i) => el.classList.toggle('active', i === idx));
+  document.getElementById('ds-tilt').value = Math.round(seg.pitchDeg);
+  document.getElementById('ds-azimuth').value = Math.round(seg.azimuthDeg);
+  if (DS_STATE.map && seg.center) {
+    DS_STATE.map.panTo({ lat: seg.center.latitude, lng: seg.center.longitude });
+  }
 }
 
 // ═════════════════════════════════════════════════════════════
-// STUB 4: NREL PVWatts v8 - Production Estimate
+// RENDER INDIVIDUAL PANELS AS ROTATED POLYGONS
 // ═════════════════════════════════════════════════════════════
-async function fetchPVWatts(systemKw, tilt, azimuth, losses, arrayType) {
-  // No location yet? Use NEPA regional average as fallback
-  if (!DS_STATE.coords) {
-    const nepaFactor = 1275;
-    return {
-      ac_annual: systemKw * nepaFactor,
-      solrad_annual: 4.8,
-      source: 'regional_estimate'
-    };
+function energyToColor(kwh, minKwh, maxKwh) {
+  if (maxKwh === minKwh) return '#22c55e';
+  const t = (kwh - minKwh) / (maxKwh - minKwh);
+  // Red -> Orange -> Yellow -> Lime -> Green
+  const stops = [
+    { t: 0.00, r: 239, g: 68,  b: 68  },
+    { t: 0.25, r: 245, g: 158, b: 11  },
+    { t: 0.50, r: 234, g: 179, b: 8   },
+    { t: 0.75, r: 132, g: 204, b: 22  },
+    { t: 1.00, r: 34,  g: 197, b: 94  }
+  ];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (t >= stops[i].t && t <= stops[i+1].t) {
+      const local = (t - stops[i].t) / (stops[i+1].t - stops[i].t);
+      const r = Math.round(stops[i].r + local * (stops[i+1].r - stops[i].r));
+      const g = Math.round(stops[i].g + local * (stops[i+1].g - stops[i].g));
+      const b = Math.round(stops[i].b + local * (stops[i+1].b - stops[i].b));
+      return `rgb(${r},${g},${b})`;
+    }
+  }
+  return '#22c55e';
+}
+
+function panelCorners(center, widthM, heightM, orientation, azimuthDeg) {
+  // In the panel's local frame:
+  //   Y_local = "downhill" direction (points where azimuth points)
+  //   X_local = perpendicular, right-hand rule from above
+  //
+  // For LANDSCAPE: long axis perpendicular to slope → X_local extent = heightM/2 (long)
+  // For PORTRAIT:  long axis along slope → Y_local extent = heightM/2 (long)
+  let dx, dy;
+  if (orientation === 'LANDSCAPE') {
+    dx = heightM / 2;
+    dy = widthM / 2;
+  } else {
+    dx = widthM / 2;
+    dy = heightM / 2;
   }
 
-  // LIVE: Call NREL PVWatts v8
+  const corners = [
+    [-dx, -dy], [ dx, -dy], [ dx,  dy], [-dx,  dy]
+  ];
+
+  // Rotation: Y_local direction in world frame = (sin θ, cos θ)
+  //           X_local direction in world frame = (cos θ, -sin θ)
+  // where θ = azimuth (clockwise from north)
+  const θ = azimuthDeg * Math.PI / 180;
+  const sinθ = Math.sin(θ);
+  const cosθ = Math.cos(θ);
+
+  const mPerDegLat = 111320;
+  const mPerDegLng = 111320 * Math.cos(center.latitude * Math.PI / 180);
+
+  return corners.map(([xL, yL]) => {
+    // world x (east) = xL*cosθ + yL*sinθ
+    // world y (north) = xL*(-sinθ) + yL*cosθ
+    const xW = xL * cosθ + yL * sinθ;
+    const yW = -xL * sinθ + yL * cosθ;
+    return {
+      lat: center.latitude + yW / mPerDegLat,
+      lng: center.longitude + xW / mPerDegLng
+    };
+  });
+}
+
+function clearRenderedPanels() {
+  DS_STATE.renderedPanels.forEach(p => p.setMap(null));
+  DS_STATE.renderedPanels = [];
+}
+
+function renderPanels() {
+  if (!DS_STATE.map || !DS_STATE.allPanels.length) return;
+  clearRenderedPanels();
+
+  const count = parseInt(document.getElementById('ds-slider').value) || 0;
+
+  // Take top `count` panels that aren't disabled by obstructions
+  const active = [];
+  for (const p of DS_STATE.allPanels) {
+    if (active.length >= count) break;
+    if (DS_STATE.disabledPanels.has(p.idx)) continue;
+    active.push(p);
+  }
+
+  if (!active.length) {
+    updateSliderDisplay(0);
+    updateSystemStats();
+    return;
+  }
+
+  const minE = Math.min(...active.map(p => p.yearlyEnergyDcKwh));
+  const maxE = Math.max(...active.map(p => p.yearlyEnergyDcKwh));
+
+  for (const p of active) {
+    const seg = DS_STATE.roofSegments[p.segmentIndex] || { azimuthDeg: 180 };
+    const corners = panelCorners(
+      p.center,
+      DS_STATE.panelWidthM,
+      DS_STATE.panelHeightM,
+      p.orientation,
+      seg.azimuthDeg
+    );
+    const color = energyToColor(p.yearlyEnergyDcKwh, minE, maxE);
+    const poly = new google.maps.Polygon({
+      paths: corners,
+      strokeColor: '#0B2545',
+      strokeOpacity: 0.7,
+      strokeWeight: 0.8,
+      fillColor: color,
+      fillOpacity: 0.85,
+      clickable: false,
+      map: DS_STATE.map,
+      zIndex: 50
+    });
+    DS_STATE.renderedPanels.push(poly);
+  }
+
+  // Update legend
+  document.getElementById('ds-legend-min').textContent = Math.round(minE);
+  document.getElementById('ds-legend-max').textContent = Math.round(maxE);
+
+  updateSliderDisplay(active.length);
+  updateSystemStats();
+}
+
+function updateSliderDisplay(activeCount) {
+  document.getElementById('ds-slider-val').textContent = activeCount.toLocaleString();
+  const pct = DS_STATE.maxPanels ? (activeCount / DS_STATE.maxPanels * 100) : 0;
+  document.getElementById('ds-slider-pct').textContent = `${pct.toFixed(0)}% of roof capacity`;
+}
+
+function showLegend() {
+  document.getElementById('ds-legend').classList.add('show');
+}
+
+// ═════════════════════════════════════════════════════════════
+// OBSTRUCTION DRAWING
+// ═════════════════════════════════════════════════════════════
+function toggleDrawObstruction() {
+  if (!DS_STATE.drawingManager) {
+    alert('Load an address first');
+    return;
+  }
+  const btn = document.getElementById('ds-draw-obst');
+  const isActive = btn.classList.contains('active');
+  if (isActive) {
+    DS_STATE.drawingManager.setDrawingMode(null);
+    btn.classList.remove('active');
+    btn.innerHTML = '✏️ Draw Obstruction';
+  } else {
+    DS_STATE.drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
+    btn.classList.add('active');
+    btn.innerHTML = '🖱 Click map to draw...';
+  }
+}
+
+function applyObstructions() {
+  DS_STATE.disabledPanels.clear();
+  for (const panel of DS_STATE.allPanels) {
+    const latLng = new google.maps.LatLng(panel.center.latitude, panel.center.longitude);
+    for (const obst of DS_STATE.obstructions) {
+      if (google.maps.geometry.poly.containsLocation(latLng, obst)) {
+        DS_STATE.disabledPanels.add(panel.idx);
+        break;
+      }
+    }
+  }
+  renderPanels();
+}
+
+function clearObstructions() {
+  DS_STATE.obstructions.forEach(o => o.setMap(null));
+  DS_STATE.obstructions = [];
+  DS_STATE.disabledPanels.clear();
+  updateObstructionList();
+  renderPanels();
+}
+
+function updateObstructionList() {
+  const el = document.getElementById('ds-obst-list');
+  const n = DS_STATE.obstructions.length;
+  const disabled = DS_STATE.disabledPanels.size;
+  if (n === 0) {
+    el.innerHTML = '<em>No obstructions drawn</em>';
+  } else {
+    el.innerHTML = `<strong>${n}</strong> obstruction${n>1?'s':''} drawn · <strong>${disabled}</strong> panel${disabled!==1?'s':''} excluded`;
+  }
+}
+
+// ═════════════════════════════════════════════════════════════
+// SYSTEM STATS
+// ═════════════════════════════════════════════════════════════
+function updateSystemStats() {
+  const panelW = parseFloat(document.getElementById('ds-panel-w').value);
+  const count = DS_STATE.renderedPanels.length;
+  const systemKw = (panelW * count) / 1000;
+  document.getElementById('ds-kw').innerHTML = systemKw.toFixed(2) + '<span class="ds-stat-unit">kW DC</span>';
+  document.getElementById('ds-active-count').innerHTML = count.toLocaleString() + '<span class="ds-stat-unit">panels</span>';
+  DS_STATE.selectedCount = count;
+}
+
+// ═════════════════════════════════════════════════════════════
+// NREL PVWATTS + UTILITY RATES
+// ═════════════════════════════════════════════════════════════
+async function fetchPVWatts(systemKw, tilt, azimuth, losses, arrayType) {
+  if (!DS_STATE.coords) {
+    return { ac_annual: systemKw * 1275, ac_monthly: null, source: 'regional_estimate' };
+  }
   const params = new URLSearchParams({
     api_key: DS_CONFIG.NREL_API_KEY,
     lat: DS_STATE.coords.lat,
@@ -4390,17 +4610,11 @@ async function fetchPVWatts(systemKw, tilt, azimuth, losses, arrayType) {
     losses: losses,
     timeframe: 'monthly'
   });
-
   try {
     const url = `https://developer.nrel.gov/api/pvwatts/${DS_CONFIG.PVWATTS_VERSION}.json?${params}`;
     const res = await fetch(url);
     const data = await res.json();
-
-    if (data.errors && data.errors.length) {
-      console.error('[DS] PVWatts errors:', data.errors);
-      throw new Error(data.errors[0]);
-    }
-
+    if (data.errors && data.errors.length) throw new Error(data.errors[0]);
     return {
       ac_annual: data.outputs.ac_annual,
       ac_monthly: data.outputs.ac_monthly,
@@ -4410,36 +4624,37 @@ async function fetchPVWatts(systemKw, tilt, azimuth, losses, arrayType) {
       station: data.station_info ? data.station_info.city + ', ' + data.station_info.state : null
     };
   } catch (e) {
-    console.error('[DS] PVWatts fetch failed, using regional estimate:', e);
-    return {
-      ac_annual: systemKw * 1275,
-      solrad_annual: 4.8,
-      source: 'regional_estimate_fallback'
-    };
+    console.error('[DS] PVWatts failed:', e);
+    return { ac_annual: systemKw * 1275, ac_monthly: null, source: 'regional_estimate_fallback' };
   }
 }
 
-// ═════════════════════════════════════════════════════════════
-// Update system size display
-// ═════════════════════════════════════════════════════════════
-function updateSystemStats() {
-  const panelW = parseFloat(document.getElementById('ds-panel-w').value);
-  const count = parseInt(document.getElementById('ds-count').value) || 0;
-  const systemKw = (panelW * count) / 1000;
-  const area = count * 18;  // 18 sq ft per panel avg
-
-  document.getElementById('ds-kw').innerHTML = systemKw.toFixed(2) + '<span class="ds-stat-unit">kW DC</span>';
-  document.getElementById('ds-area').innerHTML = area.toLocaleString() + '<span class="ds-stat-unit">sq ft</span>';
+async function fetchUtilityRate() {
+  if (!DS_STATE.address) return;
+  try {
+    const params = new URLSearchParams({
+      api_key: DS_CONFIG.NREL_API_KEY,
+      address: DS_STATE.address
+    });
+    const res = await fetch(`https://developer.nrel.gov/api/utility_rates/v3.json?${params}`);
+    const data = await res.json();
+    if (data.outputs && data.outputs.residential) {
+      document.getElementById('ds-rate').value = data.outputs.residential.toFixed(3);
+    }
+  } catch (e) { console.warn('[DS] Rate fetch failed:', e); }
 }
 
-['ds-panel-w','ds-count'].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) el.addEventListener('input', updateSystemStats);
-  if (el) el.addEventListener('change', updateSystemStats);
-});
+// ═════════════════════════════════════════════════════════════
+// STATUS + UTILITIES
+// ═════════════════════════════════════════════════════════════
+function setStatus(level, text) {
+  const el = document.getElementById('ds-seg-status');
+  el.className = 'ds-status ' + level;
+  el.textContent = text;
+}
 
 // ═════════════════════════════════════════════════════════════
-// MAIN CALC ENGINE — runs regardless of API keys (uses fallbacks)
+// MAIN CALCULATION
 // ═════════════════════════════════════════════════════════════
 async function runDesignStudio() {
   const btn = document.getElementById('ds-calc');
@@ -4447,9 +4662,8 @@ async function runDesignStudio() {
   btn.textContent = 'Calculating...';
 
   try {
-    // Gather inputs
     const panelW = parseFloat(document.getElementById('ds-panel-w').value);
-    const count = parseInt(document.getElementById('ds-count').value);
+    const count = DS_STATE.renderedPanels.length || parseInt(document.getElementById('ds-slider').value) || 20;
     const tilt = parseFloat(document.getElementById('ds-tilt').value);
     const azimuth = parseFloat(document.getElementById('ds-azimuth').value);
     const losses = parseFloat(document.getElementById('ds-losses').value);
@@ -4457,31 +4671,31 @@ async function runDesignStudio() {
     const cpw = parseFloat(document.getElementById('ds-cpw').value);
     const rate = parseFloat(document.getElementById('ds-rate').value);
     const esc = parseFloat(document.getElementById('ds-esc').value) / 100;
+    const itcPct = parseFloat(document.getElementById('ds-itc').value) / 100;
     const projectType = document.getElementById('ds-type').value;
 
     const systemKw = (panelW * count) / 1000;
     const systemWatts = panelW * count;
 
-    // Call PVWatts (or fallback)
     const pv = await fetchPVWatts(systemKw, tilt, azimuth, losses, arrayType);
     const annualProd = pv.ac_annual;
     const specificYield = annualProd / systemKw;
 
-    // Financials
     const grossCost = systemWatts * cpw;
-    let netCost = grossCost;
+    let netCost = grossCost * (1 - itcPct);
     if (projectType === 'commercial') {
-      netCost = grossCost * (1 - DS_CONFIG.ITC_RATE - DS_CONFIG.MACRS_NET_BENEFIT_PCT);
+      netCost = grossCost * (1 - itcPct - DS_CONFIG.MACRS_NET_BENEFIT_PCT);
     }
 
-    // 25-year projection with rate escalation + 0.5% degradation
     let cumulativeSavings = 0;
     let paybackYear = null;
+    const yearlyData = [];
     for (let y = 1; y <= 25; y++) {
       const yearProd = annualProd * Math.pow(0.995, y - 1);
       const yearRate = rate * Math.pow(1 + esc, y - 1);
       const yearSavings = yearProd * yearRate;
       cumulativeSavings += yearSavings;
+      yearlyData.push({ year: y, prod: yearProd, savings: yearSavings, cumulative: cumulativeSavings });
       if (paybackYear === null && cumulativeSavings >= netCost) {
         paybackYear = y - 1 + (netCost - (cumulativeSavings - yearSavings)) / yearSavings;
       }
@@ -4490,7 +4704,6 @@ async function runDesignStudio() {
     const year1Savings = annualProd * rate;
     const totalSavings25 = cumulativeSavings;
 
-    // Display
     document.getElementById('r-kw').textContent = systemKw.toFixed(2);
     document.getElementById('r-prod').textContent = Math.round(annualProd).toLocaleString();
     document.getElementById('r-yield').textContent = Math.round(specificYield).toLocaleString();
@@ -4500,18 +4713,23 @@ async function runDesignStudio() {
     document.getElementById('r-pb').textContent = paybackYear ? paybackYear.toFixed(1) : '25+';
     document.getElementById('r-25').textContent = '$' + Math.round(totalSavings25).toLocaleString();
 
+    // Render monthly chart + table
+    if (pv.ac_monthly) {
+      renderMonthlyChart(pv.ac_monthly);
+      renderMonthlyTable(pv.ac_monthly, rate);
+    }
+
     document.getElementById('ds-results').classList.add('show');
     document.getElementById('ds-pdf').style.display = 'block';
 
-    // Save state for PDF
     DS_STATE.results = {
       systemKw, count, panelW, tilt, azimuth,
       annualProd, specificYield, grossCost, netCost,
       year1Savings, paybackYear, totalSavings25,
+      monthly: pv.ac_monthly, rate, esc, yearlyData,
       projectType, address: DS_STATE.address,
       productionSource: pv.source
     };
-
   } catch (e) {
     console.error('[DS] Calc error:', e);
     alert('Calculation error: ' + e.message);
@@ -4522,127 +4740,129 @@ async function runDesignStudio() {
 }
 
 // ═════════════════════════════════════════════════════════════
-// PDF Proposal Export (stateless)
+// MONTHLY CHART (SVG) + TABLE
+// ═════════════════════════════════════════════════════════════
+function renderMonthlyChart(monthly) {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const max = Math.max(...monthly);
+  const W = 780, H = 240, padL = 55, padR = 20, padT = 25, padB = 40;
+  const plotH = H - padT - padB;
+  const plotW = W - padL - padR;
+  const slot = plotW / 12;
+  const barW = slot * 0.7;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" class="ds-monthly-chart"><defs><linearGradient id="dsbar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2D82BE"/><stop offset="1" stop-color="#1B5E8A"/></linearGradient></defs>`;
+
+  // Grid + Y labels
+  for (let i = 0; i <= 4; i++) {
+    const val = max * (1 - i/4);
+    const y = padT + (plotH * i / 4);
+    svg += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#f1f5f9" stroke-width="1"/>`;
+    svg += `<text x="${padL-10}" y="${y+4}" text-anchor="end" fill="#94a3b8" font-size="11" font-weight="600">${Math.round(val).toLocaleString()}</text>`;
+  }
+
+  // Y-axis title
+  svg += `<text x="20" y="${padT + plotH/2}" fill="#64748B" font-size="10" font-weight="700" text-anchor="middle" transform="rotate(-90, 20, ${padT + plotH/2})">kWh / month</text>`;
+
+  // Bars
+  monthly.forEach((kwh, i) => {
+    const h = (kwh / max) * plotH;
+    const x = padL + i * slot + (slot - barW)/2;
+    const y = padT + plotH - h;
+    svg += `<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="url(#dsbar)" rx="3"/>`;
+    svg += `<text x="${x + barW/2}" y="${padT + plotH + 18}" text-anchor="middle" fill="#64748B" font-size="11" font-weight="700">${months[i]}</text>`;
+    svg += `<text x="${x + barW/2}" y="${y - 5}" text-anchor="middle" fill="#0B2545" font-size="10" font-weight="800">${Math.round(kwh).toLocaleString()}</text>`;
+  });
+
+  svg += '</svg>';
+  document.getElementById('ds-monthly-chart').innerHTML = svg;
+}
+
+function renderMonthlyTable(monthly, rate) {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const total = monthly.reduce((a,b) => a+b, 0);
+  let h = '<table class="ds-monthly-table"><thead><tr><th>Month</th><th>Production</th><th>% Annual</th><th>Savings</th></tr></thead><tbody>';
+  monthly.forEach((kwh, i) => {
+    h += `<tr><td>${months[i]}</td><td>${Math.round(kwh).toLocaleString()} kWh</td><td>${(kwh/total*100).toFixed(1)}%</td><td>$${Math.round(kwh*rate).toLocaleString()}</td></tr>`;
+  });
+  h += `<tr class="total"><td>Annual Total</td><td>${Math.round(total).toLocaleString()} kWh</td><td>100.0%</td><td>$${Math.round(total*rate).toLocaleString()}</td></tr>`;
+  h += '</tbody></table>';
+  document.getElementById('ds-monthly-table-wrap').innerHTML = h;
+}
+
+// ═════════════════════════════════════════════════════════════
+// PDF EXPORT
 // ═════════════════════════════════════════════════════════════
 function exportProposal() {
   if (!DS_STATE.results) { alert('Run calculation first'); return; }
-  // Build a printable proposal window
   const r = DS_STATE.results;
   const w = window.open('', '_blank');
   if (!w) { alert('Please allow popups'); return; }
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthlyRows = r.monthly ? r.monthly.map((m,i) =>
+    `<tr><td>${months[i]}</td><td style="text-align:right">${Math.round(m).toLocaleString()} kWh</td></tr>`
+  ).join('') : '';
+
   w.document.write(`<!DOCTYPE html><html><head><title>Solar Mason Proposal</title>
-    <style>body{font-family:-apple-system,sans-serif;max-width:800px;margin:2rem auto;padding:2rem;color:#0B2545}
-    h1{color:#2D82BE}h2{border-bottom:2px solid #2D82BE;padding-bottom:.3rem}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
-    .box{padding:1rem;background:#f8fafc;border-radius:8px}
-    .box strong{display:block;font-size:.75rem;text-transform:uppercase;color:#64748B}
-    .box span{font-size:1.4rem;font-weight:800;color:#0B2545}</style></head><body>
-    <h1>Solar Mason — System Proposal</h1>
-    <p><strong>Address:</strong> ${r.address || 'TBD'}</p>
-    <h2>System</h2>
-    <div class="grid">
-      <div class="box"><strong>System Size</strong><span>${r.systemKw.toFixed(2)} kW</span></div>
-      <div class="box"><strong>Panel Count</strong><span>${r.count} × ${r.panelW}W</span></div>
-      <div class="box"><strong>Annual Production</strong><span>${Math.round(r.annualProd).toLocaleString()} kWh</span></div>
-      <div class="box"><strong>Specific Yield</strong><span>${Math.round(r.specificYield)} kWh/kW</span></div>
-    </div>
-    <h2>Financials</h2>
-    <div class="grid">
-      <div class="box"><strong>Gross Cost</strong><span>$${Math.round(r.grossCost).toLocaleString()}</span></div>
-      <div class="box"><strong>Net Cost (after ITC${r.projectType==='commercial'?'+MACRS':''})</strong><span>$${Math.round(r.netCost).toLocaleString()}</span></div>
-      <div class="box"><strong>Year 1 Savings</strong><span>$${Math.round(r.year1Savings).toLocaleString()}</span></div>
-      <div class="box"><strong>Payback</strong><span>${r.paybackYear ? r.paybackYear.toFixed(1) + ' years' : '25+ years'}</span></div>
-      <div class="box"><strong>25-Year Savings</strong><span>$${Math.round(r.totalSavings25).toLocaleString()}</span></div>
-      <div class="box"><strong>Production Source</strong><span>${r.productionSource === 'nrel_pvwatts' ? 'NREL PVWatts' : 'Regional Est.'}</span></div>
-    </div>
-    <p style="margin-top:2rem;font-size:.8rem;color:#64748B">Solar Mason LLC · HIC-181628 · 570-MY-SOLAR · engineering@solarmason.com</p>
-    <button onclick="window.print()" style="margin-top:1rem;padding:.8rem 2rem;background:#2D82BE;color:#fff;border:none;border-radius:8px;font-size:1rem;cursor:pointer">Print / Save as PDF</button>
-    </body></html>`);
+  <style>body{font-family:-apple-system,sans-serif;max-width:800px;margin:2rem auto;padding:2rem;color:#0B2545}
+  h1{color:#2D82BE;margin:0 0 .25rem 0}h2{border-bottom:2px solid #2D82BE;padding-bottom:.3rem;margin-top:1.5rem}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin:1rem 0}
+  .box{padding:.85rem 1rem;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0}
+  .box strong{display:block;font-size:.7rem;text-transform:uppercase;color:#64748B;letter-spacing:.04em}
+  .box span{font-size:1.25rem;font-weight:800;color:#0B2545;display:block;margin-top:.2rem}
+  table{width:100%;border-collapse:collapse;margin:.5rem 0;font-size:.85rem}
+  table td{padding:.35rem .5rem;border-bottom:1px solid #e2e8f0}</style></head><body>
+  <h1>Solar Mason LLC</h1>
+  <div style="font-size:.85rem;color:#64748B">System Design Proposal · Generated ${new Date().toLocaleDateString()}</div>
+  <p style="margin-top:1rem"><strong>Project Address:</strong> ${r.address || 'TBD'}</p>
+  <h2>System Specifications</h2>
+  <div class="grid">
+    <div class="box"><strong>System Size</strong><span>${r.systemKw.toFixed(2)} kW DC</span></div>
+    <div class="box"><strong>Panel Count</strong><span>${r.count} × ${r.panelW}W</span></div>
+    <div class="box"><strong>Tilt / Azimuth</strong><span>${r.tilt}° / ${r.azimuth}°</span></div>
+    <div class="box"><strong>Annual Production</strong><span>${Math.round(r.annualProd).toLocaleString()} kWh</span></div>
+    <div class="box"><strong>Specific Yield</strong><span>${Math.round(r.specificYield)} kWh/kW</span></div>
+    <div class="box"><strong>Production Source</strong><span style="font-size:.9rem">${r.productionSource === 'nrel_pvwatts' ? 'NREL PVWatts v8' : 'Regional Est.'}</span></div>
+  </div>
+  <h2>Financial Analysis</h2>
+  <div class="grid">
+    <div class="box"><strong>Gross Cost</strong><span>$${Math.round(r.grossCost).toLocaleString()}</span></div>
+    <div class="box"><strong>Net Cost${r.projectType==='commercial'?' (ITC + MACRS)':' (after ITC)'}</strong><span>$${Math.round(r.netCost).toLocaleString()}</span></div>
+    <div class="box"><strong>Year 1 Savings</strong><span>$${Math.round(r.year1Savings).toLocaleString()}</span></div>
+    <div class="box"><strong>Simple Payback</strong><span>${r.paybackYear ? r.paybackYear.toFixed(1) + ' years' : '25+ years'}</span></div>
+    <div class="box"><strong>25-Year Savings</strong><span>$${Math.round(r.totalSavings25).toLocaleString()}</span></div>
+    <div class="box"><strong>Utility Rate</strong><span>$${r.rate.toFixed(3)}/kWh</span></div>
+  </div>
+  ${r.monthly ? `<h2>Monthly Production</h2><table><thead><tr><th>Month</th><th style="text-align:right">Production</th></tr></thead><tbody>${monthlyRows}<tr style="border-top:2px solid #2D82BE;font-weight:800"><td>Annual Total</td><td style="text-align:right">${Math.round(r.annualProd).toLocaleString()} kWh</td></tr></tbody></table>` : ''}
+  <p style="margin-top:2rem;padding-top:1rem;border-top:1px solid #e2e8f0;font-size:.75rem;color:#64748B">Solar Mason LLC · HIC-181628 · 800 James Ave, Scranton, PA 18510 · 570-MY-SOLAR · engineering@solarmason.com<br>
+  Production estimates from NREL PVWatts v8. Roof analysis from Google Solar API. Not a binding quote — subject to site survey.</p>
+  <button onclick="window.print()" style="margin-top:1rem;padding:.9rem 2rem;background:#2D82BE;color:#fff;border:none;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:700">🖨 Print / Save as PDF</button>
+  </body></html>`);
   w.document.close();
 }
 
-// Manual geocoding fallback via NREL Utility Rates API (accepts address, returns lat/lon)
-async function geocodeWithNREL(address) {
-  const params = new URLSearchParams({
-    api_key: DS_CONFIG.NREL_API_KEY,
-    address: address
-  });
-  const url = `https://developer.nrel.gov/api/utility_rates/v3.json?${params}`;
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.outputs && data.outputs.lat && data.outputs.lon) {
-      return {
-        lat: data.outputs.lat,
-        lng: data.outputs.lon,
-        utility: data.outputs.utility_name,
-        rate_res: data.outputs.residential,
-        rate_com: data.outputs.commercial
-      };
-    }
-    throw new Error('No location found');
-  } catch (e) {
-    console.error('[DS] NREL geocode failed:', e);
-    return null;
-  }
-}
+// ═════════════════════════════════════════════════════════════
+// EVENT LISTENERS
+// ═════════════════════════════════════════════════════════════
+document.getElementById('ds-slider').addEventListener('input', function() {
+  renderPanels();
+});
 
-// Hook up address input with manual Enter key trigger (until Google Places arrives)
-document.getElementById('ds-addr-input').addEventListener('keydown', async function(e) {
-  if (e.key !== 'Enter') return;
-  e.preventDefault();
-  const addr = this.value.trim();
-  if (!addr) return;
-  this.disabled = true;
-  const orig = this.value;
-
-  document.getElementById('ds-seg-status').className = 'ds-status waiting';
-  document.getElementById('ds-seg-status').textContent = 'Locating address...';
-
-  const coords = await geocodeWithNREL(addr);
-  if (coords) {
-    DS_STATE.address = addr;
-    DS_STATE.coords = { lat: coords.lat, lng: coords.lng };
-
-    // Auto-populate utility rate if we got one
-    if (coords.rate_res) {
-      document.getElementById('ds-rate').value = coords.rate_res.toFixed(3);
-    }
-
-    document.getElementById('ds-map-overlay').classList.add('show');
-    document.getElementById('ds-map-overlay').innerHTML =
-      `📍 ${addr}<br><span style="font-weight:400;font-size:.72rem">Lat: ${coords.lat.toFixed(4)}, Lng: ${coords.lng.toFixed(4)}${coords.utility ? ' · ' + coords.utility : ''}</span>`;
-
-    document.getElementById('ds-seg-status').className = 'ds-status ready';
-    document.getElementById('ds-seg-status').textContent = 'Location set — ready for calculation';
-
-    // Update map placeholder to show we have coords
-    document.getElementById('ds-map').innerHTML =
-      `<div class="ds-map-placeholder"><div class="icon">📍</div><div><strong>Location Ready</strong></div>` +
-      `<div style="font-size:.82rem">${addr}</div>` +
-      `<div style="font-size:.72rem;opacity:.7">Satellite imagery activates when Google Maps key is added. NREL PVWatts is live — click Calculate for location-specific production.</div></div>`;
-  } else {
-    document.getElementById('ds-seg-status').className = 'ds-status error';
-    document.getElementById('ds-seg-status').textContent = 'Could not locate that address';
-  }
-  this.disabled = false;
+['ds-panel-w'].forEach(id => {
+  document.getElementById(id).addEventListener('change', updateSystemStats);
 });
 
 // Initialize
 updateSystemStats();
-initGooglePlaces();
 
-// When Google Maps script loads (after key added), it will call this
 window.initGoogleMaps = function() {
-  DS_CONFIG.USE_GOOGLE_PLACES = true;
-  DS_CONFIG.USE_GOOGLE_SOLAR = true;
   initGooglePlaces();
-  document.getElementById('ds-api-banner').style.display = 'none';
 };
 </script>
 
 <script async defer
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA8cHa1iux7107r26z3zQnHHg0CPH-AC0w&libraries=places&callback=initGoogleMaps">
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA8cHa1iux7107r26z3zQnHHg0CPH-AC0w&libraries=places,drawing,geometry&callback=initGoogleMaps">
 </script>
 
 </div>
