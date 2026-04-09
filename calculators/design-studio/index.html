@@ -3985,6 +3985,46 @@ html { scroll-behavior: smooth; }
 .ds-api-banner .icon{font-size:1.4rem;flex-shrink:0}
 .ds-api-banner h4{font-size:.9rem;font-weight:700;color:#065f46;margin:0 0 .3rem 0}
 .ds-api-banner p{font-size:.82rem;color:#047857;line-height:1.5;margin:0}
+
+/* Mount Mode Toggle */
+.ds-mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:0;background:#f1f5f9;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:4px;margin-bottom:.5rem}
+.ds-mode-btn{padding:.7rem .5rem;border:none;background:transparent;font-size:.82rem;font-weight:700;color:#64748B;cursor:pointer;border-radius:8px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.4rem}
+.ds-mode-btn.active{background:#fff;color:#2D82BE;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.ds-mode-hint{font-size:.72rem;color:#64748B;line-height:1.5;padding:.4rem .2rem 0}
+
+/* Editable Segment Card */
+.ds-seg-edit{border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:.75rem;background:#fff;margin-bottom:.5rem}
+.ds-seg-edit-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+.ds-seg-edit-title{font-size:.82rem;font-weight:800;color:#0B2545}
+.ds-seg-edit-count{font-size:.68rem;color:#64748B;font-weight:600}
+.ds-seg-edit-row{display:grid;grid-template-columns:1fr 1fr auto;gap:.4rem;align-items:end}
+.ds-seg-edit-row .ds-field label{font-size:.62rem}
+.ds-seg-edit-row .ds-field input{padding:.4rem .5rem;font-size:.78rem}
+.ds-seg-edit-apply{padding:.45rem .7rem;border-radius:7px;border:1px solid rgba(45,130,190,.25);background:#fff;color:#2D82BE;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.ds-seg-edit-apply:hover{background:rgba(45,130,190,.08)}
+
+/* Ground Mode Panel */
+.ds-ground-panel{display:none}
+.ds-ground-panel.active{display:block}
+.ds-ground-btn-row{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.5rem}
+.ds-ground-btn{padding:.55rem .6rem;border-radius:8px;border:1px solid rgba(45,130,190,.2);background:#fff;color:#2D82BE;font-size:.72rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.3rem}
+.ds-ground-btn:hover:not(:disabled){background:rgba(45,130,190,.06)}
+.ds-ground-btn:disabled{opacity:.4;cursor:not-allowed}
+.ds-ground-btn.active{background:#2D82BE;color:#fff;border-color:#2D82BE}
+.ds-ground-info{font-size:.7rem;color:#64748B;line-height:1.5;padding:.5rem .65rem;background:#f8fafc;border-radius:8px;margin-top:.5rem;border-left:3px solid #2D82BE}
+
+/* Roof-only and Ground-only sections */
+.ds-roof-only{display:block}
+.ds-ground-only{display:none}
+body.ds-mode-ground .ds-roof-only{display:none}
+body.ds-mode-ground .ds-ground-only{display:block}
+
+/* Per-panel edit popup */
+.ds-panel-popup{font-size:.8rem}
+.ds-panel-popup strong{color:#0B2545}
+.ds-panel-popup .row{display:flex;gap:.4rem;align-items:center;margin-top:.4rem}
+.ds-panel-popup input{width:60px;padding:.3rem .4rem;border:1px solid rgba(0,0,0,.1);border-radius:5px;font-size:.78rem}
+.ds-panel-popup button{padding:.35rem .7rem;border-radius:5px;border:none;background:#2D82BE;color:#fff;font-size:.72rem;font-weight:700;cursor:pointer}
 </style>
 
 <div class="ds-wrap">
@@ -4000,12 +4040,22 @@ html { scroll-behavior: smooth; }
       <div class="ds-addr-hint">✅ Google Places + Google Solar + NREL PVWatts all active</div>
     </div>
 
-    <!-- Panel Slider (NEW) -->
+    <!-- Mount Mode Toggle -->
     <div class="ds-panel">
-      <h3><span class="step">2</span> Panel Layout</h3>
+      <h3><span class="step">2</span> Mount Type</h3>
+      <div class="ds-mode-toggle">
+        <button class="ds-mode-btn active" id="ds-mode-roof" onclick="setMountMode('roof')">🏠 Roof Mount</button>
+        <button class="ds-mode-btn" id="ds-mode-ground" onclick="setMountMode('ground')">🌱 Ground Mount</button>
+      </div>
+      <div class="ds-mode-hint" id="ds-mode-hint">Roof mode: auto-detects segments from Google Solar API and places panels on detected roof faces.</div>
+    </div>
+
+    <!-- Panel Layout -->
+    <div class="ds-panel">
+      <h3><span class="step">3</span> Panel Layout</h3>
       <div class="ds-status waiting" id="ds-seg-status">Awaiting roof analysis</div>
 
-      <div class="ds-slider-wrap">
+      <div class="ds-slider-wrap ds-roof-only">
         <div class="ds-slider-head">
           <label>Panels Placed</label>
           <div class="ds-slider-val"><span id="ds-slider-val">0</span><span class="unit">of <span id="ds-slider-max">0</span> max</span></div>
@@ -4021,7 +4071,29 @@ html { scroll-behavior: smooth; }
         </div>
       </div>
 
-      <div class="ds-segments" id="ds-segments">
+      <!-- Ground Mode Controls -->
+      <div class="ds-ground-only">
+        <div class="ds-ground-info">
+          <strong>Ground mount mode.</strong> Click the map to place panels. Drag placed panels to reposition. Use Duplicate Row/Column to build arrays quickly.
+        </div>
+        <div class="ds-row" style="margin-top:.6rem">
+          <div class="ds-field"><label>Default Tilt (°)</label><input type="number" id="ds-ground-tilt" value="30" min="0" max="60"></div>
+          <div class="ds-field"><label>Default Azimuth (°)</label><input type="number" id="ds-ground-az" value="180" min="0" max="360"></div>
+        </div>
+        <div class="ds-ground-btn-row">
+          <button class="ds-ground-btn" id="ds-ground-place" onclick="toggleGroundPlacement()">📍 Place Mode</button>
+          <button class="ds-ground-btn" onclick="clearGroundPanels()">🗑 Clear All</button>
+        </div>
+        <div class="ds-ground-btn-row">
+          <button class="ds-ground-btn" id="ds-dup-row" onclick="duplicateRow()" disabled>➡️ Duplicate Row</button>
+          <button class="ds-ground-btn" id="ds-dup-col" onclick="duplicateCol()" disabled>⬇️ Duplicate Col</button>
+        </div>
+        <div class="ds-ground-info" style="margin-top:.6rem;border-left-color:#f59e0b">
+          <strong>Selected panel:</strong> <span id="ds-selected-panel">None</span> — click a placed panel first, then use Duplicate Row/Col to multiply.
+        </div>
+      </div>
+
+      <div class="ds-segments ds-roof-only" id="ds-segments">
         <div style="text-align:center;padding:1rem;color:#94a3b8;font-size:.82rem">Select an address to analyze roof segments.</div>
       </div>
     </div>
@@ -4158,9 +4230,19 @@ const DS_STATE = {
   coords: null,
   map: null,
   roofSegments: [],
-  allPanels: [],        // Full array from Google Solar, sorted by energy desc
+  allPanels: [],        // Full array from Google Solar (roof mode) + manual ground panels
   activePanels: new Set(),    // Panel indices currently selected/enabled
   panelPolygons: new Map(),   // idx -> google.maps.Polygon (for in-place updates)
+  panelTiltOverride: new Map(),  // idx -> tilt degrees (per-panel override)
+  panelAzOverride: new Map(),    // idx -> azimuth degrees (per-panel override)
+  segmentTiltOverride: new Map(), // segIdx -> tilt (applied to all panels in segment)
+  segmentAzOverride: new Map(),   // segIdx -> azimuth
+  // Ground mode state
+  mountMode: 'roof',           // 'roof' or 'ground'
+  groundPlacementActive: false,
+  groundMapClickListener: null,
+  selectedGroundPanel: null,   // idx of currently selected ground panel (for duplication)
+  nextGroundIdx: 100000,       // starting idx for ground panels (separate from roof)
   renderedPanels: [],   // Legacy: all polygon instances currently on map
   disabledPanels: new Set(),  // Indices disabled by obstructions
   obstructions: [],     // google.maps.Polygon instances
@@ -4321,6 +4403,22 @@ async function fetchSolarInsights() {
     segmentIndex: p.segmentIndex || 0
   }));
 
+  // Reset overrides, ground state, and obstructions on new load
+  DS_STATE.panelTiltOverride.clear();
+  DS_STATE.panelAzOverride.clear();
+  DS_STATE.segmentTiltOverride.clear();
+  DS_STATE.segmentAzOverride.clear();
+  DS_STATE.disabledPanels.clear();
+  DS_STATE.selectedGroundPanel = null;
+  DS_STATE.nextGroundIdx = 100000;
+  if (DS_STATE.obstructions) {
+    DS_STATE.obstructions.forEach(o => o.setMap(null));
+    DS_STATE.obstructions = [];
+  }
+  document.getElementById('ds-dup-row').disabled = true;
+  document.getElementById('ds-dup-col').disabled = true;
+  document.getElementById('ds-selected-panel').textContent = 'None';
+
   // Also pre-compute a "best config" count from solarPanelConfigs
   const configs = sp.solarPanelConfigs || [];
   const bestConfig = configs.length ? configs[configs.length - 1] : null;
@@ -4364,20 +4462,33 @@ async function fetchSolarInsights() {
 // ═════════════════════════════════════════════════════════════
 function renderSegments() {
   const container = document.getElementById('ds-segments');
-  if (!DS_STATE.roofSegments.length) return;
+  if (!DS_STATE.roofSegments.length) {
+    container.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:.82rem">Select an address to analyze roof segments.</div>';
+    return;
+  }
+
+  // Count panels per segment
+  const panelsPerSeg = {};
+  for (const p of DS_STATE.allPanels) {
+    if (p.isGround) continue;
+    panelsPerSeg[p.segmentIndex] = (panelsPerSeg[p.segmentIndex] || 0) + 1;
+  }
 
   container.innerHTML = DS_STATE.roofSegments.map((s, i) => {
     const sqft = Math.round(s.areaMeters2 * 10.764);
+    const effTilt = Math.round(DS_STATE.segmentTiltOverride.get(i) ?? s.pitchDeg);
+    const effAz = Math.round(DS_STATE.segmentAzOverride.get(i) ?? s.azimuthDeg);
+    const panelCount = panelsPerSeg[i] || 0;
     return `
-      <div class="ds-seg ${i === 0 ? 'active' : ''}" onclick="selectSegment(${i})">
-        <div class="ds-seg-head">
-          <span>Segment ${i + 1}</span>
-          <span>${sqft.toLocaleString()} sq ft</span>
+      <div class="ds-seg-edit">
+        <div class="ds-seg-edit-head">
+          <span class="ds-seg-edit-title">Segment ${i + 1}</span>
+          <span class="ds-seg-edit-count">${panelCount} panels · ${sqft.toLocaleString()} sq ft · ${Math.round(s.sunshineHours).toLocaleString()} sun hrs</span>
         </div>
-        <div class="ds-seg-meta">
-          <span>${s.pitchDeg.toFixed(0)}° pitch</span>
-          <span>${s.azimuthDeg.toFixed(0)}° az</span>
-          <span>${Math.round(s.sunshineHours).toLocaleString()} sun hrs</span>
+        <div class="ds-seg-edit-row">
+          <div class="ds-field"><label>Tilt °</label><input type="number" id="ds-seg-tilt-${i}" value="${effTilt}" min="0" max="60"></div>
+          <div class="ds-field"><label>Azimuth °</label><input type="number" id="ds-seg-az-${i}" value="${effAz}" min="0" max="360"></div>
+          <button class="ds-seg-edit-apply" id="ds-seg-apply-${i}" onclick="applySegmentAngles(${i})">Apply</button>
         </div>
       </div>`;
   }).join('');
@@ -4386,9 +4497,6 @@ function renderSegments() {
 function selectSegment(idx) {
   const seg = DS_STATE.roofSegments[idx];
   if (!seg) return;
-  document.querySelectorAll('.ds-seg').forEach((el, i) => el.classList.toggle('active', i === idx));
-  document.getElementById('ds-tilt').value = Math.round(seg.pitchDeg);
-  document.getElementById('ds-azimuth').value = Math.round(seg.azimuthDeg);
   if (DS_STATE.map && seg.center) {
     DS_STATE.map.panTo({ lat: seg.center.latitude, lng: seg.center.longitude });
   }
@@ -4525,6 +4633,247 @@ function syncSliderToActive() {
   if (slider) slider.value = DS_STATE.activePanels.size;
 }
 
+// ═════════════════════════════════════════════════════════════
+// GET EFFECTIVE TILT/AZIMUTH for any panel (handles overrides)
+// ═════════════════════════════════════════════════════════════
+function getPanelAngles(panel) {
+  // Priority: per-panel override > per-segment override > segment default > global default
+  if (panel.isGround) {
+    return {
+      tilt: DS_STATE.panelTiltOverride.get(panel.idx) ?? panel.tilt ?? parseFloat(document.getElementById('ds-ground-tilt').value) ?? 30,
+      azimuth: DS_STATE.panelAzOverride.get(panel.idx) ?? panel.azimuth ?? parseFloat(document.getElementById('ds-ground-az').value) ?? 180
+    };
+  }
+  const segIdx = panel.segmentIndex;
+  const seg = DS_STATE.roofSegments[segIdx] || { pitchDeg: 25, azimuthDeg: 180 };
+  return {
+    tilt: DS_STATE.panelTiltOverride.get(panel.idx)
+          ?? DS_STATE.segmentTiltOverride.get(segIdx)
+          ?? seg.pitchDeg,
+    azimuth: DS_STATE.panelAzOverride.get(panel.idx)
+          ?? DS_STATE.segmentAzOverride.get(segIdx)
+          ?? seg.azimuthDeg
+  };
+}
+
+// ═════════════════════════════════════════════════════════════
+// MOUNT MODE SWITCHING
+// ═════════════════════════════════════════════════════════════
+function setMountMode(mode) {
+  DS_STATE.mountMode = mode;
+  document.body.classList.toggle('ds-mode-ground', mode === 'ground');
+  document.getElementById('ds-mode-roof').classList.toggle('active', mode === 'roof');
+  document.getElementById('ds-mode-ground').classList.toggle('active', mode === 'ground');
+
+  const hint = document.getElementById('ds-mode-hint');
+  if (mode === 'roof') {
+    hint.textContent = 'Roof mode: auto-detects segments from Google Solar API and places panels on detected roof faces.';
+  } else {
+    hint.textContent = 'Ground mode: click the map to place each panel. Drag to reposition. Duplicate rows or columns to build an array.';
+  }
+
+  // Turn off ground placement if switching away
+  if (mode !== 'ground' && DS_STATE.groundPlacementActive) {
+    toggleGroundPlacement();
+  }
+
+  // Update status line
+  if (mode === 'ground') {
+    setStatus('ready', 'Ground mode — click map to place panels');
+  } else if (DS_STATE.roofSegments.length) {
+    setStatus('ready', `${DS_STATE.roofSegments.length} segments · ${DS_STATE.maxPanels} max panels`);
+  } else {
+    setStatus('waiting', 'Enter an address to auto-detect roof');
+  }
+}
+
+// ═════════════════════════════════════════════════════════════
+// GROUND MODE: click to place, drag to move, duplicate
+// ═════════════════════════════════════════════════════════════
+function toggleGroundPlacement() {
+  const btn = document.getElementById('ds-ground-place');
+  DS_STATE.groundPlacementActive = !DS_STATE.groundPlacementActive;
+  if (DS_STATE.groundPlacementActive) {
+    if (!DS_STATE.map) { alert('Load an address first to see the map'); DS_STATE.groundPlacementActive = false; return; }
+    btn.classList.add('active');
+    btn.innerHTML = '🖱 Click map...';
+    DS_STATE.map.setOptions({ draggableCursor: 'crosshair' });
+    DS_STATE.groundMapClickListener = DS_STATE.map.addListener('click', (e) => {
+      placeGroundPanel({ latitude: e.latLng.lat(), longitude: e.latLng.lng() });
+    });
+  } else {
+    btn.classList.remove('active');
+    btn.innerHTML = '📍 Place Mode';
+    if (DS_STATE.map) DS_STATE.map.setOptions({ draggableCursor: null });
+    if (DS_STATE.groundMapClickListener) {
+      google.maps.event.removeListener(DS_STATE.groundMapClickListener);
+      DS_STATE.groundMapClickListener = null;
+    }
+  }
+}
+
+function placeGroundPanel(center) {
+  const tilt = parseFloat(document.getElementById('ds-ground-tilt').value) || 30;
+  const az = parseFloat(document.getElementById('ds-ground-az').value) || 180;
+  const idx = DS_STATE.nextGroundIdx++;
+
+  const panel = {
+    idx,
+    center,
+    orientation: 'LANDSCAPE',
+    yearlyEnergyDcKwh: 500, // placeholder — PVWatts will replace in calc
+    segmentIndex: -1,
+    isGround: true,
+    tilt,
+    azimuth: az
+  };
+  DS_STATE.allPanels.push(panel);
+  DS_STATE.activePanels.add(idx);
+
+  // Create draggable polygon
+  const corners = panelCorners(center, DS_STATE.panelWidthM, DS_STATE.panelHeightM, 'LANDSCAPE', az);
+  const poly = new google.maps.Polygon({
+    paths: corners,
+    clickable: true,
+    draggable: true,
+    map: DS_STATE.map
+  });
+
+  // Click to select/toggle
+  poly.addListener('click', () => {
+    if (DS_STATE.selectedGroundPanel === idx) {
+      togglePanel(idx);
+    } else {
+      selectGroundPanel(idx);
+    }
+  });
+
+  // Drag end to reposition
+  poly.addListener('dragend', () => {
+    const path = poly.getPath();
+    // Compute new centroid from dragged polygon corners
+    let latSum = 0, lngSum = 0;
+    const n = path.getLength();
+    for (let i = 0; i < n; i++) {
+      latSum += path.getAt(i).lat();
+      lngSum += path.getAt(i).lng();
+    }
+    panel.center = { latitude: latSum / n, longitude: lngSum / n };
+  });
+
+  DS_STATE.panelPolygons.set(idx, poly);
+  DS_STATE.renderedPanels.push(poly);
+  applyPanelStyle(idx);
+
+  // Update stats and slider
+  syncSliderToActive();
+  updateSliderDisplay(DS_STATE.activePanels.size);
+  updateSystemStats();
+}
+
+function selectGroundPanel(idx) {
+  DS_STATE.selectedGroundPanel = idx;
+  document.getElementById('ds-selected-panel').textContent = `Panel #${idx - 99999}`;
+  document.getElementById('ds-dup-row').disabled = false;
+  document.getElementById('ds-dup-col').disabled = false;
+  // Highlight selected
+  for (const pidx of DS_STATE.panelPolygons.keys()) applyPanelStyle(pidx);
+  const poly = DS_STATE.panelPolygons.get(idx);
+  if (poly) poly.setOptions({ strokeColor: '#f59e0b', strokeWeight: 3, zIndex: 100 });
+}
+
+function clearGroundPanels() {
+  if (!confirm('Remove all ground-placed panels?')) return;
+  const toRemove = DS_STATE.allPanels.filter(p => p.isGround).map(p => p.idx);
+  for (const idx of toRemove) {
+    const poly = DS_STATE.panelPolygons.get(idx);
+    if (poly) poly.setMap(null);
+    DS_STATE.panelPolygons.delete(idx);
+    DS_STATE.activePanels.delete(idx);
+  }
+  DS_STATE.allPanels = DS_STATE.allPanels.filter(p => !p.isGround);
+  DS_STATE.selectedGroundPanel = null;
+  document.getElementById('ds-selected-panel').textContent = 'None';
+  document.getElementById('ds-dup-row').disabled = true;
+  document.getElementById('ds-dup-col').disabled = true;
+  syncSliderToActive();
+  updateSliderDisplay(DS_STATE.activePanels.size);
+  updateSystemStats();
+}
+
+function duplicateRow() {
+  _duplicateDirection('row');
+}
+function duplicateCol() {
+  _duplicateDirection('col');
+}
+
+function _duplicateDirection(direction) {
+  if (DS_STATE.selectedGroundPanel === null) { alert('Click a panel to select it first'); return; }
+  const source = DS_STATE.allPanels.find(p => p.idx === DS_STATE.selectedGroundPanel);
+  if (!source) return;
+
+  const count = parseInt(prompt(`How many copies in ${direction === 'row' ? 'row (east)' : 'column (south)'}?`, '5')) || 0;
+  if (count <= 0) return;
+
+  // Spacing: panel width + 2 cm gap for row; panel height + 50cm gap for column (typical ground mount)
+  const spacingM = direction === 'row'
+    ? DS_STATE.panelWidthM * 1.02
+    : DS_STATE.panelHeightM * 1.3;
+
+  // Convert meters to lat/lng deltas
+  const latDelta = direction === 'col' ? -(spacingM / 111320) : 0;  // south = neg lat
+  const mPerDegLng = 111320 * Math.cos(source.center.latitude * Math.PI / 180);
+  const lngDelta = direction === 'row' ? (spacingM / mPerDegLng) : 0;  // east = pos lng
+
+  for (let i = 1; i <= count; i++) {
+    const newCenter = {
+      latitude: source.center.latitude + latDelta * i,
+      longitude: source.center.longitude + lngDelta * i
+    };
+    placeGroundPanel(newCenter);
+  }
+}
+
+// ═════════════════════════════════════════════════════════════
+// SEGMENT ANGLE EDITING
+// ═════════════════════════════════════════════════════════════
+function applySegmentAngles(segIdx) {
+  const tiltEl = document.getElementById(`ds-seg-tilt-${segIdx}`);
+  const azEl = document.getElementById(`ds-seg-az-${segIdx}`);
+  if (!tiltEl || !azEl) return;
+
+  const tilt = parseFloat(tiltEl.value);
+  const az = parseFloat(azEl.value);
+  DS_STATE.segmentTiltOverride.set(segIdx, tilt);
+  DS_STATE.segmentAzOverride.set(segIdx, az);
+
+  // Re-compute and update the polygons of panels in this segment
+  for (const p of DS_STATE.allPanels) {
+    if (p.segmentIndex !== segIdx || p.isGround) continue;
+    const poly = DS_STATE.panelPolygons.get(p.idx);
+    if (!poly) continue;
+    const corners = panelCorners(
+      p.center,
+      DS_STATE.panelWidthM,
+      DS_STATE.panelHeightM,
+      p.orientation,
+      az
+    );
+    poly.setPath(corners);
+  }
+
+  // Flash the Apply button to confirm
+  const btn = document.getElementById(`ds-seg-apply-${segIdx}`);
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Applied';
+    btn.style.background = '#10b981';
+    btn.style.color = '#fff';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; }, 1500);
+  }
+}
+
 function renderPanels() {
   if (!DS_STATE.map || !DS_STATE.allPanels.length) return;
   clearRenderedPanels();
@@ -4535,23 +4884,47 @@ function renderPanels() {
 
   // Render every panel as a clickable polygon
   for (const p of DS_STATE.allPanels) {
-    const seg = DS_STATE.roofSegments[p.segmentIndex] || { azimuthDeg: 180 };
+    const angles = getPanelAngles(p);
     const corners = panelCorners(
       p.center,
       DS_STATE.panelWidthM,
       DS_STATE.panelHeightM,
       p.orientation,
-      seg.azimuthDeg
+      angles.azimuth
     );
     const poly = new google.maps.Polygon({
       paths: corners,
       clickable: true,
+      draggable: !!p.isGround,
       map: DS_STATE.map
     });
 
     // Closure captures the panel idx
     const panelIdx = p.idx;
-    poly.addListener('click', () => togglePanel(panelIdx));
+    poly.addListener('click', () => {
+      if (p.isGround) {
+        if (DS_STATE.selectedGroundPanel === panelIdx) {
+          togglePanel(panelIdx);
+        } else {
+          selectGroundPanel(panelIdx);
+        }
+      } else {
+        togglePanel(panelIdx);
+      }
+    });
+
+    if (p.isGround) {
+      poly.addListener('dragend', () => {
+        const path = poly.getPath();
+        let latSum = 0, lngSum = 0;
+        const n = path.getLength();
+        for (let i = 0; i < n; i++) {
+          latSum += path.getAt(i).lat();
+          lngSum += path.getAt(i).lng();
+        }
+        p.center = { latitude: latSum / n, longitude: lngSum / n };
+      });
+    }
 
     DS_STATE.panelPolygons.set(panelIdx, poly);
     DS_STATE.renderedPanels.push(poly);
@@ -4729,9 +5102,7 @@ async function runDesignStudio() {
 
   try {
     const panelW = parseFloat(document.getElementById('ds-panel-w').value);
-    const count = DS_STATE.renderedPanels.length || parseInt(document.getElementById('ds-slider').value) || 20;
-    const tilt = parseFloat(document.getElementById('ds-tilt').value);
-    const azimuth = parseFloat(document.getElementById('ds-azimuth').value);
+    const count = DS_STATE.activePanels.size || parseInt(document.getElementById('ds-slider').value) || 20;
     const losses = parseFloat(document.getElementById('ds-losses').value);
     const arrayType = parseInt(document.getElementById('ds-array').value);
     const cpw = parseFloat(document.getElementById('ds-cpw').value);
@@ -4743,9 +5114,60 @@ async function runDesignStudio() {
     const systemKw = (panelW * count) / 1000;
     const systemWatts = panelW * count;
 
-    const pv = await fetchPVWatts(systemKw, tilt, azimuth, losses, arrayType);
-    const annualProd = pv.ac_annual;
-    const specificYield = annualProd / systemKw;
+    // Group active panels by (tilt, azimuth) for multi-angle PVWatts
+    const groups = new Map(); // key="tilt_az" -> { tilt, azimuth, count }
+    if (DS_STATE.activePanels.size > 0) {
+      for (const p of DS_STATE.allPanels) {
+        if (!DS_STATE.activePanels.has(p.idx)) continue;
+        const angles = getPanelAngles(p);
+        const key = `${Math.round(angles.tilt)}_${Math.round(angles.azimuth)}`;
+        if (!groups.has(key)) {
+          groups.set(key, { tilt: angles.tilt, azimuth: angles.azimuth, count: 0 });
+        }
+        groups.get(key).count++;
+      }
+    } else {
+      // Fallback: single group with form inputs
+      const tilt = parseFloat(document.getElementById('ds-tilt').value);
+      const az = parseFloat(document.getElementById('ds-azimuth').value);
+      groups.set(`${tilt}_${az}`, { tilt, azimuth: az, count });
+    }
+
+    // Call PVWatts for each unique (tilt,az) group in parallel and sum results
+    let annualProd = 0;
+    let acMonthly = null;
+    let stationInfo = null;
+    let productionSource = 'regional_estimate';
+
+    const groupPromises = [];
+    for (const g of groups.values()) {
+      const groupKw = (panelW * g.count) / 1000;
+      if (groupKw <= 0) continue;
+      groupPromises.push(
+        fetchPVWatts(groupKw, g.tilt, g.azimuth, losses, arrayType)
+          .then(res => ({ res, kw: groupKw, group: g }))
+      );
+    }
+    const groupResults = await Promise.all(groupPromises);
+    for (const { res } of groupResults) {
+      annualProd += res.ac_annual || 0;
+      if (res.ac_monthly) {
+        if (!acMonthly) acMonthly = res.ac_monthly.slice();
+        else acMonthly = acMonthly.map((v, i) => v + res.ac_monthly[i]);
+      }
+      if (res.station) stationInfo = res.station;
+      if (res.source === 'nrel_pvwatts') productionSource = 'nrel_pvwatts';
+    }
+
+    const pv = {
+      ac_annual: annualProd,
+      ac_monthly: acMonthly,
+      source: productionSource,
+      station: stationInfo,
+      groupCount: groups.size
+    };
+
+    const specificYield = systemKw ? annualProd / systemKw : 0;
 
     const grossCost = systemWatts * cpw;
     let netCost = grossCost * (1 - itcPct);
