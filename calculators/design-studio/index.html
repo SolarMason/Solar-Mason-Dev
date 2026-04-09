@@ -3970,11 +3970,11 @@ html { scroll-behavior: smooth; }
 </style>
 
 <!-- ═══ API STATUS BANNER ═══ -->
-<div class="ds-api-banner" id="ds-api-banner">
-  <div class="icon">⚙️</div>
+<div class="ds-api-banner" id="ds-api-banner" style="background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(16,185,129,.02));border-color:rgba(16,185,129,.25)">
+  <div class="icon">✅</div>
   <div>
-    <h4>Design Studio — Awaiting API Keys</h4>
-    <p>This tool is fully built and ready to activate. All UI, financial calculations, and stub API functions are in place. Once NREL + Google Maps/Solar API keys are added to the config at the top of this page, the full modeling workflow will activate instantly.</p>
+    <h4 style="color:#065f46">NREL PVWatts Active · Awaiting Google Maps Key</h4>
+    <p style="color:#047857">Live NREL PVWatts v8 integration is active — type an address + hit Enter to geocode via NREL, then Calculate for location-specific production + utility rate. Satellite imagery and automatic roof detection will activate once the Google Maps/Solar API key is added.</p>
   </div>
 </div>
 
@@ -3987,9 +3987,9 @@ html { scroll-behavior: smooth; }
     <div class="ds-panel" style="margin-bottom:1rem">
       <h3><span class="step">1</span> Project Address</h3>
       <div class="ds-addr">
-        <input type="text" id="ds-addr-input" placeholder="Enter address..." autocomplete="off">
+        <input type="text" id="ds-addr-input" placeholder="Enter address + press Enter..." autocomplete="off">
       </div>
-      <div class="ds-addr-hint">Google Places autocomplete will activate when API key is added.</div>
+      <div class="ds-addr-hint">✅ NREL geocoding + utility rate lookup active. Google Places autocomplete arrives with Google key.</div>
     </div>
 
     <!-- Step 2: Roof Segments -->
@@ -4125,13 +4125,13 @@ html { scroll-behavior: smooth; }
 // API CONFIGURATION — REPLACE THESE VALUES WHEN KEYS ARRIVE
 // ═════════════════════════════════════════════════════════════
 const DS_CONFIG = {
-  NREL_API_KEY: 'REPLACE_WITH_NREL_KEY',
+  NREL_API_KEY: '0PGhcfmSpiSOCwOReHNneLzVlOh3BrF3zV4F5GoW',
   GOOGLE_MAPS_KEY: 'REPLACE_WITH_GOOGLE_KEY',
 
   // Feature flags — flip to true once keys are live
   USE_GOOGLE_PLACES: false,
   USE_GOOGLE_SOLAR: false,
-  USE_NREL_PVWATTS: false,
+  USE_NREL_PVWATTS: true,
 
   // PVWatts defaults
   PVWATTS_VERSION: 'v8',
@@ -4280,8 +4280,8 @@ function selectSegment(idx) {
 // STUB 4: NREL PVWatts v8 - Production Estimate
 // ═════════════════════════════════════════════════════════════
 async function fetchPVWatts(systemKw, tilt, azimuth, losses, arrayType) {
-  if (!DS_CONFIG.USE_NREL_PVWATTS || !DS_STATE.coords) {
-    // Fallback to regional average if no API
+  // No location yet? Use NEPA regional average as fallback
+  if (!DS_STATE.coords) {
     const nepaFactor = 1275;
     return {
       ac_annual: systemKw * nepaFactor,
@@ -4290,31 +4290,46 @@ async function fetchPVWatts(systemKw, tilt, azimuth, losses, arrayType) {
     };
   }
 
-  // TODO: When key arrives, call PVWatts v8
-  // const params = new URLSearchParams({
-  //   api_key: DS_CONFIG.NREL_API_KEY,
-  //   lat: DS_STATE.coords.lat,
-  //   lon: DS_STATE.coords.lng,
-  //   system_capacity: systemKw,
-  //   azimuth: azimuth,
-  //   tilt: tilt,
-  //   array_type: arrayType,
-  //   module_type: DS_CONFIG.MODULE_TYPE,
-  //   losses: losses,
-  //   timeframe: 'monthly'
-  // });
-  //
-  // const url = `https://developer.nrel.gov/api/pvwatts/${DS_CONFIG.PVWATTS_VERSION}.json?${params}`;
-  // const res = await fetch(url);
-  // const data = await res.json();
-  //
-  // return {
-  //   ac_annual: data.outputs.ac_annual,
-  //   ac_monthly: data.outputs.ac_monthly,
-  //   solrad_annual: data.outputs.solrad_annual,
-  //   capacity_factor: data.outputs.capacity_factor,
-  //   source: 'nrel_pvwatts'
-  // };
+  // LIVE: Call NREL PVWatts v8
+  const params = new URLSearchParams({
+    api_key: DS_CONFIG.NREL_API_KEY,
+    lat: DS_STATE.coords.lat,
+    lon: DS_STATE.coords.lng,
+    system_capacity: systemKw,
+    azimuth: azimuth,
+    tilt: tilt,
+    array_type: arrayType,
+    module_type: DS_CONFIG.MODULE_TYPE,
+    losses: losses,
+    timeframe: 'monthly'
+  });
+
+  try {
+    const url = `https://developer.nrel.gov/api/pvwatts/${DS_CONFIG.PVWATTS_VERSION}.json?${params}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.errors && data.errors.length) {
+      console.error('[DS] PVWatts errors:', data.errors);
+      throw new Error(data.errors[0]);
+    }
+
+    return {
+      ac_annual: data.outputs.ac_annual,
+      ac_monthly: data.outputs.ac_monthly,
+      solrad_annual: data.outputs.solrad_annual,
+      capacity_factor: data.outputs.capacity_factor,
+      source: 'nrel_pvwatts',
+      station: data.station_info ? data.station_info.city + ', ' + data.station_info.state : null
+    };
+  } catch (e) {
+    console.error('[DS] PVWatts fetch failed, using regional estimate:', e);
+    return {
+      ac_annual: systemKw * 1275,
+      solrad_annual: 4.8,
+      source: 'regional_estimate_fallback'
+    };
+  }
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -4458,6 +4473,73 @@ function exportProposal() {
     </body></html>`);
   w.document.close();
 }
+
+// Manual geocoding fallback via NREL Utility Rates API (accepts address, returns lat/lon)
+async function geocodeWithNREL(address) {
+  const params = new URLSearchParams({
+    api_key: DS_CONFIG.NREL_API_KEY,
+    address: address
+  });
+  const url = `https://developer.nrel.gov/api/utility_rates/v3.json?${params}`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.outputs && data.outputs.lat && data.outputs.lon) {
+      return {
+        lat: data.outputs.lat,
+        lng: data.outputs.lon,
+        utility: data.outputs.utility_name,
+        rate_res: data.outputs.residential,
+        rate_com: data.outputs.commercial
+      };
+    }
+    throw new Error('No location found');
+  } catch (e) {
+    console.error('[DS] NREL geocode failed:', e);
+    return null;
+  }
+}
+
+// Hook up address input with manual Enter key trigger (until Google Places arrives)
+document.getElementById('ds-addr-input').addEventListener('keydown', async function(e) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const addr = this.value.trim();
+  if (!addr) return;
+  this.disabled = true;
+  const orig = this.value;
+
+  document.getElementById('ds-seg-status').className = 'ds-status waiting';
+  document.getElementById('ds-seg-status').textContent = 'Locating address...';
+
+  const coords = await geocodeWithNREL(addr);
+  if (coords) {
+    DS_STATE.address = addr;
+    DS_STATE.coords = { lat: coords.lat, lng: coords.lng };
+
+    // Auto-populate utility rate if we got one
+    if (coords.rate_res) {
+      document.getElementById('ds-rate').value = coords.rate_res.toFixed(3);
+    }
+
+    document.getElementById('ds-map-overlay').classList.add('show');
+    document.getElementById('ds-map-overlay').innerHTML =
+      `📍 ${addr}<br><span style="font-weight:400;font-size:.72rem">Lat: ${coords.lat.toFixed(4)}, Lng: ${coords.lng.toFixed(4)}${coords.utility ? ' · ' + coords.utility : ''}</span>`;
+
+    document.getElementById('ds-seg-status').className = 'ds-status ready';
+    document.getElementById('ds-seg-status').textContent = 'Location set — ready for calculation';
+
+    // Update map placeholder to show we have coords
+    document.getElementById('ds-map').innerHTML =
+      `<div class="ds-map-placeholder"><div class="icon">📍</div><div><strong>Location Ready</strong></div>` +
+      `<div style="font-size:.82rem">${addr}</div>` +
+      `<div style="font-size:.72rem;opacity:.7">Satellite imagery activates when Google Maps key is added. NREL PVWatts is live — click Calculate for location-specific production.</div></div>`;
+  } else {
+    document.getElementById('ds-seg-status').className = 'ds-status error';
+    document.getElementById('ds-seg-status').textContent = 'Could not locate that address';
+  }
+  this.disabled = false;
+});
 
 // Initialize
 updateSystemStats();
