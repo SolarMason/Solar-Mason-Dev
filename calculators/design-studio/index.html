@@ -4016,6 +4016,9 @@ html { scroll-behavior: smooth; }
           <span id="ds-slider-pct">Fill % will show here</span>
           <span id="ds-slider-maxlabel">0</span>
         </div>
+        <div style="font-size:.72rem;color:#64748B;margin-top:.65rem;padding-top:.65rem;border-top:1px solid rgba(45,130,190,.1);line-height:1.45">
+          💡 <strong>Tap any panel on the map</strong> to add or remove it individually. Grey outlines are inactive panels you can click to activate.
+        </div>
       </div>
 
       <div class="ds-segments" id="ds-segments">
@@ -4156,7 +4159,9 @@ const DS_STATE = {
   map: null,
   roofSegments: [],
   allPanels: [],        // Full array from Google Solar, sorted by energy desc
-  renderedPanels: [],   // google.maps.Polygon instances currently on map
+  activePanels: new Set(),    // Panel indices currently selected/enabled
+  panelPolygons: new Map(),   // idx -> google.maps.Polygon (for in-place updates)
+  renderedPanels: [],   // Legacy: all polygon instances currently on map
   disabledPanels: new Set(),  // Indices disabled by obstructions
   obstructions: [],     // google.maps.Polygon instances
   drawingManager: null,
@@ -4329,6 +4334,16 @@ async function fetchSolarInsights() {
   slider.max = DS_STATE.maxPanels;
   slider.value = suggestedCount;
   DS_STATE.selectedCount = suggestedCount;
+
+  // Initialize activePanels to top N panels by energy (excluding obstructed ones)
+  DS_STATE.activePanels.clear();
+  let added = 0;
+  for (const p of DS_STATE.allPanels) {
+    if (added >= suggestedCount) break;
+    if (DS_STATE.disabledPanels.has(p.idx)) continue;
+    DS_STATE.activePanels.add(p.idx);
+    added++;
+  }
   document.getElementById('ds-slider-max').textContent = DS_STATE.maxPanels.toLocaleString();
   document.getElementById('ds-slider-maxlabel').textContent = DS_STATE.maxPanels.toLocaleString();
 
@@ -4450,32 +4465,76 @@ function panelCorners(center, widthM, heightM, orientation, azimuthDeg) {
 function clearRenderedPanels() {
   DS_STATE.renderedPanels.forEach(p => p.setMap(null));
   DS_STATE.renderedPanels = [];
+  DS_STATE.panelPolygons.clear();
+}
+
+function applyPanelStyle(idx) {
+  const poly = DS_STATE.panelPolygons.get(idx);
+  if (!poly) return;
+  const isActive = DS_STATE.activePanels.has(idx);
+  const isDisabled = DS_STATE.disabledPanels.has(idx);
+  const panel = DS_STATE.allPanels[idx];
+
+  if (isDisabled) {
+    poly.setOptions({
+      strokeColor: '#dc2626',
+      strokeOpacity: 0.6,
+      strokeWeight: 1,
+      fillColor: '#dc2626',
+      fillOpacity: 0.15,
+      zIndex: 40
+    });
+  } else if (isActive) {
+    const color = energyToColor(panel.yearlyEnergyDcKwh, DS_STATE.energyMin, DS_STATE.energyMax);
+    poly.setOptions({
+      strokeColor: '#0B2545',
+      strokeOpacity: 0.9,
+      strokeWeight: 1.2,
+      fillColor: color,
+      fillOpacity: 0.85,
+      zIndex: 55
+    });
+  } else {
+    // Inactive but clickable — ghost outline
+    poly.setOptions({
+      strokeColor: '#94a3b8',
+      strokeOpacity: 0.6,
+      strokeWeight: 0.8,
+      fillColor: '#cbd5e1',
+      fillOpacity: 0.18,
+      zIndex: 45
+    });
+  }
+}
+
+function togglePanel(idx) {
+  if (DS_STATE.disabledPanels.has(idx)) return;  // can't toggle obstructed panels
+  if (DS_STATE.activePanels.has(idx)) {
+    DS_STATE.activePanels.delete(idx);
+  } else {
+    DS_STATE.activePanels.add(idx);
+  }
+  applyPanelStyle(idx);
+  syncSliderToActive();
+  updateSliderDisplay(DS_STATE.activePanels.size);
+  updateSystemStats();
+}
+
+function syncSliderToActive() {
+  const slider = document.getElementById('ds-slider');
+  if (slider) slider.value = DS_STATE.activePanels.size;
 }
 
 function renderPanels() {
   if (!DS_STATE.map || !DS_STATE.allPanels.length) return;
   clearRenderedPanels();
 
-  const count = parseInt(document.getElementById('ds-slider').value) || 0;
+  // Compute energy range across ALL panels (so colors stay stable)
+  DS_STATE.energyMin = Math.min(...DS_STATE.allPanels.map(p => p.yearlyEnergyDcKwh));
+  DS_STATE.energyMax = Math.max(...DS_STATE.allPanels.map(p => p.yearlyEnergyDcKwh));
 
-  // Take top `count` panels that aren't disabled by obstructions
-  const active = [];
+  // Render every panel as a clickable polygon
   for (const p of DS_STATE.allPanels) {
-    if (active.length >= count) break;
-    if (DS_STATE.disabledPanels.has(p.idx)) continue;
-    active.push(p);
-  }
-
-  if (!active.length) {
-    updateSliderDisplay(0);
-    updateSystemStats();
-    return;
-  }
-
-  const minE = Math.min(...active.map(p => p.yearlyEnergyDcKwh));
-  const maxE = Math.max(...active.map(p => p.yearlyEnergyDcKwh));
-
-  for (const p of active) {
     const seg = DS_STATE.roofSegments[p.segmentIndex] || { azimuthDeg: 180 };
     const corners = panelCorners(
       p.center,
@@ -4484,26 +4543,29 @@ function renderPanels() {
       p.orientation,
       seg.azimuthDeg
     );
-    const color = energyToColor(p.yearlyEnergyDcKwh, minE, maxE);
     const poly = new google.maps.Polygon({
       paths: corners,
-      strokeColor: '#0B2545',
-      strokeOpacity: 0.7,
-      strokeWeight: 0.8,
-      fillColor: color,
-      fillOpacity: 0.85,
-      clickable: false,
-      map: DS_STATE.map,
-      zIndex: 50
+      clickable: true,
+      map: DS_STATE.map
     });
+
+    // Closure captures the panel idx
+    const panelIdx = p.idx;
+    poly.addListener('click', () => togglePanel(panelIdx));
+
+    DS_STATE.panelPolygons.set(panelIdx, poly);
     DS_STATE.renderedPanels.push(poly);
+
+    // Apply initial style based on active/disabled state
+    applyPanelStyle(panelIdx);
   }
 
-  // Update legend
-  document.getElementById('ds-legend-min').textContent = Math.round(minE);
-  document.getElementById('ds-legend-max').textContent = Math.round(maxE);
+  // Update legend with global energy range
+  document.getElementById('ds-legend-min').textContent = Math.round(DS_STATE.energyMin);
+  document.getElementById('ds-legend-max').textContent = Math.round(DS_STATE.energyMax);
 
-  updateSliderDisplay(active.length);
+  syncSliderToActive();
+  updateSliderDisplay(DS_STATE.activePanels.size);
   updateSystemStats();
 }
 
@@ -4545,11 +4607,18 @@ function applyObstructions() {
     for (const obst of DS_STATE.obstructions) {
       if (google.maps.geometry.poly.containsLocation(latLng, obst)) {
         DS_STATE.disabledPanels.add(panel.idx);
+        DS_STATE.activePanels.delete(panel.idx);
         break;
       }
     }
   }
-  renderPanels();
+  // Update styles in place for every panel
+  for (const idx of DS_STATE.panelPolygons.keys()) {
+    applyPanelStyle(idx);
+  }
+  syncSliderToActive();
+  updateSliderDisplay(DS_STATE.activePanels.size);
+  updateSystemStats();
 }
 
 function clearObstructions() {
@@ -4557,7 +4626,12 @@ function clearObstructions() {
   DS_STATE.obstructions = [];
   DS_STATE.disabledPanels.clear();
   updateObstructionList();
-  renderPanels();
+  // Update styles in place for every panel
+  for (const idx of DS_STATE.panelPolygons.keys()) {
+    applyPanelStyle(idx);
+  }
+  updateSliderDisplay(DS_STATE.activePanels.size);
+  updateSystemStats();
 }
 
 function updateObstructionList() {
@@ -4576,7 +4650,7 @@ function updateObstructionList() {
 // ═════════════════════════════════════════════════════════════
 function updateSystemStats() {
   const panelW = parseFloat(document.getElementById('ds-panel-w').value);
-  const count = DS_STATE.renderedPanels.length;
+  const count = DS_STATE.activePanels.size;
   const systemKw = (panelW * count) / 1000;
   document.getElementById('ds-kw').innerHTML = systemKw.toFixed(2) + '<span class="ds-stat-unit">kW DC</span>';
   document.getElementById('ds-active-count').innerHTML = count.toLocaleString() + '<span class="ds-stat-unit">panels</span>';
@@ -4838,7 +4912,22 @@ function exportProposal() {
 // EVENT LISTENERS
 // ═════════════════════════════════════════════════════════════
 document.getElementById('ds-slider').addEventListener('input', function() {
-  renderPanels();
+  const target = parseInt(this.value) || 0;
+  // Rebuild active set as top N panels by energy, excluding obstructed ones
+  DS_STATE.activePanels.clear();
+  let added = 0;
+  for (const p of DS_STATE.allPanels) {
+    if (added >= target) break;
+    if (DS_STATE.disabledPanels.has(p.idx)) continue;
+    DS_STATE.activePanels.add(p.idx);
+    added++;
+  }
+  // Update styles of all rendered panels in place
+  for (const idx of DS_STATE.panelPolygons.keys()) {
+    applyPanelStyle(idx);
+  }
+  updateSliderDisplay(DS_STATE.activePanels.size);
+  updateSystemStats();
 });
 
 ['ds-panel-w'].forEach(id => {
