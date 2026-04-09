@@ -4592,27 +4592,33 @@ async function render3DPanels() {
 
     const angles = getPanelAngles(p);
     const tiltRad = Cesium.Math.toRadians(angles.tilt);
-    // Cesium azimuth convention: heading is CW from north
-    // Google Solar azimuth is also CW from north — matches
+    // Heading = compass azimuth the panel faces (CW from north).
+    // Google Solar + Cesium both use this convention.
     const headingRad = Cesium.Math.toRadians(angles.azimuth);
 
-    // Position slightly above the roof to avoid z-fighting
+    // Position: center of the panel, snug on the roof (tiny offset to avoid z-fighting)
     const position = Cesium.Cartesian3.fromDegrees(
       p.center.longitude,
       p.center.latitude,
-      h + 0.15
+      h + 0.04
     );
 
-    // Build orientation: panel tilted back FROM the azimuth direction.
-    // Heading pitches the local frame, then pitch rotates panel up.
-    // Panel is a flat box; we rotate around the axis perpendicular to azimuth
-    // so the panel face tilts toward sun.
-    const hpr = new Cesium.HeadingPitchRoll(
-      headingRad,
-      -tiltRad,  // pitch up by tilt degrees
-      0
-    );
+    // Orientation math:
+    // 1) Heading (around -Z) rotates the local frame so +Y points toward the azimuth
+    //    direction (downhill). After this, +X is the ACROSS-slope axis and +Y is the
+    //    fall-line pointing downhill.
+    // 2) Roll (around +X, the across-slope axis) tilts the panel: negative roll drops
+    //    the downhill end and raises the uphill end, so the panel face matches the roof
+    //    plane. Pitch would have rotated around the WRONG axis (tilting sideways).
+    const hpr = new Cesium.HeadingPitchRoll(headingRad, 0, -tiltRad);
     const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+
+    // Dimensions: local X = across-slope (panel WIDTH), local Y = along fall line
+    // (panel LENGTH). Respect PORTRAIT/LANDSCAPE so the long edge sits along the
+    // correct axis.
+    const isLandscape = p.orientation === 'LANDSCAPE';
+    const dimX = isLandscape ? DS_STATE.panelHeightM : DS_STATE.panelWidthM;
+    const dimY = isLandscape ? DS_STATE.panelWidthM : DS_STATE.panelHeightM;
 
     // Energy-based color (same heat map as 2D)
     const color = energyToColor(p.yearlyEnergyDcKwh, DS_STATE.energyMin, DS_STATE.energyMax);
@@ -4622,11 +4628,7 @@ async function render3DPanels() {
       position: position,
       orientation: orientation,
       box: {
-        dimensions: new Cesium.Cartesian3(
-          DS_STATE.panelHeightM,  // length — oriented along the tilt direction
-          DS_STATE.panelWidthM,   // width
-          0.04                    // thin (4 cm thick)
-        ),
+        dimensions: new Cesium.Cartesian3(dimX, dimY, 0.035),
         material: cesiumColor,
         outline: true,
         outlineColor: Cesium.Color.fromCssColorString('#0B2545').withAlpha(0.9)
