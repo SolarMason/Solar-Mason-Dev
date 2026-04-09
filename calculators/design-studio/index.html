@@ -4183,6 +4183,12 @@ body.ds-mode-ground .ds-ground-only{display:block}
             <div style="font-size:.78rem;opacity:.7;max-width:320px">Satellite imagery, automatic roof detection, and panel placement will load once you select an address.</div>
           </div>
         </div>
+        <div id="ds-cesium" style="display:none;position:absolute;inset:0;width:100%;height:100%"></div>
+        <div id="ds-cesium-loading" style="display:none;position:absolute;inset:0;background:rgba(15,23,42,.85);color:#fff;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:.75rem;text-align:center;padding:2rem">
+          <div style="font-size:2.5rem">🌍</div>
+          <div style="font-weight:700;font-size:1rem" id="ds-cesium-status">Loading Cesium + Google 3D Tiles…</div>
+          <div style="font-size:.78rem;opacity:.75;max-width:380px" id="ds-cesium-hint">First load: ~2 MB library + 3D tile fetch. Subsequent toggles are instant.</div>
+        </div>
         <div class="ds-map-overlay" id="ds-map-overlay"></div>
         <div class="ds-legend" id="ds-legend">
           <div class="ds-legend-title">Panel Energy (kWh/yr)</div>
@@ -4246,6 +4252,12 @@ const DS_STATE = {
   groundMapClickListener: null,
   selectedGroundPanel: null,   // idx of currently selected ground panel (for duplication)
   nextGroundIdx: 100000,       // starting idx for ground panels (separate from roof)
+  // Cesium 3D state
+  cesiumLoadPromise: null,
+  cesiumViewer: null,
+  cesiumTileset: null,
+  cesiumMode: false,
+  panel3DEntities: [],
   renderedPanels: [],   // Legacy: all polygon instances currently on map
   disabledPanels: new Set(),  // Indices disabled by obstructions
   obstructions: [],     // google.maps.Polygon instances
@@ -4297,25 +4309,21 @@ function initMap() {
     center: DS_STATE.coords,
     zoom: 21,
     mapTypeId: 'satellite',
-    tilt: 45,              // attempt 3D — no-op when location has no 3D imagery
+    tilt: 0,
     heading: 0,
-    rotateControl: true,   // let the user rotate + tilt
+    rotateControl: false,
     streetViewControl: false,
     fullscreenControl: true,
     mapTypeControl: true
   });
 
-  // After map loads, check whether 3D is actually being honored
-  google.maps.event.addListenerOnce(DS_STATE.map, 'idle', () => {
-    const actualTilt = DS_STATE.map.getTilt();
-    DS_STATE.has3D = actualTilt > 0;
-    const btn = document.getElementById('ds-view-toggle');
-    if (btn) {
-      btn.style.display = 'inline-flex';
-      btn.textContent = DS_STATE.has3D ? '🔲 Flatten (2D)' : '🔲 3D Unavailable';
-      btn.disabled = !DS_STATE.has3D;
-    }
-  });
+  // Enable the 3D toggle button now that the map is up
+  const vbtn = document.getElementById('ds-view-toggle');
+  if (vbtn) {
+    vbtn.style.display = 'inline-flex';
+    vbtn.textContent = '🌍 View True 3D';
+    vbtn.disabled = false;
+  }
 
   new google.maps.Marker({
     position: DS_STATE.coords,
@@ -4361,22 +4369,252 @@ function initMap() {
 }
 
 function toggleMapView() {
-  if (!DS_STATE.map) return;
   const btn = document.getElementById('ds-view-toggle');
-  const current = DS_STATE.map.getTilt();
-  if (current > 0) {
-    DS_STATE.map.setTilt(0);
-    if (btn) btn.textContent = '🧊 View 3D';
-  } else {
-    DS_STATE.map.setTilt(45);
+  if (DS_STATE.cesiumMode) {
+    // Switch back to 2D
+    document.getElementById('ds-cesium').style.display = 'none';
+    document.getElementById('ds-map').style.display = 'block';
+    if (btn) btn.textContent = '🌍 View True 3D';
+    DS_STATE.cesiumMode = false;
+    // Trigger map resize after it's visible again
     setTimeout(() => {
-      if (DS_STATE.map.getTilt() > 0) {
-        if (btn) btn.textContent = '🔲 Flatten (2D)';
-      } else {
-        if (btn) { btn.textContent = '🔲 3D Unavailable'; btn.disabled = true; }
-      }
-    }, 300);
+      if (DS_STATE.map) google.maps.event.trigger(DS_STATE.map, 'resize');
+    }, 50);
+    return;
   }
+  // Switch to 3D — lazy-load Cesium first
+  enterCesium3D();
+}
+
+async function enterCesium3D() {
+  if (!DS_STATE.coords) { alert('Load an address first'); return; }
+  const mapDiv = document.getElementById('ds-map');
+  const cesDiv = document.getElementById('ds-cesium');
+  const loadingDiv = document.getElementById('ds-cesium-loading');
+  const btn = document.getElementById('ds-view-toggle');
+
+  loadingDiv.style.display = 'flex';
+  loadingDiv.style.alignItems = 'center';
+  loadingDiv.style.justifyContent = 'center';
+
+  try {
+    await loadCesium();
+    document.getElementById('ds-cesium-status').textContent = 'Initializing 3D viewer…';
+    if (!DS_STATE.cesiumViewer) {
+      await initCesium();
+    } else {
+      // Re-fly to current coords
+      const height = 120;
+      DS_STATE.cesiumViewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(DS_STATE.coords.lng, DS_STATE.coords.lat, height),
+        orientation: { heading: 0, pitch: Cesium.Math.toRadians(-35), roll: 0 },
+        duration: 1.2
+      });
+    }
+
+    mapDiv.style.display = 'none';
+    cesDiv.style.display = 'block';
+    DS_STATE.cesiumMode = true;
+    if (btn) btn.textContent = '🗺 Back to 2D';
+
+    document.getElementById('ds-cesium-status').textContent = 'Loading Google 3D tiles…';
+    // Give tiles a moment to populate around the target before placing panels
+    setTimeout(async () => {
+      document.getElementById('ds-cesium-status').textContent = 'Placing panels on roof…';
+      try {
+        await render3DPanels();
+        loadingDiv.style.display = 'none';
+      } catch (e) {
+        document.getElementById('ds-cesium-status').textContent = '⚠ Could not place panels on roof';
+        document.getElementById('ds-cesium-hint').textContent = e.message || 'Sampling the 3D surface failed. The location may not have Photorealistic 3D Tile coverage.';
+        console.error('[DS] 3D panels error:', e);
+      }
+    }, 2000);
+  } catch (e) {
+    console.error('[DS] Cesium load/init error:', e);
+    document.getElementById('ds-cesium-status').textContent = '⚠ 3D load failed';
+    document.getElementById('ds-cesium-hint').textContent = (e.message || String(e)) + ' — make sure the Map Tiles API is enabled on your Google Cloud project.';
+  }
+}
+
+// ═════════════════════════════════════════════════════════════
+// CESIUM LAZY LOADER
+// ═════════════════════════════════════════════════════════════
+function loadCesium() {
+  if (window.Cesium) return Promise.resolve();
+  if (DS_STATE.cesiumLoadPromise) return DS_STATE.cesiumLoadPromise;
+
+  DS_STATE.cesiumLoadPromise = new Promise((resolve, reject) => {
+    const version = '1.123';
+    const base = `https://cesium.com/downloads/cesiumjs/releases/${version}/Build/Cesium/`;
+    window.CESIUM_BASE_URL = base;
+
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = base + 'Widgets/widgets.css';
+    document.head.appendChild(css);
+
+    const script = document.createElement('script');
+    script.src = base + 'Cesium.js';
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Could not load Cesium from CDN'));
+    document.head.appendChild(script);
+  });
+  return DS_STATE.cesiumLoadPromise;
+}
+
+// ═════════════════════════════════════════════════════════════
+// CESIUM INIT + GOOGLE PHOTOREALISTIC 3D TILES
+// ═════════════════════════════════════════════════════════════
+async function initCesium() {
+  // We don't use Ion-hosted assets — Google 3D Tiles come direct from Google.
+  // An empty token prevents the "no token" warning without requiring Ion signup.
+  Cesium.Ion.defaultAccessToken = '';
+
+  const viewer = new Cesium.Viewer('ds-cesium', {
+    baseLayer: false,           // no base imagery — 3D tiles cover everything
+    baseLayerPicker: false,
+    geocoder: false,
+    homeButton: false,
+    sceneModePicker: false,
+    navigationHelpButton: false,
+    animation: false,
+    timeline: false,
+    fullscreenButton: true,
+    infoBox: false,
+    selectionIndicator: false,
+    requestRenderMode: true,
+    creditContainer: document.createElement('div')
+  });
+
+  // Hide the default blue globe — 3D tiles will cover it
+  viewer.scene.globe.show = false;
+  viewer.scene.skyAtmosphere.show = false;
+  viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#e2e8f0');
+
+  // Load Google Photorealistic 3D Tiles
+  try {
+    const tileset = await Cesium.createGooglePhotorealistic3DTileset({
+      key: DS_CONFIG.GOOGLE_MAPS_KEY,
+      showCreditsOnScreen: true  // Google requires attribution
+    });
+    viewer.scene.primitives.add(tileset);
+    DS_STATE.cesiumTileset = tileset;
+  } catch (e) {
+    throw new Error('Failed to load Google 3D Tiles — confirm Map Tiles API is enabled: ' + (e.message || e));
+  }
+
+  // Fly to the project location
+  const targetHeight = 130;
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(DS_STATE.coords.lng, DS_STATE.coords.lat, targetHeight),
+    orientation: {
+      heading: 0,
+      pitch: Cesium.Math.toRadians(-40),
+      roll: 0
+    },
+    duration: 0
+  });
+
+  DS_STATE.cesiumViewer = viewer;
+  DS_STATE.panel3DEntities = [];
+}
+
+// ═════════════════════════════════════════════════════════════
+// RENDER ACTIVE PANELS AS 3D MESHES ON THE ROOF
+// ═════════════════════════════════════════════════════════════
+async function render3DPanels() {
+  if (!DS_STATE.cesiumViewer || !DS_STATE.cesiumMode) return;
+  clear3DPanels();
+
+  const viewer = DS_STATE.cesiumViewer;
+  const scene = viewer.scene;
+
+  // Collect active panels + their cartographic positions
+  const active = DS_STATE.allPanels.filter(p => DS_STATE.activePanels.has(p.idx));
+  if (!active.length) return;
+
+  // Build array of Cartographic positions to clamp (at ground height first)
+  const cartos = active.map(p =>
+    Cesium.Cartographic.fromDegrees(p.center.longitude, p.center.latitude, 0)
+  );
+
+  // clampToHeightMostDetailed takes Cartesian3 positions and returns them clamped
+  // We need Cartesian3, so convert first with a dummy height
+  const positions = cartos.map(c => Cesium.Cartographic.toCartesian(c));
+
+  // Clamp to the most detailed 3D tile surface at each position
+  let clamped;
+  try {
+    clamped = await scene.clampToHeightMostDetailed(positions);
+  } catch (e) {
+    console.warn('[DS] clampToHeightMostDetailed failed, falling back to sampleHeight', e);
+    clamped = positions;
+  }
+
+  // Compute Cartographics from clamped positions to get the roof height
+  const heights = clamped.map(pos => {
+    if (!pos) return null;
+    const c = Cesium.Cartographic.fromCartesian(pos);
+    return c.height;
+  });
+
+  // Create a thin oriented box entity for each panel
+  active.forEach((p, i) => {
+    const h = heights[i];
+    if (h === null || !Number.isFinite(h)) return;
+
+    const angles = getPanelAngles(p);
+    const tiltRad = Cesium.Math.toRadians(angles.tilt);
+    // Cesium azimuth convention: heading is CW from north
+    // Google Solar azimuth is also CW from north — matches
+    const headingRad = Cesium.Math.toRadians(angles.azimuth);
+
+    // Position slightly above the roof to avoid z-fighting
+    const position = Cesium.Cartesian3.fromDegrees(
+      p.center.longitude,
+      p.center.latitude,
+      h + 0.15
+    );
+
+    // Build orientation: panel tilted back FROM the azimuth direction.
+    // Heading pitches the local frame, then pitch rotates panel up.
+    // Panel is a flat box; we rotate around the axis perpendicular to azimuth
+    // so the panel face tilts toward sun.
+    const hpr = new Cesium.HeadingPitchRoll(
+      headingRad,
+      -tiltRad,  // pitch up by tilt degrees
+      0
+    );
+    const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+
+    // Energy-based color (same heat map as 2D)
+    const color = energyToColor(p.yearlyEnergyDcKwh, DS_STATE.energyMin, DS_STATE.energyMax);
+    const cesiumColor = Cesium.Color.fromCssColorString(color).withAlpha(0.92);
+
+    const entity = viewer.entities.add({
+      position: position,
+      orientation: orientation,
+      box: {
+        dimensions: new Cesium.Cartesian3(
+          DS_STATE.panelHeightM,  // length — oriented along the tilt direction
+          DS_STATE.panelWidthM,   // width
+          0.04                    // thin (4 cm thick)
+        ),
+        material: cesiumColor,
+        outline: true,
+        outlineColor: Cesium.Color.fromCssColorString('#0B2545').withAlpha(0.9)
+      }
+    });
+    DS_STATE.panel3DEntities.push(entity);
+  });
+}
+
+function clear3DPanels() {
+  if (!DS_STATE.cesiumViewer || !DS_STATE.panel3DEntities) return;
+  DS_STATE.panel3DEntities.forEach(e => DS_STATE.cesiumViewer.entities.remove(e));
+  DS_STATE.panel3DEntities = [];
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -4661,6 +4899,15 @@ function togglePanel(idx) {
   syncSliderToActive();
   updateSliderDisplay(DS_STATE.activePanels.size);
   updateSystemStats();
+  refresh3DIfActive();
+}
+
+function refresh3DIfActive() {
+  if (DS_STATE.cesiumMode && DS_STATE.cesiumViewer) {
+    // Debounce — coalesce multiple rapid toggles into one render
+    clearTimeout(DS_STATE.refresh3DTimer);
+    DS_STATE.refresh3DTimer = setTimeout(() => render3DPanels().catch(e => console.error(e)), 200);
+  }
 }
 
 function syncSliderToActive() {
@@ -5385,6 +5632,7 @@ document.getElementById('ds-slider').addEventListener('input', function() {
   }
   updateSliderDisplay(DS_STATE.activePanels.size);
   updateSystemStats();
+  refresh3DIfActive();
 });
 
 ['ds-panel-w'].forEach(id => {
