@@ -4171,7 +4171,10 @@ body.ds-mode-ground .ds-ground-only{display:block}
   <!-- RIGHT PANEL -->
   <div>
     <div class="ds-panel">
-      <h3><span class="step">🗺</span> Satellite View · Roof Analysis · Panel Placement</h3>
+      <h3 style="display:flex;align-items:center;justify-content:space-between;gap:.75rem">
+        <span><span class="step">🗺</span> Satellite View · Roof Analysis · Panel Placement</span>
+        <button id="ds-view-toggle" onclick="toggleMapView()" style="display:none;padding:.4rem .8rem;border-radius:100px;border:1px solid rgba(45,130,190,.25);background:#fff;color:#2D82BE;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap">🔲 Flatten (2D)</button>
+      </h3>
       <div class="ds-map-wrap">
         <div id="ds-map">
           <div class="ds-map-placeholder">
@@ -4294,11 +4297,24 @@ function initMap() {
     center: DS_STATE.coords,
     zoom: 21,
     mapTypeId: 'satellite',
-    tilt: 0,
-    rotateControl: false,
+    tilt: 45,              // attempt 3D — no-op when location has no 3D imagery
+    heading: 0,
+    rotateControl: true,   // let the user rotate + tilt
     streetViewControl: false,
     fullscreenControl: true,
     mapTypeControl: true
+  });
+
+  // After map loads, check whether 3D is actually being honored
+  google.maps.event.addListenerOnce(DS_STATE.map, 'idle', () => {
+    const actualTilt = DS_STATE.map.getTilt();
+    DS_STATE.has3D = actualTilt > 0;
+    const btn = document.getElementById('ds-view-toggle');
+    if (btn) {
+      btn.style.display = 'inline-flex';
+      btn.textContent = DS_STATE.has3D ? '🔲 Flatten (2D)' : '🔲 3D Unavailable';
+      btn.disabled = !DS_STATE.has3D;
+    }
   });
 
   new google.maps.Marker({
@@ -4342,6 +4358,25 @@ function initMap() {
   document.getElementById('ds-map-overlay').classList.add('show');
   document.getElementById('ds-map-overlay').innerHTML =
     `📍 ${DS_STATE.address}<br><span style="font-weight:400;font-size:.72rem;color:#64748B">Lat: ${DS_STATE.coords.lat.toFixed(5)}, Lng: ${DS_STATE.coords.lng.toFixed(5)}</span>`;
+}
+
+function toggleMapView() {
+  if (!DS_STATE.map) return;
+  const btn = document.getElementById('ds-view-toggle');
+  const current = DS_STATE.map.getTilt();
+  if (current > 0) {
+    DS_STATE.map.setTilt(0);
+    if (btn) btn.textContent = '🧊 View 3D';
+  } else {
+    DS_STATE.map.setTilt(45);
+    setTimeout(() => {
+      if (DS_STATE.map.getTilt() > 0) {
+        if (btn) btn.textContent = '🔲 Flatten (2D)';
+      } else {
+        if (btn) { btn.textContent = '🔲 3D Unavailable'; btn.disabled = true; }
+      }
+    }, 300);
+  }
 }
 
 // ═════════════════════════════════════════════════════════════
