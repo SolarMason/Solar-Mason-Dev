@@ -4141,6 +4141,40 @@ html { scroll-behavior: smooth; }
 .ds-array-del{padding:.4rem .55rem;border-radius:6px;border:1px solid rgba(220,38,38,.2);background:#fff;color:#dc2626;font-size:.85rem;cursor:pointer;line-height:1}
 .ds-array-del:hover{background:#fef2f2}
 
+/* Inverter brand + model picker in Step 6 */
+.ds-inv-section{margin-top:.6rem;padding-top:.6rem;border-top:1px solid rgba(0,0,0,.06)}
+.ds-inv-label{font-size:.66rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem}
+.ds-inv-brand-row{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:.55rem}
+.ds-inv-brand-btn{padding:.55rem .5rem;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;cursor:pointer;text-align:left;transition:all .15s;display:flex;flex-direction:column;gap:.1rem;font-family:inherit}
+.ds-inv-brand-btn:hover{background:#f1f5f9;border-color:rgba(45,130,190,.35)}
+.ds-inv-brand-btn.active{background:linear-gradient(135deg,rgba(45,130,190,.08),rgba(45,130,190,.02));border-color:#2D82BE;box-shadow:0 1px 4px rgba(45,130,190,.15)}
+.ds-inv-brand-name{font-size:.78rem;font-weight:800;color:#0B2545;line-height:1.1}
+.ds-inv-brand-sub{font-size:.6rem;color:#64748B;font-weight:600;line-height:1.2}
+.ds-inv-block{margin-top:.35rem}
+.ds-inv-block .ds-field select{padding:.45rem .55rem;font-size:.72rem}
+.ds-inv-rec{font-size:.56rem;color:#059669;font-weight:800;margin-left:.35rem;background:rgba(16,185,129,.1);padding:.08rem .38rem;border-radius:100px;vertical-align:middle}
+.ds-inv-compat{margin-top:.4rem;padding:.42rem .55rem;background:rgba(45,130,190,.04);border:1px solid rgba(45,130,190,.15);border-radius:7px;font-size:.62rem;color:#475569;line-height:1.45}
+.ds-inv-compat.warn{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.35);color:#78350f}
+.ds-inv-compat.err{background:rgba(220,38,38,.06);border-color:rgba(220,38,38,.3);color:#991b1b}
+.ds-inv-compat strong{color:inherit;font-weight:800}
+
+/* BOM section — populates after Calculate */
+.ds-bom{margin-top:1rem;padding:.8rem .9rem;background:linear-gradient(135deg,#fff,#f8fbff);border:1px solid rgba(45,130,190,.2);border-radius:12px;box-shadow:0 1px 3px rgba(11,37,69,.05)}
+.ds-bom-title{font-size:.82rem;font-weight:800;color:#0B2545;margin-bottom:.55rem;display:flex;align-items:center;gap:.4rem;padding-bottom:.45rem;border-bottom:1px solid rgba(45,130,190,.12)}
+.ds-bom-title::before{content:'📦';font-size:.95rem}
+.ds-bom-table{width:100%;border-collapse:collapse;font-size:.7rem}
+.ds-bom-table th{text-align:left;padding:.3rem .25rem;font-size:.58rem;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;font-weight:800;border-bottom:1px solid #e2e8f0}
+.ds-bom-table th.num{text-align:right;width:40px}
+.ds-bom-table td{padding:.42rem .25rem;border-bottom:1px solid rgba(0,0,0,.04);vertical-align:top}
+.ds-bom-table td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:800;color:#0B2545}
+.ds-bom-table tr:last-child td{border-bottom:none}
+.ds-bom-cat{font-size:.56rem;text-transform:uppercase;letter-spacing:.04em;color:#2D82BE;font-weight:800;display:block;margin-bottom:.1rem}
+.ds-bom-item{font-size:.72rem;font-weight:700;color:#0B2545;line-height:1.25}
+.ds-bom-meta{font-size:.62rem;color:#64748B;font-weight:500;margin-top:.1rem;line-height:1.3}
+.ds-bom-empty{font-size:.7rem;color:#94a3b8;text-align:center;padding:.8rem .4rem;font-style:italic}
+
+/* Inverter brand + model picker in Step 6 — end */
+
 /* Utility Bill Upload */
 .ds-bill-upload{border:2px dashed rgba(45,130,190,.3);border-radius:14px;padding:1.6rem 1rem;text-align:center;background:rgba(45,130,190,.03);cursor:pointer;transition:all .25s}
 .ds-bill-upload:hover,.ds-bill-upload.dragover{border-color:#2D82BE;background:rgba(45,130,190,.08);transform:translateY(-1px)}
@@ -4348,35 +4382,68 @@ body.ds-mode-ground .ds-ground-only{display:block}
       <div class="ds-row">
         <div class="ds-field">
           <label>Panel Wattage</label>
-          <select id="ds-panel-w">
+          <select id="ds-panel-w" onchange="onPanelWattageChange()">
             <option value="410">Q CELLS 410W</option>
             <option value="450" selected>Q CELLS 450W</option>
             <option value="500">REC 500W</option>
             <option value="550">Canadian 550W</option>
           </select>
         </div>
-        <div class="ds-field">
-          <label>Array Type</label>
-          <select id="ds-array">
-            <option value="0">Fixed (open)</option>
-            <option value="1" selected>Fixed (roof)</option>
-            <option value="2">1-axis track</option>
-          </select>
+        <div class="ds-field"><label>Tilt (°)</label><input type="number" id="ds-tilt" value="25" min="0" max="60"></div>
+      </div>
+      <div class="ds-row">
+        <div class="ds-field"><label>Azimuth (°)</label><input type="number" id="ds-azimuth" value="180" min="0" max="360"></div>
+        <div class="ds-field"><label>Losses (%)</label><input type="number" id="ds-losses" value="14" min="0" max="30" step="0.5"></div>
+      </div>
+
+      <!-- Inverter selection — brand switches the compatibility model below -->
+      <div class="ds-inv-section">
+        <div class="ds-inv-label">Inverter Brand</div>
+        <div class="ds-inv-brand-row">
+          <button type="button" class="ds-inv-brand-btn active" data-brand="enphase" onclick="setInverterBrand('enphase')">
+            <span class="ds-inv-brand-name">Enphase</span>
+            <span class="ds-inv-brand-sub">Microinverter · 1 per panel</span>
+          </button>
+          <button type="button" class="ds-inv-brand-btn" data-brand="solaredge" onclick="setInverterBrand('solaredge')">
+            <span class="ds-inv-brand-name">SolarEdge</span>
+            <span class="ds-inv-brand-sub">String + Optimizers</span>
+          </button>
+        </div>
+
+        <!-- Enphase: microinverter picker -->
+        <div class="ds-inv-block" id="ds-inv-enphase">
+          <div class="ds-field">
+            <label>Microinverter Model <span id="ds-inv-ep-rec" class="ds-inv-rec"></span></label>
+            <select id="ds-inv-ep-model" onchange="onInverterModelChange()"></select>
+          </div>
+          <div class="ds-inv-compat" id="ds-inv-ep-compat"></div>
+        </div>
+
+        <!-- SolarEdge: optimizer + string inverter picker -->
+        <div class="ds-inv-block" id="ds-inv-solaredge" style="display:none">
+          <div class="ds-field">
+            <label>Power Optimizer <span id="ds-inv-se-opt-rec" class="ds-inv-rec"></span></label>
+            <select id="ds-inv-se-opt" onchange="onInverterModelChange()"></select>
+          </div>
+          <div class="ds-field" style="margin-top:.5rem">
+            <label>String Inverter <span id="ds-inv-se-inv-rec" class="ds-inv-rec"></span></label>
+            <select id="ds-inv-se-inv" onchange="onInverterModelChange()"></select>
+          </div>
+          <div class="ds-inv-compat" id="ds-inv-se-compat"></div>
         </div>
       </div>
-      <div class="ds-row">
-        <div class="ds-field"><label>Tilt (°)</label><input type="number" id="ds-tilt" value="25" min="0" max="60"></div>
-        <div class="ds-field"><label>Azimuth (°)</label><input type="number" id="ds-azimuth" value="180" min="0" max="360"></div>
-      </div>
-      <div class="ds-row">
-        <div class="ds-field"><label>Losses (%)</label><input type="number" id="ds-losses" value="14" min="0" max="30" step="0.5"></div>
-        <div class="ds-field" style="visibility:hidden"><label>—</label><input type="number" disabled></div>
-      </div>
-      <!-- Hidden: kept for backwards compat with runDesignStudio; driven by customer-class toggle in Step 7 -->
+
+      <!-- Hidden: kept for backwards compat with runDesignStudio. Default to fixed roof/ground
+           driven by the mount-mode toggle in Step 3 — the dropdown was removed as redundant. -->
+      <select id="ds-array" style="display:none">
+        <option value="0">Fixed (open)</option>
+        <option value="1" selected>Fixed (roof)</option>
+      </select>
       <select id="ds-type" style="display:none">
         <option value="residential">Residential</option>
         <option value="commercial">Commercial</option>
       </select>
+
       <div class="ds-stats">
         <div class="ds-stat"><div class="ds-stat-label">System Size</div><div class="ds-stat-value" id="ds-kw">0.00<span class="ds-stat-unit">kW DC</span></div></div>
         <div class="ds-stat"><div class="ds-stat-label">Active Panels</div><div class="ds-stat-value" id="ds-active-count">0<span class="ds-stat-unit">panels</span></div></div>
@@ -4482,6 +4549,14 @@ body.ds-mode-ground .ds-ground-only{display:block}
         <div class="ds-chart-title">📈 Monthly Production Breakdown (PVWatts)</div>
         <div id="ds-monthly-chart"></div>
         <div id="ds-monthly-table-wrap"></div>
+      </div>
+
+      <!-- Bill of Materials — populated by renderBOM() -->
+      <div class="ds-bom" id="ds-bom">
+        <div class="ds-bom-title">Bill of Materials</div>
+        <div id="ds-bom-body">
+          <div class="ds-bom-empty">Place panels and hit Calculate to generate the BOM</div>
+        </div>
       </div>
     </div>
 
@@ -6216,6 +6291,11 @@ function updateSystemStats() {
   document.getElementById('ds-kw').innerHTML = systemKw.toFixed(2) + '<span class="ds-stat-unit">kW DC</span>';
   document.getElementById('ds-active-count').innerHTML = count.toLocaleString() + '<span class="ds-stat-unit">panels</span>';
   DS_STATE.selectedCount = count;
+  // Keep inverter recommendations + compatibility display in sync as panel count changes.
+  // Guarded because updateSystemStats is called during very early init before the inverter UI exists.
+  if (document.getElementById('ds-inv-ep-model')) {
+    refreshInverterRecommendations();
+  }
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -6422,13 +6502,18 @@ async function runDesignStudio() {
     document.getElementById('ds-results').classList.add('show');
     document.getElementById('ds-pdf').style.display = 'block';
 
+    // Populate the Bill of Materials from the live panel count + selected inverter + racking
+    renderBOM();
+
     DS_STATE.results = {
       systemKw, count, panelW, tilt, azimuth,
       annualProd, specificYield, grossCost, netCost,
       year1Savings, paybackYear, totalSavings25,
       monthly: pv.ac_monthly, rate, esc, yearlyData,
       projectType, address: DS_STATE.address,
-      productionSource: pv.source
+      productionSource: pv.source,
+      inverterBrand: DS_STATE.inverterBrand,
+      inverterSelection: { ...DS_STATE.inverterSelection }
     };
   } catch (e) {
     console.error('[DS] Calc error:', e);
@@ -7101,6 +7186,357 @@ function exportProposal() {
 // ═════════════════════════════════════════════════════════════
 // EVENT LISTENERS
 // ═════════════════════════════════════════════════════════════
+// ============================================================
+// INVERTER DATABASE + COMPATIBILITY LOGIC
+// Verified from Enphase + SolarEdge datasheets (2024-2025 lineup).
+// Specs must be cross-checked against the latest manufacturer datasheets
+// before any final proposal; numbers here are used for sizing + BOM only.
+// ============================================================
+
+const INVERTER_DB = {
+  enphase: {
+    micro: [
+      // model, peakACva, maxDCinputW, minPanelW, maxPanelW, voltage, notes
+      { model: 'IQ8+',       peakAC: 300, maxDC: 440, minPanelW: 235, maxPanelW: 440, voltage: '240V split', notes: '60/120, 72/144-cell modules' },
+      { model: 'IQ8M',       peakAC: 330, maxDC: 470, minPanelW: 260, maxPanelW: 470, voltage: '240V split', notes: 'Mid-range residential' },
+      { model: 'IQ8A',       peakAC: 366, maxDC: 500, minPanelW: 295, maxPanelW: 500, voltage: '240V split', notes: 'Higher power residential' },
+      { model: 'IQ8H',       peakAC: 384, maxDC: 530, minPanelW: 320, maxPanelW: 530, voltage: '240V split', notes: '240V split-phase backup-ready' },
+      { model: 'IQ8P',       peakAC: 480, maxDC: 650, minPanelW: 400, maxPanelW: 650, voltage: '240V split', notes: 'Large residential + commercial modules' },
+      { model: 'IQ8X',       peakAC: 530, maxDC: 720, minPanelW: 480, maxPanelW: 720, voltage: '240V split', notes: '80/88/96-cell high-Voc modules' },
+    ]
+  },
+  solaredge: {
+    optimizer: [
+      { model: 'P370',  maxInputW: 370,  maxInputV: 60,   minPanelW: 180, maxPanelW: 370,  notes: 'Residential' },
+      { model: 'P401',  maxInputW: 405,  maxInputV: 80,   minPanelW: 250, maxPanelW: 405,  notes: 'Residential' },
+      { model: 'P485',  maxInputW: 485,  maxInputV: 83,   minPanelW: 300, maxPanelW: 485,  notes: 'Residential/light-comm' },
+      { model: 'P505',  maxInputW: 505,  maxInputV: 83,   minPanelW: 320, maxPanelW: 505,  notes: 'Residential/light-comm' },
+      { model: 'S440',  maxInputW: 440,  maxInputV: 80,   minPanelW: 250, maxPanelW: 440,  notes: 'S-Series smart optimizer' },
+      { model: 'S500',  maxInputW: 500,  maxInputV: 83,   minPanelW: 300, maxPanelW: 500,  notes: 'S-Series smart optimizer' },
+      { model: 'S550',  maxInputW: 550,  maxInputV: 83,   minPanelW: 350, maxPanelW: 550,  notes: 'S-Series smart optimizer' },
+      { model: 'P850',  maxInputW: 850,  maxInputV: 125,  minPanelW: 500, maxPanelW: 850,  notes: 'Commercial dual-input' },
+    ],
+    stringInverter: [
+      // model, ratedACkW, maxDCoverSizeRatio (SolarEdge allows up to 1.55 typ)
+      { model: 'SE3000H-US',  ratedAC: 3.0,  maxDCkW: 4.65,  voltage: '240V 1Φ', notes: 'Residential' },
+      { model: 'SE3800H-US',  ratedAC: 3.8,  maxDCkW: 5.90,  voltage: '240V 1Φ', notes: 'Residential' },
+      { model: 'SE5000H-US',  ratedAC: 5.0,  maxDCkW: 7.75,  voltage: '240V 1Φ', notes: 'Residential' },
+      { model: 'SE5700H-US',  ratedAC: 5.76, ratedAC208: 5.0, maxDCkW: 8.93, voltage: '208/240V 1Φ', notes: 'Residential' },
+      { model: 'SE6000H-US',  ratedAC: 6.0,  ratedAC208: 5.0, maxDCkW: 9.30, voltage: '208/240V 1Φ', notes: 'Residential' },
+      { model: 'SE7600H-US',  ratedAC: 7.6,  maxDCkW: 11.78, voltage: '240V 1Φ', notes: 'Residential' },
+      { model: 'SE10000H-US', ratedAC: 10.0, maxDCkW: 15.50, voltage: '240V 1Φ', notes: 'Large residential' },
+      { model: 'SE11400H-US', ratedAC: 11.4, ratedAC208: 10.0, maxDCkW: 17.67, voltage: '208/240V 1Φ', notes: 'Max single-phase residential' },
+    ]
+  }
+};
+
+// DS state for inverter selection — mirrors the UI controls
+DS_STATE.inverterBrand = 'enphase';
+DS_STATE.inverterSelection = { micro: null, optimizer: null, stringInverter: null };
+
+// Return the smallest Enphase micro that can handle a given panel wattage
+function recommendEnphaseMicro(panelW) {
+  const micros = INVERTER_DB.enphase.micro;
+  return micros.find(m => panelW >= m.minPanelW && panelW <= m.maxPanelW) || micros[micros.length - 1];
+}
+
+// Return the smallest SolarEdge optimizer that can handle a given panel wattage
+function recommendSolarEdgeOptimizer(panelW) {
+  const opts = INVERTER_DB.solaredge.optimizer;
+  // Prefer P-series first, then S-series as alternate — pick the tightest fit
+  const compatible = opts.filter(o => panelW <= o.maxInputW && panelW >= o.minPanelW * 0.85);
+  return compatible[0] || opts[opts.length - 1];
+}
+
+// Return the smallest SolarEdge string inverter that fits a given DC size,
+// honoring the maxDCkW oversizing cap on each inverter.
+function recommendSolarEdgeInverter(totalDCkW) {
+  const invs = INVERTER_DB.solaredge.stringInverter;
+  return invs.find(i => totalDCkW <= i.maxDCkW) || invs[invs.length - 1];
+}
+
+// ------- UI wiring -------
+
+function populateEnphaseMicroDropdown(panelW) {
+  const sel = document.getElementById('ds-inv-ep-model');
+  if (!sel) return;
+  const recommended = recommendEnphaseMicro(panelW);
+  sel.innerHTML = INVERTER_DB.enphase.micro.map(m => {
+    const compat = panelW >= m.minPanelW && panelW <= m.maxPanelW;
+    const badge = compat ? '' : ' ⚠';
+    return `<option value="${m.model}" ${m.model === recommended.model ? 'selected' : ''}>${m.model} — ${m.peakAC}VA${badge}</option>`;
+  }).join('');
+  DS_STATE.inverterSelection.micro = recommended.model;
+  const recEl = document.getElementById('ds-inv-ep-rec');
+  if (recEl) recEl.textContent = `auto: ${recommended.model}`;
+  updateInverterCompatDisplay();
+}
+
+function populateSolarEdgeDropdowns(panelW, totalDCkW) {
+  const optSel = document.getElementById('ds-inv-se-opt');
+  const invSel = document.getElementById('ds-inv-se-inv');
+  if (!optSel || !invSel) return;
+
+  const recOpt = recommendSolarEdgeOptimizer(panelW);
+  optSel.innerHTML = INVERTER_DB.solaredge.optimizer.map(o => {
+    const compat = panelW <= o.maxInputW;
+    const badge = compat ? '' : ' ⚠';
+    return `<option value="${o.model}" ${o.model === recOpt.model ? 'selected' : ''}>${o.model} — ${o.maxInputW}W max${badge}</option>`;
+  }).join('');
+  DS_STATE.inverterSelection.optimizer = recOpt.model;
+  const optRec = document.getElementById('ds-inv-se-opt-rec');
+  if (optRec) optRec.textContent = `auto: ${recOpt.model}`;
+
+  const recInv = recommendSolarEdgeInverter(totalDCkW || 0.1);
+  invSel.innerHTML = INVERTER_DB.solaredge.stringInverter.map(i => {
+    const compat = (totalDCkW || 0) <= i.maxDCkW;
+    const badge = compat ? '' : ' ⚠';
+    return `<option value="${i.model}" ${i.model === recInv.model ? 'selected' : ''}>${i.model} — ${i.ratedAC}kW AC${badge}</option>`;
+  }).join('');
+  DS_STATE.inverterSelection.stringInverter = recInv.model;
+  const invRec = document.getElementById('ds-inv-se-inv-rec');
+  if (invRec) invRec.textContent = `auto: ${recInv.model}`;
+
+  updateInverterCompatDisplay();
+}
+
+function setInverterBrand(brand) {
+  DS_STATE.inverterBrand = brand;
+  document.querySelectorAll('.ds-inv-brand-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.brand === brand);
+  });
+  document.getElementById('ds-inv-enphase').style.display = (brand === 'enphase') ? 'block' : 'none';
+  document.getElementById('ds-inv-solaredge').style.display = (brand === 'solaredge') ? 'block' : 'none';
+  refreshInverterRecommendations();
+}
+
+function refreshInverterRecommendations() {
+  const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
+  const activeCount = activeCountForMode();
+  const totalDCkW = (activeCount * panelW) / 1000;
+  if (DS_STATE.inverterBrand === 'enphase') {
+    populateEnphaseMicroDropdown(panelW);
+  } else {
+    populateSolarEdgeDropdowns(panelW, totalDCkW);
+  }
+}
+
+function onPanelWattageChange() {
+  updateSystemStats();
+  refreshInverterRecommendations();
+}
+
+function onInverterModelChange() {
+  if (DS_STATE.inverterBrand === 'enphase') {
+    DS_STATE.inverterSelection.micro = document.getElementById('ds-inv-ep-model').value;
+  } else {
+    DS_STATE.inverterSelection.optimizer = document.getElementById('ds-inv-se-opt').value;
+    DS_STATE.inverterSelection.stringInverter = document.getElementById('ds-inv-se-inv').value;
+  }
+  updateInverterCompatDisplay();
+}
+
+function updateInverterCompatDisplay() {
+  const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
+  const activeCount = activeCountForMode();
+  const totalDCkW = (activeCount * panelW) / 1000;
+
+  if (DS_STATE.inverterBrand === 'enphase') {
+    const el = document.getElementById('ds-inv-ep-compat');
+    if (!el) return;
+    const micro = INVERTER_DB.enphase.micro.find(m => m.model === DS_STATE.inverterSelection.micro);
+    if (!micro) { el.textContent = ''; return; }
+    const inRange = panelW >= micro.minPanelW && panelW <= micro.maxPanelW;
+    const totalACkW = (activeCount * micro.peakAC) / 1000;
+    const dcAcRatio = totalACkW > 0 ? (totalDCkW / totalACkW) : 0;
+    if (!inRange) {
+      el.className = 'ds-inv-compat err';
+      el.innerHTML = `⚠ <strong>${panelW}W panel is outside ${micro.model}'s ${micro.minPanelW}–${micro.maxPanelW}W range.</strong> Pick a larger micro or different panel.`;
+    } else {
+      el.className = 'ds-inv-compat';
+      el.innerHTML = `✓ <strong>${activeCount}</strong> × ${micro.model} · total AC: <strong>${totalACkW.toFixed(2)} kW</strong> · DC/AC ratio: <strong>${dcAcRatio.toFixed(2)}</strong> · ${micro.notes}`;
+    }
+  } else {
+    const el = document.getElementById('ds-inv-se-compat');
+    if (!el) return;
+    const opt = INVERTER_DB.solaredge.optimizer.find(o => o.model === DS_STATE.inverterSelection.optimizer);
+    const inv = INVERTER_DB.solaredge.stringInverter.find(i => i.model === DS_STATE.inverterSelection.stringInverter);
+    if (!opt || !inv) { el.textContent = ''; return; }
+    const optOK = panelW <= opt.maxInputW;
+    const invOK = totalDCkW <= inv.maxDCkW;
+    const dcAcRatio = inv.ratedAC > 0 ? (totalDCkW / inv.ratedAC) : 0;
+    if (!optOK) {
+      el.className = 'ds-inv-compat err';
+      el.innerHTML = `⚠ <strong>${panelW}W panel exceeds ${opt.model}'s ${opt.maxInputW}W max input.</strong> Pick a larger optimizer.`;
+    } else if (!invOK) {
+      el.className = 'ds-inv-compat warn';
+      el.innerHTML = `⚠ <strong>${totalDCkW.toFixed(2)} kW DC exceeds ${inv.model}'s ${inv.maxDCkW.toFixed(1)} kW cap.</strong> Pick a larger string inverter.`;
+    } else {
+      el.className = 'ds-inv-compat';
+      el.innerHTML = `✓ <strong>${activeCount}</strong> × ${opt.model} + <strong>1</strong> × ${inv.model} · DC: <strong>${totalDCkW.toFixed(2)} kW</strong> / AC: <strong>${inv.ratedAC} kW</strong> · ratio: <strong>${dcAcRatio.toFixed(2)}</strong>`;
+    }
+  }
+}
+
+// ============================================================
+// BILL OF MATERIALS
+// ============================================================
+
+function computeBOM() {
+  const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
+  const panelLabel = document.getElementById('ds-panel-w')?.selectedOptions[0]?.textContent || `${panelW}W Module`;
+  const activeCount = activeCountForMode();
+  if (activeCount === 0) return [];
+
+  const items = [];
+
+  // 1. Solar Panels
+  items.push({
+    category: 'Modules',
+    name: panelLabel,
+    meta: `${panelW}W monocrystalline · 25-yr manufacturer warranty`,
+    qty: activeCount
+  });
+
+  // 2. Inverters
+  if (DS_STATE.inverterBrand === 'enphase') {
+    const micro = INVERTER_DB.enphase.micro.find(m => m.model === DS_STATE.inverterSelection.micro)
+                  || recommendEnphaseMicro(panelW);
+    items.push({
+      category: 'Microinverters',
+      name: `Enphase ${micro.model}`,
+      meta: `${micro.peakAC} VA peak · ${micro.voltage} · ${micro.notes}`,
+      qty: activeCount
+    });
+    items.push({
+      category: 'Monitoring',
+      name: 'Enphase IQ Gateway (metered)',
+      meta: 'System-level monitoring + revenue-grade production metering',
+      qty: 1
+    });
+    // AC combiner for every 12 micros (rough commercial rule of thumb)
+    if (activeCount > 12) {
+      items.push({
+        category: 'Combiner',
+        name: 'Enphase IQ Combiner 4C (or equivalent AC combiner)',
+        meta: 'Load center with built-in microinverter branch breakers',
+        qty: Math.ceil(activeCount / 12)
+      });
+    }
+  } else {
+    const opt = INVERTER_DB.solaredge.optimizer.find(o => o.model === DS_STATE.inverterSelection.optimizer);
+    const inv = INVERTER_DB.solaredge.stringInverter.find(i => i.model === DS_STATE.inverterSelection.stringInverter);
+    if (opt) {
+      items.push({
+        category: 'Optimizers',
+        name: `SolarEdge ${opt.model}`,
+        meta: `${opt.maxInputW}W max input · ${opt.notes}`,
+        qty: activeCount
+      });
+    }
+    if (inv) {
+      items.push({
+        category: 'Inverter',
+        name: `SolarEdge ${inv.model}`,
+        meta: `${inv.ratedAC} kW AC rated · ${inv.voltage} · HD-Wave technology · ${inv.notes}`,
+        qty: 1
+      });
+    }
+    // DC disconnect for string inverter systems
+    items.push({
+      category: 'Disconnect',
+      name: 'DC Disconnect (NEMA 3R)',
+      meta: 'Required per NEC 690.13 for string inverter systems',
+      qty: 1
+    });
+  }
+
+  // 3. Racking
+  if (DS_STATE.mountMode === 'ground' && DS_STATE.groundArrays.length > 0) {
+    const avans8 = DS_STATE.groundArrays.filter(a => a.type === 'AVANS_8').length;
+    const avans10 = DS_STATE.groundArrays.filter(a => a.type === 'AVANS_10').length;
+    if (avans8 > 0) {
+      items.push({
+        category: 'Racking',
+        name: 'AVANS 8.0 Ground Rack',
+        meta: '2×4 panel array · 30° fixed tilt · ballasted or ground-screw base · 6 ft clearance',
+        qty: avans8
+      });
+    }
+    if (avans10 > 0) {
+      items.push({
+        category: 'Racking',
+        name: 'AVANS 10.0 Ground Rack',
+        meta: '2×5 panel array · 30° fixed tilt · ballasted or ground-screw base · 6 ft clearance',
+        qty: avans10
+      });
+    }
+  } else if (DS_STATE.mountMode === 'roof') {
+    // Rough estimate: 1 rail pair per 4 panels, plus mid + end clamps + flashings
+    const railPairs = Math.ceil(activeCount / 4);
+    items.push({
+      category: 'Racking',
+      name: 'Roof Rail Kit (IronRidge XR100 or equivalent)',
+      meta: 'Aluminum rail + splice kits · sized to 4 panels per pair',
+      qty: railPairs
+    });
+    items.push({
+      category: 'Racking',
+      name: 'Flashings / Roof Attachments',
+      meta: '~1 per rail foot · aluminum step flashing with butyl seal',
+      qty: Math.ceil(activeCount * 1.3)
+    });
+    items.push({
+      category: 'Racking',
+      name: 'Mid + End Clamps',
+      meta: 'Universal module clamps · 2 mid per panel, 4 end per row',
+      qty: activeCount * 2 + 8
+    });
+  }
+
+  // 4. Balance of System (BOS)
+  items.push({
+    category: 'BOS',
+    name: 'PV Wire, Conduit, Connectors',
+    meta: 'Module-level cabling, 10 AWG THWN-2 home-runs, MC4 tools',
+    qty: 1
+  });
+  items.push({
+    category: 'BOS',
+    name: 'Rapid Shutdown / PV Disconnect Signage',
+    meta: 'NEC 690.56(C) rapid shutdown placard + directory labels',
+    qty: 1
+  });
+
+  return items;
+}
+
+function renderBOM() {
+  const body = document.getElementById('ds-bom-body');
+  if (!body) return;
+  const items = computeBOM();
+  if (!items.length) {
+    body.innerHTML = '<div class="ds-bom-empty">Place panels and hit Calculate to generate the BOM</div>';
+    return;
+  }
+  const rows = items.map(it => `
+    <tr>
+      <td>
+        <span class="ds-bom-cat">${it.category}</span>
+        <div class="ds-bom-item">${it.name}</div>
+        <div class="ds-bom-meta">${it.meta}</div>
+      </td>
+      <td class="num">${it.qty}</td>
+    </tr>
+  `).join('');
+  body.innerHTML = `
+    <table class="ds-bom-table">
+      <thead><tr><th>Component</th><th class="num">Qty</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
 // Shared "activate top N roof panels by energy" logic — used by slider + presets
 function applyTopNPanels(target) {
   for (const p of DS_STATE.allPanels) {
@@ -7143,12 +7579,14 @@ document.getElementById('ds-slider').addEventListener('input', function() {
 
 // Live rotation — adjusting the ground tilt or azimuth rotates the selected array
 // (or the most recently placed one if nothing is selected) in real time on the map.
+// Exception: TILT changes in ground mode propagate to ALL ground arrays (tilts
+// must match across an entire ground-mount system for uniform row shading + racking).
 function liveReorientFromInputs() {
   if (!DS_STATE.groundArrays.length) return;
   const newTilt = parseFloat(document.getElementById('ds-ground-tilt').value);
   const newAz   = parseFloat(document.getElementById('ds-ground-az').value);
-  // Priority: reorient the array that owns the currently selected panel.
-  // Fallback: reorient the most recently placed array.
+
+  // Which array owns the azimuth edit? Priority: selected panel's array, else most recent.
   let targetArrayId = null;
   if (DS_STATE.selectedGroundPanel != null) {
     const sel = DS_STATE.allPanels.find(p => p.idx === DS_STATE.selectedGroundPanel);
@@ -7157,7 +7595,16 @@ function liveReorientFromInputs() {
   if (targetArrayId == null) {
     targetArrayId = DS_STATE.groundArrays[DS_STATE.groundArrays.length - 1].id;
   }
-  reorientArray(targetArrayId, newTilt, newAz);
+
+  // Tilt applies to EVERY ground array (uniform-tilt constraint).
+  // Azimuth applies only to the target array so multi-array layouts can have per-row orientation.
+  for (const arr of DS_STATE.groundArrays) {
+    if (arr.id === targetArrayId) {
+      reorientArray(arr.id, newTilt, newAz);
+    } else {
+      reorientArray(arr.id, newTilt, arr.azimuth);
+    }
+  }
 }
 
 document.getElementById('ds-ground-az').addEventListener('input', liveReorientFromInputs);
@@ -7167,11 +7614,17 @@ document.getElementById('ds-ground-tilt').addEventListener('input', liveReorient
   document.getElementById(id).addEventListener('change', updateSystemStats);
 });
 
+// Default ground tilt is ALWAYS 30° on boot — ground-mount industry standard for PA,
+// and the AVANS rack is physically designed around this angle.
+document.getElementById('ds-ground-tilt').value = 30;
+
 // Initialize
 updateSystemStats();
 bindBillUpload();
 updateItcDisplay();
 setCustomerClass('residential');
+setInverterBrand('enphase');          // Initial brand → populates the Enphase dropdown
+refreshInverterRecommendations();
 
 // Tools overlay collapse/expand
 function toggleToolsOverlay() {
