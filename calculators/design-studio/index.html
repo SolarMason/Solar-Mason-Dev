@@ -5844,21 +5844,24 @@ function deleteAvansArray(arrayId) {
   refresh3DIfActive();
 }
 
-// Rotate an existing AVANS array around its center to a new azimuth. Recomputes every panel's
-// world position from its stored (rowIdx, colIdx) in local coordinates, then re-transforms into
-// world space by the new azimuth. Updates polygons, panel records, and the array record.
-function rotateArray(arrayId, newAz) {
+// Re-orient a placed AVANS array to a new tilt + azimuth. Recomputes every panel's
+// world position from its stored (rowIdx, colIdx) local coordinates, rebuilds its polygon
+// path, and updates the array + panel records. Used by the live tilt + azimuth listeners —
+// groundwork for tracker arrays later where both angles move continuously.
+function reorientArray(arrayId, newTilt, newAz) {
   const arr = DS_STATE.groundArrays.find(a => a.id === arrayId);
   if (!arr) return;
 
-  const tilt = arr.tilt ?? parseFloat(document.getElementById('ds-ground-tilt')?.value) ?? 30;
+  const tilt = (newTilt != null && !isNaN(newTilt)) ? newTilt : (arr.tilt ?? 30);
+  const az   = (newAz   != null && !isNaN(newAz))   ? newAz   : (arr.azimuth ?? 180);
+
   const panelW = DS_STATE.panelWidthM || 1.045;
   const panelH = DS_STATE.panelHeightM || 1.879;
   const colGap = panelW * 0.02;
   const rowProjected = panelH * Math.cos(tilt * Math.PI / 180);
   const cols = arr.type === 'AVANS_10' ? 5 : 4;
 
-  const azRad = newAz * Math.PI / 180;
+  const azRad = az * Math.PI / 180;
   const sinA = Math.sin(azRad), cosA = Math.cos(azRad);
   const centerLat = arr.center.latitude;
   const latScale = 1 / 111320;
@@ -5872,32 +5875,37 @@ function rotateArray(arrayId, newAz) {
     const yLocal = r === 0 ? +(rowProjected / 2) : -(rowProjected / 2);
     const xLocal = (c - (cols - 1) / 2) * (panelW + colGap);
 
-    // Same transform as placeAvansArray: +Y → (cosA, sinA), +X → (−sinA, cosA)
     const worldNorth = xLocal * (-sinA) + yLocal * cosA;
     const worldEast  = xLocal * cosA    + yLocal * sinA;
 
-    const newCenter = {
+    panel.center = {
       latitude:  arr.center.latitude  + worldNorth * latScale,
       longitude: arr.center.longitude + worldEast  * lngScale
     };
-    panel.center = newCenter;
-    panel.azimuth = newAz;
+    panel.azimuth = az;
+    panel.tilt = tilt;
 
     const poly = DS_STATE.panelPolygons.get(idx);
     if (poly) {
       const corners = panelCorners(
-        newCenter,
+        panel.center,
         panelW,
         panelH * Math.cos(tilt * Math.PI / 180),
         'PORTRAIT',
-        newAz
+        az
       );
       poly.setPath(corners);
     }
   }
 
-  arr.azimuth = newAz;
+  arr.azimuth = az;
+  arr.tilt = tilt;
   refresh3DIfActive();
+}
+
+// Backwards-compat shim: rotateArray(id, az) is now reorientArray(id, undefined, az)
+function rotateArray(arrayId, newAz) {
+  reorientArray(arrayId, undefined, newAz);
 }
 
 // Render the list of placed AVANS arrays with delete buttons
@@ -7107,13 +7115,14 @@ document.getElementById('ds-slider').addEventListener('input', function() {
   document.querySelectorAll('.ds-preset-btn').forEach(b => b.classList.remove('active'));
 });
 
-// Live rotation — adjusting the ground azimuth input rotates the selected array
+// Live rotation — adjusting the ground tilt or azimuth rotates the selected array
 // (or the most recently placed one if nothing is selected) in real time on the map.
-document.getElementById('ds-ground-az').addEventListener('input', function() {
-  const newAz = parseFloat(this.value);
-  if (isNaN(newAz) || !DS_STATE.groundArrays.length) return;
-  // Priority: rotate the array that owns the currently selected panel.
-  // Fallback: rotate the most recently placed array.
+function liveReorientFromInputs() {
+  if (!DS_STATE.groundArrays.length) return;
+  const newTilt = parseFloat(document.getElementById('ds-ground-tilt').value);
+  const newAz   = parseFloat(document.getElementById('ds-ground-az').value);
+  // Priority: reorient the array that owns the currently selected panel.
+  // Fallback: reorient the most recently placed array.
   let targetArrayId = null;
   if (DS_STATE.selectedGroundPanel != null) {
     const sel = DS_STATE.allPanels.find(p => p.idx === DS_STATE.selectedGroundPanel);
@@ -7122,8 +7131,11 @@ document.getElementById('ds-ground-az').addEventListener('input', function() {
   if (targetArrayId == null) {
     targetArrayId = DS_STATE.groundArrays[DS_STATE.groundArrays.length - 1].id;
   }
-  rotateArray(targetArrayId, newAz);
-});
+  reorientArray(targetArrayId, newTilt, newAz);
+}
+
+document.getElementById('ds-ground-az').addEventListener('input', liveReorientFromInputs);
+document.getElementById('ds-ground-tilt').addEventListener('input', liveReorientFromInputs);
 
 ['ds-panel-w'].forEach(id => {
   document.getElementById(id).addEventListener('change', updateSystemStats);
