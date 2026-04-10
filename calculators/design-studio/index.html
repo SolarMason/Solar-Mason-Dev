@@ -5566,9 +5566,9 @@ async function render3DPanels() {
     const tiltRad = Cesium.Math.toRadians(angles.tilt);
     const headingRad = Cesium.Math.toRadians(angles.azimuth);
 
-    // Roof panels: ~30cm above the sampled roof to avoid mesh clipping
+    // Roof panels: float above the sampled roof to avoid mesh clipping
     // Ground panels: use the per-panel groundOffsetM (lower row at ~6 ft, upper row higher)
-    const zOffset = p.isGround ? (p.groundOffsetM || 1.83) : 0.30;
+    const zOffset = p.isGround ? (p.groundOffsetM || 1.83) : 0.5;
 
     const position = Cesium.Cartesian3.fromDegrees(
       p.center.longitude,
@@ -5576,9 +5576,13 @@ async function render3DPanels() {
       h + zOffset
     );
 
-    const hpr = new Cesium.HeadingPitchRoll(headingRad, 0, -tiltRad);
+    // Heading = roof azimuth (compass direction of the downslope)
+    // Pitch = negative tilt (tilts the front edge down to match the roof slope)
+    // Roll = 0 (no lateral tilt)
+    const hpr = new Cesium.HeadingPitchRoll(headingRad, -tiltRad, 0);
     const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
 
+    // Panel dimensions: X = across-slope (left-right), Y = along-slope (up-down the roof)
     const isLandscape = p.orientation === 'LANDSCAPE';
     const dimX = isLandscape ? DS_STATE.panelHeightM : DS_STATE.panelWidthM;
     const dimY = isLandscape ? DS_STATE.panelWidthM : DS_STATE.panelHeightM;
