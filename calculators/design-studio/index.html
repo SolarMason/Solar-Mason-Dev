@@ -3948,6 +3948,17 @@ html { scroll-behavior: smooth; }
 .ds-field input,.ds-field select{width:100%;padding:.55rem .7rem;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:.85rem;color:#0B2545;background:#f8fafc}
 .ds-field input:focus,.ds-field select:focus{outline:none;border-color:#2D82BE;background:#fff}
 .ds-slider-wrap{background:linear-gradient(135deg,rgba(45,130,190,.06),rgba(45,130,190,.02));border:1px solid rgba(45,130,190,.15);border-radius:12px;padding:1rem 1.1rem;margin-bottom:.85rem}
+
+/* Offset presets */
+.ds-preset-wrap{background:#fff;border:1px solid rgba(45,130,190,.18);border-radius:12px;padding:.85rem 1rem;margin-bottom:.85rem}
+.ds-preset-label{font-size:.7rem;font-weight:800;color:#0B2545;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.55rem;display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
+.ds-preset-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem}
+.ds-preset-btn{background:#f8fafc;border:2px solid #e2e8f0;border-radius:10px;padding:.7rem .5rem;cursor:pointer;transition:all .2s;text-align:center;font-family:inherit}
+.ds-preset-btn:hover{border-color:rgba(45,130,190,.45);background:rgba(45,130,190,.04);transform:translateY(-1px)}
+.ds-preset-btn.active{border-color:#2D82BE;background:linear-gradient(135deg,rgba(45,130,190,.12),rgba(45,130,190,.04));box-shadow:0 4px 14px rgba(45,130,190,.18)}
+.ds-preset-pct{font-size:1.15rem;font-weight:900;color:#0B2545;line-height:1;margin-bottom:.2rem}
+.ds-preset-btn.active .ds-preset-pct{color:#2D82BE}
+.ds-preset-meta{font-size:.65rem;font-weight:700;color:#64748B;line-height:1.2}
 .ds-slider-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.5rem}
 .ds-slider-head label{font-size:.72rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em}
 .ds-slider-val{font-size:1.5rem;font-weight:900;color:#0B2545;line-height:1}
@@ -4134,6 +4145,26 @@ body.ds-mode-ground .ds-ground-only{display:block}
     <div class="ds-panel">
       <h3><span class="step">5</span> Panel Layout</h3>
       <div class="ds-status waiting" id="ds-seg-status">Awaiting roof analysis</div>
+
+      <!-- Offset presets (only visible when a utility bill has been uploaded) -->
+      <div class="ds-preset-wrap ds-roof-only" id="ds-preset-wrap" style="display:none">
+        <div class="ds-preset-label">Quick offset presets <span id="ds-preset-sub" style="font-weight:600;color:#94a3b8;font-size:.66rem"></span></div>
+        <div class="ds-preset-row">
+          <button class="ds-preset-btn" data-pct="80" onclick="selectOffsetPreset(80)">
+            <div class="ds-preset-pct">80%</div>
+            <div class="ds-preset-meta" id="ds-preset-80">—</div>
+          </button>
+          <button class="ds-preset-btn active" data-pct="100" onclick="selectOffsetPreset(100)">
+            <div class="ds-preset-pct">100%</div>
+            <div class="ds-preset-meta" id="ds-preset-100">—</div>
+          </button>
+          <button class="ds-preset-btn" data-pct="120" onclick="selectOffsetPreset(120)">
+            <div class="ds-preset-pct">120%</div>
+            <div class="ds-preset-meta" id="ds-preset-120">—</div>
+          </button>
+        </div>
+        <div style="font-size:.68rem;color:#94a3b8;margin-top:.5rem;text-align:center">Tap to snap to a target offset, then fine-tune with the slider or panel taps below.</div>
+      </div>
 
       <div class="ds-slider-wrap ds-roof-only">
         <div class="ds-slider-head">
@@ -5064,6 +5095,12 @@ async function fetchSolarInsights() {
   setStatus('ready', `${DS_STATE.roofSegments.length} segments · ${DS_STATE.maxPanels} max panels`);
   renderPanels();
   showLegend();
+
+  // If a bill was uploaded before solar insights returned, now we can size against it
+  refreshOffsetPresets();
+  if (DS_STATE.billData && DS_STATE.billData.annualKwh) {
+    selectOffsetPreset(100);
+  }
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -6258,6 +6295,10 @@ function applyManualBill() {
     <div class="row"><span>Monthly average</span><span>${Math.round(billData.annualKwh/12).toLocaleString()} kWh</span></div>
     <div style="font-size:.7rem;color:#475569;margin-top:.5rem">Hit <strong>Calculate &amp; Model</strong> to see the production-vs-consumption chart with monthly offset.</div>
   `;
+  refreshOffsetPresets();
+  if (DS_STATE.allPanels && DS_STATE.allPanels.length) {
+    selectOffsetPreset(100);
+  }
 }
 
 async function processBillFile(file) {
@@ -6299,9 +6340,9 @@ async function processBillFile(file) {
     billData.monthlyConsumption = distributeAnnualToMonthly(billData.annualKwh);
     DS_STATE.billData = billData;
 
-    // Auto-fill rate
-    if (billData.ratePerKwh && billData.ratePerKwh > 0.05 && billData.ratePerKwh < 0.50) {
-      document.getElementById('ds-rate').value = billData.ratePerKwh.toFixed(3);
+    // Auto-fill rate (keep 4 decimals of precision — matches bill-analyzer approach)
+    if (billData.ratePerKwh && billData.ratePerKwh > 0.04 && billData.ratePerKwh < 0.60) {
+      document.getElementById('ds-rate').value = billData.ratePerKwh.toFixed(4);
     }
 
     // ── Auto-load the project address extracted from the bill ──
@@ -6317,55 +6358,77 @@ async function processBillFile(file) {
                           : 'NREL fallback';
         addressNote = `<div class="row"><span>Service address</span><span><strong>${geo.formatted}</strong></span></div>`
                     + `<div class="row" style="font-size:.68rem;opacity:.75"><span>Geocoded via</span><span>${sourceLabel}</span></div>`;
-        // Fire the same flow as Places autocomplete in the background
         loadProjectAddress(geo.formatted, geo.lat, geo.lng).catch(e =>
           console.warn('[DS] Background address load failed', e)
         );
       } else {
         addressNote = `<div class="row" style="color:#92400e"><span>⚠ Address extracted</span><span><strong>${billData.address}</strong></span></div>`
-                    + `<div class="row" style="color:#92400e;font-size:.7rem"><span colspan="2">All three geocoders failed. Open DevTools console for details. Type the address manually in Step 2 to continue.</span></div>`;
+                    + `<div class="row" style="color:#92400e;font-size:.7rem"><span colspan="2">All three geocoders failed. Type the address manually in Step 2 to continue.</span></div>`;
       }
     }
 
-    // Cross-validate against NREL utility rate for the location
+    // ── Cross-validate / fallback against NREL residential rate for the location ──
     let validation = '';
-    if (DS_STATE.coords || addressLoaded) {
-      try {
-        const params = new URLSearchParams({
-          api_key: DS_CONFIG.NREL_API_KEY,
-          address: billData.address || DS_STATE.address || ''
-        });
-        const r = await fetch(`https://developer.nrel.gov/api/utility_rates/v3.json?${params}`);
-        const d = await r.json();
-        const nrelRate = d.outputs && d.outputs.residential;
-        if (nrelRate && billData.ratePerKwh) {
-          const diff = Math.abs(billData.ratePerKwh - nrelRate) / nrelRate;
-          if (diff > 0.30) {
-            validation = `<div class="row" style="color:#92400e"><span>⚠ Rate vs NREL avg</span><span><strong>$${billData.ratePerKwh.toFixed(3)}</strong> bill vs $${nrelRate.toFixed(3)} regional</span></div>`;
-          } else {
-            validation = `<div class="row"><span>✓ Validated vs NREL</span><span>within ${(diff*100).toFixed(0)}% of regional average</span></div>`;
-          }
-        }
-      } catch (e) {
-        console.warn('[DS] NREL rate validation failed', e);
+    let nrelRate = null;
+    try {
+      const params = new URLSearchParams({
+        api_key: DS_CONFIG.NREL_API_KEY,
+        address: billData.address || DS_STATE.address || ''
+      });
+      const r = await fetch(`https://developer.nrel.gov/api/utility_rates/v3.json?${params}`);
+      const d = await r.json();
+      nrelRate = d.outputs && d.outputs.residential;
+    } catch (e) {
+      console.warn('[DS] NREL rate lookup failed', e);
+    }
+
+    // If bill rate didn't parse cleanly, FALL BACK to NREL
+    if (!billData.ratePerKwh && nrelRate && nrelRate > 0.04 && nrelRate < 0.60) {
+      billData.ratePerKwh = +nrelRate.toFixed(4);
+      document.getElementById('ds-rate').value = billData.ratePerKwh.toFixed(4);
+      validation = `<div class="row" style="color:#1e40af"><span>ℹ Rate source</span><span><strong>NREL fallback</strong> $${nrelRate.toFixed(4)}/kWh</span></div>`;
+    } else if (billData.ratePerKwh && nrelRate) {
+      const diff = Math.abs(billData.ratePerKwh - nrelRate) / nrelRate;
+      if (diff > 0.30) {
+        validation = `<div class="row" style="color:#92400e"><span>⚠ Rate vs NREL</span><span><strong>$${billData.ratePerKwh.toFixed(4)}</strong> bill vs $${nrelRate.toFixed(4)} regional</span></div>`;
+      } else {
+        validation = `<div class="row"><span>✓ Validated vs NREL</span><span>within ${(diff*100).toFixed(0)}% of $${nrelRate.toFixed(4)} regional avg</span></div>`;
       }
+    }
+
+    // Rate breakdown rows (show supply + delivery + blended when we have them)
+    let breakdownRows = '';
+    const rb = billData.rateBreakdown;
+    if (rb) {
+      if (rb.supplyRate)    breakdownRows += `<div class="row"><span>&nbsp;&nbsp;Supply / Generation</span><span>$${rb.supplyRate.toFixed(4)}/kWh</span></div>`;
+      if (rb.deliveryRate)  breakdownRows += `<div class="row"><span>&nbsp;&nbsp;Delivery / Distribution</span><span>$${rb.deliveryRate.toFixed(4)}/kWh</span></div>`;
+      if (rb.blendedRate)   breakdownRows += `<div class="row" style="font-weight:700"><span>&nbsp;&nbsp;Blended rate</span><span><strong>$${rb.blendedRate.toFixed(4)}/kWh</strong></span></div>`;
     }
 
     // Render success summary
     result.className = 'ds-bill-result';
     const monthlyAvg = Math.round(billData.annualKwh / 12).toLocaleString();
+    const rateSourceLabel = rb && rb.blendedRate ? 'supply + delivery'
+                          : (validation.includes('NREL fallback') ? 'NREL' : 'bill');
     result.innerHTML = `
       <div style="font-weight:800;color:#065f46;margin-bottom:.4rem">✅ Bill parsed successfully</div>
       <div class="row"><span>Utility</span><span><strong>${billData.utility || 'Unknown'}</strong></span></div>
       ${addressNote}
       <div class="row"><span>Annual usage</span><span><strong>${billData.annualKwh.toLocaleString()} kWh</strong></span></div>
       <div class="row"><span>Monthly average</span><span>${monthlyAvg} kWh</span></div>
-      ${billData.ratePerKwh ? `<div class="row"><span>Rate ($/kWh)</span><span><strong>$${billData.ratePerKwh.toFixed(3)}</strong> (auto-filled)</span></div>` : ''}
+      ${billData.ratePerKwh ? `<div class="row"><span>Rate ($/kWh)</span><span><strong>$${billData.ratePerKwh.toFixed(4)}</strong> (${rateSourceLabel})</span></div>` : ''}
+      ${breakdownRows}
       ${validation}
       <div style="font-size:.7rem;color:#475569;margin-top:.5rem">${addressLoaded
-        ? '🛰 Loading satellite + roof analysis automatically… When ready, hit <strong>Calculate &amp; Model</strong> to see the production-vs-consumption chart.'
+        ? '🛰 Loading satellite + roof analysis… 80 / 100 / 120% offset presets will auto-populate. Then hit <strong>Calculate &amp; Model</strong>.'
         : 'Hit <strong>Calculate &amp; Model</strong> to see the production-vs-consumption chart with monthly offset.'}</div>
     `;
+
+    // If panels are already loaded, refresh presets + snap to 100% now
+    refreshOffsetPresets();
+    if (DS_STATE.allPanels && DS_STATE.allPanels.length) {
+      selectOffsetPreset(100);
+    }
   } catch (err) {
     console.error('[DS] Bill parse error', err);
     result.className = 'ds-bill-result error';
@@ -6373,10 +6436,87 @@ async function processBillFile(file) {
   }
 }
 
-// Lightweight bill parser (PA-focused, supports most common utilities)
-function parseUtilityBill(text) {
+// ═════════════════════════════════════════════════════════════
+// OFFSET PRESETS — 80% / 100% / 120% auto-sizing from bill
+// ═════════════════════════════════════════════════════════════
+
+// Compute how many top-energy roof panels are needed to hit an offset percentage
+function panelCountForOffset(offsetPct) {
+  if (!DS_STATE.billData || !DS_STATE.billData.annualKwh) return null;
+  if (!DS_STATE.allPanels || !DS_STATE.allPanels.length) return null;
+
+  // Apply the losses factor so we compare DC panel energy to AC consumption fairly
+  const lossesPct = parseFloat(document.getElementById('ds-losses')?.value) || 14;
+  const acFactor = 1 - lossesPct / 100;
+
+  const targetKwh = DS_STATE.billData.annualKwh * (offsetPct / 100);
+  const roofPanels = DS_STATE.allPanels.filter(p => !p.isGround && !DS_STATE.disabledPanels.has(p.idx));
+
+  let cumulative = 0;
+  for (let i = 0; i < roofPanels.length; i++) {
+    cumulative += (roofPanels[i].yearlyEnergyDcKwh || 0) * acFactor;
+    if (cumulative >= targetKwh) return i + 1;
+  }
+  return roofPanels.length; // couldn't reach target — return max available
+}
+
+// Activate the top-N highest-energy panels (mirrors slider behavior)
+function selectOffsetPreset(offsetPct) {
+  if (DS_STATE.mountMode !== 'roof') setMountMode('roof');
+  const count = panelCountForOffset(offsetPct);
+  if (count == null) return;
+
+  // Top N by energy = exactly what the slider does
+  const slider = document.getElementById('ds-slider');
+  if (slider) {
+    slider.value = count;
+    updateSliderDisplay(count);
+    applyTopNPanels(count);
+  }
+
+  // Highlight the active preset button
+  document.querySelectorAll('.ds-preset-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.pct) === offsetPct);
+  });
+  updateSystemStats();
+  refresh3DIfActive();
+}
+
+// Recalculate preset labels (panel count + kW size for each target)
+function refreshOffsetPresets() {
+  const wrap = document.getElementById('ds-preset-wrap');
+  if (!wrap) return;
+  const hasBill = DS_STATE.billData && DS_STATE.billData.annualKwh;
+  const hasPanels = DS_STATE.allPanels && DS_STATE.allPanels.length;
+  if (!hasBill || !hasPanels) {
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = '';
+  const sub = document.getElementById('ds-preset-sub');
+  if (sub) sub.textContent = `(${DS_STATE.billData.annualKwh.toLocaleString()} kWh / yr)`;
+
+  const panelKw = (DS_STATE.panelCapacityW || 400) / 1000;
+  [80, 100, 120].forEach(pct => {
+    const n = panelCountForOffset(pct);
+    const el = document.getElementById('ds-preset-' + pct);
+    if (el && n != null) {
+      el.textContent = `${n} panels · ${(n * panelKw).toFixed(1)} kW`;
+    } else if (el) {
+      el.textContent = '—';
+    }
+  });
+}
   const t = text.replace(/\s+/g, ' ');
-  const data = { utility: null, annualKwh: null, ratePerKwh: null, billingKwh: null, address: null };
+  const data = {
+    utility: null,
+    annualKwh: null,
+    ratePerKwh: null,
+    billingKwh: null,
+    address: null,
+    charges: { supply: null, delivery: null, customerCharge: null, totalBill: null },
+    rateBreakdown: null   // populated below with supply / delivery / effective / blended
+  };
 
   // Utility identification
   if (/PPL Electric/i.test(t)) data.utility = 'PPL Electric Utilities';
@@ -6390,11 +6530,8 @@ function parseUtilityBill(text) {
   else if (/PSE&?G/i.test(t)) data.utility = 'PSE&G';
 
   // Service address — try several patterns common across utilities
-  // Pattern 1: "Service to: NAME ADDRESS CITY ST ZIP" (PPL/PECO)
   let am = t.match(/Service to\s*:?\s*[A-Z][A-Z &,.'-]+?\s+(\d+\s+[\w\s.,-]+?)\s+([A-Z][A-Z\s]+?)[,\s]+([A-Z]{2})\s*(\d{5})/);
-  // Pattern 2: street address + city + state + zip anywhere in document
   if (!am) am = t.match(/(\d+\s+[\w\s.-]+?(?:ST|AVE|BLVD|DR|RD|CT|LN|WAY|PL|CIR|HWY|TRL|PKWY)(?:\s+(?:N|S|E|W|NE|NW|SE|SW))?)\s+([A-Z][A-Z\s]+?)[,\s]+([A-Z]{2})\s*(\d{5})/i);
-  // Pattern 3: "Service Address" label
   if (!am) am = t.match(/Service Address[:\s]+(\d+\s+[\w\s.-]+?)\s+([A-Z][A-Za-z\s]+?)[,\s]+([A-Z]{2})\s*(\d{5})/i);
   if (am) {
     const street = am[1].trim();
@@ -6404,7 +6541,7 @@ function parseUtilityBill(text) {
     data.address = `${street}, ${city}, ${state} ${zip}`;
   }
 
-  // Annual usage — try multiple patterns
+  // Annual usage
   let m;
   m = t.match(/Annual Total Usage\s*(\d[\d,]+)\s*kWh/i);
   if (!m) m = t.match(/Annual Total\s*(?:Usage)?\s*(\d[\d,]+)/i);
@@ -6415,31 +6552,72 @@ function parseUtilityBill(text) {
     if (v > 1000 && v < 200000) data.annualKwh = v;
   }
 
-  // Billing period kWh (single month)
+  // Billing-period kWh
   m = t.match(/Total Delivered:?\s*(\d{2,5})/i);
   if (!m) m = t.match(/Kilowatt-?\s*Hours\s*(\d{2,5})\b/i);
   if (m) data.billingKwh = parseInt(m[1]);
-
-  // If no annual found but we have billing kWh, extrapolate × 12
   if (!data.annualKwh && data.billingKwh && data.billingKwh > 50 && data.billingKwh < 5000) {
     data.annualKwh = Math.round(data.billingKwh * 12);
   }
 
-  // Rate ($/kWh) — try Price to Compare, generation rate, or compute from charges
-  m = t.match(/Price to Compare\s*\$?(\d+\.\d{4,5})/i);
-  if (!m) m = t.match(/Generation\s*Rate\s*\$?(\d+\.\d{4,5})/i);
-  if (m) data.ratePerKwh = parseFloat(m[1]);
+  // ── RATE CALCULATION (mirrors bill-analyzer logic for accuracy) ──
+  // Extract dollar amounts for supply, delivery, customer charge, total bill
+  m = t.match(/Supply\s*\$?(\d+\.\d{2})/i);
+  if (m) data.charges.supply = parseFloat(m[1]);
 
-  // Fallback: compute total $/kWh from bill total ÷ usage
-  if (!data.ratePerKwh && data.billingKwh) {
-    let totalM = t.match(/Amount Due[^$]*\$(\d+\.\d{2})/i);
-    if (!totalM) totalM = t.match(/Total Amount Due\s*\$?(\d+\.\d{2})/i);
-    if (totalM) {
-      const total = parseFloat(totalM[1]);
-      if (total > 5 && total < 5000) {
-        data.ratePerKwh = total / data.billingKwh;
-      }
+  m = t.match(/Delivery\s*\$?(\d+\.\d{2})/i);
+  if (!m) m = t.match(/Total Delivery Charges\s*\$?(\d+\.\d{2})/i);
+  if (!m) m = t.match(/Distribution\s*\$?(\d+\.\d{2})/i);
+  if (m) data.charges.delivery = parseFloat(m[1]);
+
+  m = t.match(/Customer Charge\s*\$?(\d+\.\d{2})/i);
+  if (m) data.charges.customerCharge = parseFloat(m[1]);
+
+  m = t.match(/Amount Due By[^$]*\$(\d+\.\d{2})/i);
+  if (!m) m = t.match(/Total Amount Due\s*\$?(\d+\.\d{2})/i);
+  if (!m) m = t.match(/Amount Due[^$]*\$(\d+\.\d{2})/i);
+  if (m && parseFloat(m[1]) > 0) data.charges.totalBill = parseFloat(m[1]);
+  // Fallback: total bill = supply + delivery
+  if (!data.charges.totalBill && data.charges.supply && data.charges.delivery) {
+    data.charges.totalBill = Math.round((data.charges.supply + data.charges.delivery) * 100) / 100;
+  }
+
+  // Compute multi-component rates (kept at 4 decimal places to avoid rounding loss)
+  if (data.billingKwh && data.billingKwh > 0) {
+    const c = data.charges;
+    const breakdown = {};
+    if (c.supply)        breakdown.supplyRate    = +(c.supply    / data.billingKwh).toFixed(4);
+    if (c.delivery)      breakdown.deliveryRate  = +(c.delivery  / data.billingKwh).toFixed(4);
+    if (c.totalBill)     breakdown.effectiveRate = +(c.totalBill / data.billingKwh).toFixed(4);
+
+    // Variable rate strips out the fixed customer charge
+    if (c.totalBill && c.customerCharge != null) {
+      const variable = c.totalBill - c.customerCharge;
+      if (variable > 0) breakdown.variableRate = +(variable / data.billingKwh).toFixed(4);
     }
+
+    // Blended rate = supply + delivery (if both present), else effective, else variable
+    let blended = null;
+    if (breakdown.supplyRate && breakdown.deliveryRate) {
+      blended = +(breakdown.supplyRate + breakdown.deliveryRate).toFixed(4);
+    } else if (breakdown.effectiveRate) {
+      blended = breakdown.effectiveRate;
+    } else if (breakdown.variableRate) {
+      blended = breakdown.variableRate;
+    }
+    if (blended) breakdown.blendedRate = blended;
+
+    data.rateBreakdown = breakdown;
+    if (blended && blended > 0.04 && blended < 0.60) {
+      data.ratePerKwh = blended;
+    }
+  }
+
+  // Final fallback: explicit "Price to Compare" or "Generation Rate" line items
+  if (!data.ratePerKwh) {
+    m = t.match(/Price to Compare\s*\$?(\d+\.\d{4,5})/i);
+    if (!m) m = t.match(/Generation\s*Rate\s*\$?(\d+\.\d{4,5})/i);
+    if (m) data.ratePerKwh = parseFloat(m[1]);
   }
 
   return data;
@@ -6500,10 +6678,8 @@ function exportProposal() {
 // ═════════════════════════════════════════════════════════════
 // EVENT LISTENERS
 // ═════════════════════════════════════════════════════════════
-document.getElementById('ds-slider').addEventListener('input', function() {
-  const target = parseInt(this.value) || 0;
-  // Rebuild active ROOF panels as top N by energy, excluding obstructed ones.
-  // Ground panels are managed separately and stay in activePanels untouched.
+// Shared "activate top N roof panels by energy" logic — used by slider + presets
+function applyTopNPanels(target) {
   for (const p of DS_STATE.allPanels) {
     if (!p.isGround) DS_STATE.activePanels.delete(p.idx);
   }
@@ -6518,9 +6694,16 @@ document.getElementById('ds-slider').addEventListener('input', function() {
   for (const idx of DS_STATE.panelPolygons.keys()) {
     applyPanelStyle(idx);
   }
+}
+
+document.getElementById('ds-slider').addEventListener('input', function() {
+  const target = parseInt(this.value) || 0;
+  applyTopNPanels(target);
   updateSliderDisplay(activeCountForMode());
   updateSystemStats();
   refresh3DIfActive();
+  // Deactivate any preset highlight if user drags the slider manually
+  document.querySelectorAll('.ds-preset-btn').forEach(b => b.classList.remove('active'));
 });
 
 ['ds-panel-w'].forEach(id => {
