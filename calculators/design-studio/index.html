@@ -4080,18 +4080,38 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
   <!-- LEFT PANEL -->
   <div>
+    <!-- Step 1: Utility Bill Upload (parses address, usage, rate) -->
+    <div class="ds-panel">
+      <h3><span class="step">1</span> Upload Utility Bill <span style="font-size:.7rem;font-weight:600;color:#94a3b8;margin-left:.4rem">recommended</span></h3>
+      <p style="font-size:.78rem;color:#64748B;line-height:1.5;margin:0 0 .8rem 0">Drop a recent PDF utility bill — we'll auto-extract the service address, geocode it, fetch satellite imagery + roof analysis, pull annual consumption + rate, and validate against NREL data for the location. The whole project is set up in one click.</p>
+      <div class="ds-bill-upload" id="ds-bill-upload">
+        <input type="file" id="ds-bill-input" accept="application/pdf" style="display:none">
+        <div class="ds-bill-icon">📄</div>
+        <div class="ds-bill-title">Drop PDF here or tap to upload</div>
+        <div class="ds-bill-sub">PPL · PECO · Met-Ed · Penelec · Duquesne · ConEd · National Grid · Eversource · PSE&amp;G</div>
+      </div>
+      <div style="margin-top:.6rem;padding-top:.6rem;border-top:1px dashed rgba(0,0,0,.08)">
+        <div style="font-size:.7rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem">Or enter usage manually</div>
+        <div class="ds-row">
+          <div class="ds-field"><label>Annual kWh</label><input type="number" id="ds-manual-kwh" placeholder="12000" min="0" max="500000" step="100"></div>
+          <div class="ds-field" style="display:flex;align-items:flex-end"><button class="ds-btn ds-btn-sec" style="padding:.55rem .8rem;font-size:.78rem;width:100%" onclick="applyManualBill()">Apply</button></div>
+        </div>
+      </div>
+      <div class="ds-bill-result" id="ds-bill-result" style="display:none"></div>
+    </div>
+
     <!-- Address -->
     <div class="ds-panel">
-      <h3><span class="step">1</span> Project Address</h3>
+      <h3><span class="step">2</span> Project Address</h3>
       <div class="ds-addr">
-        <input type="text" id="ds-addr-input" placeholder="Start typing an address..." autocomplete="off">
+        <input type="text" id="ds-addr-input" placeholder="Type an address or upload a bill above" autocomplete="off">
       </div>
-      <div class="ds-addr-hint">✅ Google Places + Google Solar + NREL PVWatts all active</div>
+      <div class="ds-addr-hint">✅ Auto-filled when you upload a bill in Step 1 — or type manually for Google Places autocomplete.</div>
     </div>
 
     <!-- Mount Mode Toggle -->
     <div class="ds-panel">
-      <h3><span class="step">2</span> Mount Type</h3>
+      <h3><span class="step">3</span> Mount Type</h3>
       <div class="ds-mode-toggle">
         <button class="ds-mode-btn active" id="ds-mode-roof" onclick="setMountMode('roof')">🏠 Roof Mount</button>
         <button class="ds-mode-btn" id="ds-mode-ground" onclick="setMountMode('ground')">🌱 Ground Mount</button>
@@ -4101,7 +4121,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Obstructions & Keep-Out Zones -->
     <div class="ds-panel">
-      <h3><span class="step">3</span> Obstructions &amp; Keep-Out Zones</h3>
+      <h3><span class="step">4</span> Obstructions &amp; Keep-Out Zones</h3>
       <p style="font-size:.8rem;color:#64748B;line-height:1.5;margin:0 0 .75rem 0">Click "Draw Obstruction" then click points on the map to outline chimneys, vents, skylights, or any area to exclude. Any panels inside will be removed automatically.</p>
       <div class="ds-obst-buttons">
         <button class="ds-mini-btn" id="ds-draw-obst" onclick="toggleDrawObstruction()">✏️ Draw Obstruction</button>
@@ -4112,7 +4132,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Panel Layout -->
     <div class="ds-panel">
-      <h3><span class="step">4</span> Panel Layout</h3>
+      <h3><span class="step">5</span> Panel Layout</h3>
       <div class="ds-status waiting" id="ds-seg-status">Awaiting roof analysis</div>
 
       <div class="ds-slider-wrap ds-roof-only">
@@ -4161,7 +4181,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- System Config -->
     <div class="ds-panel">
-      <h3><span class="step">5</span> System Configuration</h3>
+      <h3><span class="step">6</span> System Configuration</h3>
       <div class="ds-row">
         <div class="ds-field">
           <label>Panel Wattage</label>
@@ -4203,7 +4223,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Financials -->
     <div class="ds-panel">
-      <h3><span class="step">6</span> Financial Inputs</h3>
+      <h3><span class="step">7</span> Financial Inputs</h3>
       <div class="ds-row">
         <div class="ds-field"><label>Cost per Watt</label><input type="number" id="ds-cpw" value="3.00" min="1" max="6" step="0.05"></div>
         <div class="ds-field"><label>Rate ($/kWh)</label><input type="number" id="ds-rate" value="0.17" min="0.05" max="0.50" step="0.01"></div>
@@ -4213,27 +4233,6 @@ body.ds-mode-ground .ds-ground-only{display:block}
         <div class="ds-field"><label>Federal ITC (%)</label><input type="number" id="ds-itc" value="30" min="0" max="50"></div>
       </div>
     </div>
-
-    <!-- Utility Bill Upload (Optional) -->
-    <div class="ds-panel">
-      <h3><span class="step">7</span> Utility Bill Upload <span style="font-size:.7rem;font-weight:600;color:#94a3b8;margin-left:.4rem">optional</span></h3>
-      <p style="font-size:.78rem;color:#64748B;line-height:1.5;margin:0 0 .8rem 0">Upload a recent PDF utility bill to auto-extract annual consumption + rate, validate against NREL data for the location, and unlock the production-vs-consumption comparison chart with monthly offset percentages.</p>
-      <div class="ds-bill-upload" id="ds-bill-upload">
-        <input type="file" id="ds-bill-input" accept="application/pdf" style="display:none">
-        <div class="ds-bill-icon">📄</div>
-        <div class="ds-bill-title">Drop PDF here or tap to upload</div>
-        <div class="ds-bill-sub">PPL · PECO · Met-Ed · Penelec · Duquesne · others</div>
-      </div>
-      <div style="margin-top:.6rem;padding-top:.6rem;border-top:1px dashed rgba(0,0,0,.08)">
-        <div style="font-size:.7rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem">Or enter manually</div>
-        <div class="ds-row">
-          <div class="ds-field"><label>Annual kWh</label><input type="number" id="ds-manual-kwh" placeholder="12000" min="0" max="500000" step="100"></div>
-          <div class="ds-field" style="display:flex;align-items:flex-end"><button class="ds-btn ds-btn-sec" style="padding:.55rem .8rem;font-size:.78rem;width:100%" onclick="applyManualBill()">Apply</button></div>
-        </div>
-      </div>
-      <div class="ds-bill-result" id="ds-bill-result" style="display:none"></div>
-    </div>
-
     <button class="ds-btn ds-btn-full" id="ds-calc" onclick="runDesignStudio()">⚡ Calculate &amp; Model</button>
     <button class="ds-btn ds-btn-sec ds-btn-full" id="ds-pdf" onclick="exportProposal()" style="margin-top:.6rem;display:none">📄 Export Proposal PDF</button>
   </div>
@@ -4390,22 +4389,53 @@ function initGooglePlaces() {
   ac.addListener('place_changed', async () => {
     const place = ac.getPlace();
     if (!place.geometry) return;
-    DS_STATE.address = place.formatted_address;
-    DS_STATE.coords = {
-      lat: place.geometry.location.lat(),
-      lng: place.geometry.location.lng()
-    };
-    setStatus('waiting', 'Loading satellite + roof analysis...');
-    initMap();
-    await fetchSolarInsights();
-    await fetchUtilityRate();
-    // Auto-enter 3D view if user hasn't explicitly opted out
-    if (DS_STATE.userViewPreference !== '2d') {
-      enterCesium3D({ silent: true }).catch((e) => {
-        console.warn('[DS] Auto 3D failed, staying in 2D:', e);
-      });
-    }
+    await loadProjectAddress(
+      place.formatted_address,
+      place.geometry.location.lat(),
+      place.geometry.location.lng()
+    );
   });
+}
+
+// Reusable: load a project address — used by Places autocomplete AND by bill upload
+async function loadProjectAddress(formattedAddress, lat, lng) {
+  DS_STATE.address = formattedAddress;
+  DS_STATE.coords = { lat, lng };
+  // Reflect in the address input
+  const inp = document.getElementById('ds-addr-input');
+  if (inp) inp.value = formattedAddress;
+
+  setStatus('waiting', 'Loading satellite + roof analysis...');
+  initMap();
+  await fetchSolarInsights();
+  await fetchUtilityRate();
+  if (DS_STATE.userViewPreference !== '2d') {
+    enterCesium3D({ silent: true }).catch((e) => {
+      console.warn('[DS] Auto 3D failed, staying in 2D:', e);
+    });
+  }
+}
+
+// Geocode a free-text address via Google Geocoding API — used after bill parsing
+async function geocodeAddressString(addr) {
+  if (!addr) return null;
+  try {
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(addr)}&key=${DS_CONFIG.GOOGLE_MAPS_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.status === 'OK' && data.results && data.results[0]) {
+      const r = data.results[0];
+      return {
+        formatted: r.formatted_address,
+        lat: r.geometry.location.lat,
+        lng: r.geometry.location.lng
+      };
+    }
+    console.warn('[DS] Geocoding API returned', data.status, data.error_message);
+  } catch (e) {
+    console.error('[DS] Geocoding fetch failed', e);
+  }
+  return null;
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -6214,13 +6244,31 @@ async function processBillFile(file) {
       document.getElementById('ds-rate').value = billData.ratePerKwh.toFixed(3);
     }
 
+    // ── Auto-load the project address extracted from the bill ──
+    let addressLoaded = false;
+    let addressNote = '';
+    if (billData.address) {
+      result.innerHTML = '⏳ Geocoding address from bill…';
+      const geo = await geocodeAddressString(billData.address);
+      if (geo) {
+        addressLoaded = true;
+        addressNote = `<div class="row"><span>Service address</span><span><strong>${geo.formatted}</strong></span></div>`;
+        // Fire the same flow as Places autocomplete in the background
+        loadProjectAddress(geo.formatted, geo.lat, geo.lng).catch(e =>
+          console.warn('[DS] Background address load failed', e)
+        );
+      } else {
+        addressNote = `<div class="row" style="color:#92400e"><span>⚠ Address found</span><span>${billData.address} <em>(could not geocode)</em></span></div>`;
+      }
+    }
+
     // Cross-validate against NREL utility rate for the location
     let validation = '';
-    if (DS_STATE.coords) {
+    if (DS_STATE.coords || addressLoaded) {
       try {
         const params = new URLSearchParams({
           api_key: DS_CONFIG.NREL_API_KEY,
-          address: DS_STATE.address || ''
+          address: billData.address || DS_STATE.address || ''
         });
         const r = await fetch(`https://developer.nrel.gov/api/utility_rates/v3.json?${params}`);
         const d = await r.json();
@@ -6244,11 +6292,14 @@ async function processBillFile(file) {
     result.innerHTML = `
       <div style="font-weight:800;color:#065f46;margin-bottom:.4rem">✅ Bill parsed successfully</div>
       <div class="row"><span>Utility</span><span><strong>${billData.utility || 'Unknown'}</strong></span></div>
+      ${addressNote}
       <div class="row"><span>Annual usage</span><span><strong>${billData.annualKwh.toLocaleString()} kWh</strong></span></div>
       <div class="row"><span>Monthly average</span><span>${monthlyAvg} kWh</span></div>
       ${billData.ratePerKwh ? `<div class="row"><span>Rate ($/kWh)</span><span><strong>$${billData.ratePerKwh.toFixed(3)}</strong> (auto-filled)</span></div>` : ''}
       ${validation}
-      <div style="font-size:.7rem;color:#475569;margin-top:.5rem">Hit <strong>Calculate &amp; Model</strong> to see the production-vs-consumption chart with monthly offset.</div>
+      <div style="font-size:.7rem;color:#475569;margin-top:.5rem">${addressLoaded
+        ? '🛰 Loading satellite + roof analysis automatically… When ready, hit <strong>Calculate &amp; Model</strong> to see the production-vs-consumption chart.'
+        : 'Hit <strong>Calculate &amp; Model</strong> to see the production-vs-consumption chart with monthly offset.'}</div>
     `;
   } catch (err) {
     console.error('[DS] Bill parse error', err);
@@ -6260,7 +6311,7 @@ async function processBillFile(file) {
 // Lightweight bill parser (PA-focused, supports most common utilities)
 function parseUtilityBill(text) {
   const t = text.replace(/\s+/g, ' ');
-  const data = { utility: null, annualKwh: null, ratePerKwh: null, billingKwh: null };
+  const data = { utility: null, annualKwh: null, ratePerKwh: null, billingKwh: null, address: null };
 
   // Utility identification
   if (/PPL Electric/i.test(t)) data.utility = 'PPL Electric Utilities';
@@ -6272,6 +6323,21 @@ function parseUtilityBill(text) {
   else if (/National Grid/i.test(t)) data.utility = 'National Grid';
   else if (/Eversource/i.test(t)) data.utility = 'Eversource';
   else if (/PSE&?G/i.test(t)) data.utility = 'PSE&G';
+
+  // Service address — try several patterns common across utilities
+  // Pattern 1: "Service to: NAME ADDRESS CITY ST ZIP" (PPL/PECO)
+  let am = t.match(/Service to\s*:?\s*[A-Z][A-Z &,.'-]+?\s+(\d+\s+[\w\s.,-]+?)\s+([A-Z][A-Z\s]+?)[,\s]+([A-Z]{2})\s*(\d{5})/);
+  // Pattern 2: street address + city + state + zip anywhere in document
+  if (!am) am = t.match(/(\d+\s+[\w\s.-]+?(?:ST|AVE|BLVD|DR|RD|CT|LN|WAY|PL|CIR|HWY|TRL|PKWY)(?:\s+(?:N|S|E|W|NE|NW|SE|SW))?)\s+([A-Z][A-Z\s]+?)[,\s]+([A-Z]{2})\s*(\d{5})/i);
+  // Pattern 3: "Service Address" label
+  if (!am) am = t.match(/Service Address[:\s]+(\d+\s+[\w\s.-]+?)\s+([A-Z][A-Za-z\s]+?)[,\s]+([A-Z]{2})\s*(\d{5})/i);
+  if (am) {
+    const street = am[1].trim();
+    const city = am[2].trim();
+    const state = am[3].trim().toUpperCase();
+    const zip = am[4];
+    data.address = `${street}, ${city}, ${state} ${zip}`;
+  }
 
   // Annual usage — try multiple patterns
   let m;
