@@ -5398,10 +5398,12 @@ async function enterCesium3D(opts = {}) {
 // ═════════════════════════════════════════════════════════════
 function loadCesium() {
   if (window.Cesium) return Promise.resolve();
+  // If previous load attempt exists, return it (even if rejected, a page refresh clears it)
   if (DS_STATE.cesiumLoadPromise) return DS_STATE.cesiumLoadPromise;
 
   DS_STATE.cesiumLoadPromise = new Promise((resolve, reject) => {
-    const version = '1.123';
+    console.log('[DS-3D] Loading Cesium JS from CDN...');
+    const version = '1.140';
     const base = `https://cesium.com/downloads/cesiumjs/releases/${version}/Build/Cesium/`;
     window.CESIUM_BASE_URL = base;
 
@@ -5413,8 +5415,8 @@ function loadCesium() {
     const script = document.createElement('script');
     script.src = base + 'Cesium.js';
     script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Could not load Cesium from CDN'));
+    script.onload = () => { console.log('[DS-3D] Cesium JS loaded OK'); resolve(); };
+    script.onerror = (e) => { console.error('[DS-3D] Cesium JS FAILED to load from', base); reject(new Error('Could not load Cesium JS from CDN — check console for network errors')); };
     document.head.appendChild(script);
   });
   return DS_STATE.cesiumLoadPromise;
@@ -5428,8 +5430,11 @@ async function initCesium() {
   // An empty token prevents the "no token" warning without requiring Ion signup.
   Cesium.Ion.defaultAccessToken = '';
 
+  // Allow more simultaneous tile requests (Google's recommended setting)
+  Cesium.RequestScheduler.requestsByServer["tile.googleapis.com:443"] = 18;
+
   const viewer = new Cesium.Viewer('ds-cesium', {
-    baseLayer: false,           // no base imagery — 3D tiles cover everything
+    imageryProvider: false,     // no base imagery — Google's recommended setting
     baseLayerPicker: false,
     geocoder: false,
     homeButton: false,
@@ -5440,15 +5445,12 @@ async function initCesium() {
     fullscreenButton: true,
     infoBox: false,
     selectionIndicator: false,
+    globe: false,               // no globe — 3D tiles provide everything
+    requestRenderMode: true,    // Google's recommended setting
     creditContainer: document.createElement('div')
   });
 
-  // Hide the default blue globe — 3D tiles will cover it
-  viewer.scene.globe.show = false;
-  viewer.scene.skyAtmosphere.show = false;
   viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#e2e8f0');
-  // Ensure continuous rendering while tiles stream in
-  viewer.scene.requestRenderMode = false;
 
   // Load Google Photorealistic 3D Tiles directly from Google (no Cesium Ion)
   console.log('[DS-3D] Requesting Google 3D Tiles root with key', DS_CONFIG.GOOGLE_MAPS_KEY.slice(0, 8) + '…');
@@ -5493,6 +5495,9 @@ async function initCesium() {
   DS_STATE.cesiumViewer = viewer;
   DS_STATE.panel3DEntities = [];
   DS_STATE.currentCompassDir = null;
+  console.log('[DS-3D] Cesium viewer created, globe visible:', viewer.scene.globe.show, 
+    'primitives:', viewer.scene.primitives.length, 
+    'tileset ready:', DS_STATE.cesiumTileset ? DS_STATE.cesiumTileset.ready : 'N/A');
 
   // Click handler — pick panel entities and toggle their active state
   const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
