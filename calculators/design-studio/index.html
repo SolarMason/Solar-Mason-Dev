@@ -3906,6 +3906,12 @@ html { scroll-behavior: smooth; }
 .ds-addr::before{content:"📍";position:absolute;left:.85rem;top:50%;transform:translateY(-50%);font-size:1rem}
 .ds-addr-hint{font-size:.72rem;color:#94a3b8;margin-top:.4rem}
 .ds-map-wrap{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(0,0,0,.08);background:#e5e7eb;min-height:600px}
+.ds-compass{position:absolute;top:14px;right:14px;z-index:30;display:none;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-radius:100px;padding:5px;box-shadow:0 6px 20px rgba(0,0,0,.18);gap:3px}
+.ds-compass.show{display:flex}
+.ds-compass button{width:38px;height:38px;border-radius:50%;border:none;background:transparent;color:#0B2545;font-weight:800;font-size:.88rem;cursor:pointer;transition:all .15s}
+.ds-compass button:hover{background:rgba(45,130,190,.12)}
+.ds-compass button.active{background:linear-gradient(135deg,#2D82BE,#1B5E8A);color:#fff;box-shadow:0 2px 8px rgba(45,130,190,.4)}
+.ds-compass-label{font-size:.62rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.06em;padding:0 10px;display:flex;align-items:center}
 #ds-map{width:100%;height:600px;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;color:#64748B;font-size:.95rem;text-align:center;padding:2rem}
 .ds-map-placeholder{display:flex;flex-direction:column;gap:.75rem;align-items:center}
 .ds-map-placeholder .icon{font-size:3rem;opacity:.5}
@@ -4184,6 +4190,13 @@ body.ds-mode-ground .ds-ground-only{display:block}
           </div>
         </div>
         <div id="ds-cesium" style="display:none;position:absolute;inset:0;width:100%;height:100%"></div>
+        <div class="ds-compass" id="ds-compass">
+          <span class="ds-compass-label">View</span>
+          <button data-dir="N" onclick="flyToCompass('N')" title="From the north — shows the NORTH face">N</button>
+          <button data-dir="E" onclick="flyToCompass('E')" title="From the east — shows the EAST face">E</button>
+          <button data-dir="S" onclick="flyToCompass('S')" title="From the south — shows the SOUTH face">S</button>
+          <button data-dir="W" onclick="flyToCompass('W')" title="From the west — shows the WEST face">W</button>
+        </div>
         <div id="ds-cesium-loading" style="display:none;position:absolute;inset:0;background:rgba(15,23,42,.85);color:#fff;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:.75rem;text-align:center;padding:2rem">
           <div style="font-size:2.5rem">🌍</div>
           <div style="font-weight:700;font-size:1rem" id="ds-cesium-status">Loading Cesium + Google 3D Tiles…</div>
@@ -4370,10 +4383,12 @@ function initMap() {
 
 function toggleMapView() {
   const btn = document.getElementById('ds-view-toggle');
+  const compass = document.getElementById('ds-compass');
   if (DS_STATE.cesiumMode) {
     // Switch back to 2D
     document.getElementById('ds-cesium').style.display = 'none';
     document.getElementById('ds-map').style.display = 'block';
+    if (compass) compass.classList.remove('show');
     if (btn) btn.textContent = '🌍 View True 3D';
     DS_STATE.cesiumMode = false;
     // Trigger map resize after it's visible again
@@ -4392,6 +4407,7 @@ async function enterCesium3D() {
   const cesDiv = document.getElementById('ds-cesium');
   const loadingDiv = document.getElementById('ds-cesium-loading');
   const btn = document.getElementById('ds-view-toggle');
+  const compass = document.getElementById('ds-compass');
 
   loadingDiv.style.display = 'flex';
   loadingDiv.style.alignItems = 'center';
@@ -4400,36 +4416,39 @@ async function enterCesium3D() {
   try {
     await loadCesium();
     document.getElementById('ds-cesium-status').textContent = 'Initializing 3D viewer…';
-    if (!DS_STATE.cesiumViewer) {
+    const firstLoad = !DS_STATE.cesiumViewer;
+    if (firstLoad) {
       await initCesium();
-    } else {
-      // Re-fly to current coords
-      const height = 120;
-      DS_STATE.cesiumViewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(DS_STATE.coords.lng, DS_STATE.coords.lat, height),
-        orientation: { heading: 0, pitch: Cesium.Math.toRadians(-35), roll: 0 },
-        duration: 1.2
-      });
     }
 
     mapDiv.style.display = 'none';
     cesDiv.style.display = 'block';
     DS_STATE.cesiumMode = true;
     if (btn) btn.textContent = '🗺 Back to 2D';
+    if (compass) compass.classList.add('show');
 
-    document.getElementById('ds-cesium-status').textContent = 'Loading Google 3D tiles…';
-    // Give tiles a moment to populate around the target before placing panels
+    document.getElementById('ds-cesium-status').textContent = firstLoad
+      ? 'Loading Google 3D tiles…'
+      : 'Re-positioning…';
+
+    // On first load, give tiles a moment to populate before sampling ground height
+    // On subsequent loads, skip the wait
+    const delay = firstLoad ? 2000 : 100;
     setTimeout(async () => {
-      document.getElementById('ds-cesium-status').textContent = 'Placing panels on roof…';
       try {
+        document.getElementById('ds-cesium-status').textContent = 'Positioning camera…';
+        // Position camera based on real ground height (fixes "nose in dirt" bug)
+        await flyToCompass(DS_STATE.currentCompassDir || 'S');
+
+        document.getElementById('ds-cesium-status').textContent = 'Placing panels on roof…';
         await render3DPanels();
         loadingDiv.style.display = 'none';
       } catch (e) {
-        document.getElementById('ds-cesium-status').textContent = '⚠ Could not place panels on roof';
+        document.getElementById('ds-cesium-status').textContent = '⚠ Could not finish 3D setup';
         document.getElementById('ds-cesium-hint').textContent = e.message || 'Sampling the 3D surface failed. The location may not have Photorealistic 3D Tile coverage.';
-        console.error('[DS] 3D panels error:', e);
+        console.error('[DS] 3D setup error:', e);
       }
-    }, 2000);
+    }, delay);
   } catch (e) {
     console.error('[DS] Cesium load/init error:', e);
     document.getElementById('ds-cesium-status').textContent = '⚠ 3D load failed';
@@ -4530,20 +4549,70 @@ async function initCesium() {
     throw new Error('Cesium could not load the 3D tileset: ' + (e.message || e));
   }
 
-  // Fly to the project location
-  const targetHeight = 130;
-  viewer.camera.flyTo({
-    destination: Cesium.Cartesian3.fromDegrees(DS_STATE.coords.lng, DS_STATE.coords.lat, targetHeight),
-    orientation: {
-      heading: 0,
-      pitch: Cesium.Math.toRadians(-40),
-      roll: 0
-    },
-    duration: 0
-  });
-
   DS_STATE.cesiumViewer = viewer;
   DS_STATE.panel3DEntities = [];
+  DS_STATE.currentCompassDir = null;
+}
+
+// ═════════════════════════════════════════════════════════════
+// COMPASS VIEW — orbit the project from N/E/S/W at 45° pitch
+// ═════════════════════════════════════════════════════════════
+async function flyToCompass(dir) {
+  if (!DS_STATE.cesiumViewer || !DS_STATE.coords) return;
+  const viewer = DS_STATE.cesiumViewer;
+
+  // Sample the actual ground/roof height at the target from the 3D tiles
+  // (this is what fixes the "nose in the dirt" bug — we were using sea level)
+  const targetCarto = Cesium.Cartographic.fromDegrees(DS_STATE.coords.lng, DS_STATE.coords.lat);
+  let targetHeight = 0;
+  try {
+    const updated = await viewer.scene.sampleHeightMostDetailed([targetCarto]);
+    if (updated && updated[0] && Number.isFinite(updated[0].height)) {
+      targetHeight = updated[0].height;
+      console.log('[DS-3D] Sampled target ground height:', targetHeight.toFixed(1), 'm');
+    }
+  } catch (e) {
+    console.warn('[DS-3D] Could not sample target height, falling back to 0', e);
+  }
+
+  // Camera is placed at 45° above horizon, 80 m from the house
+  const distance = 80;
+  const pitchDeg = 45;
+  const heightAbove = distance * Math.sin(pitchDeg * Math.PI / 180);  // ≈ 56 m above roof
+  const horzBack = distance * Math.cos(pitchDeg * Math.PI / 180);     // ≈ 56 m back
+
+  const latScale = 1 / 111320;
+  const lngScale = 1 / (111320 * Math.cos(DS_STATE.coords.lat * Math.PI / 180));
+
+  // Mapping: "N" button → camera is NORTH of target → heading 180 (looking south)
+  // so you see the north face of the house. Same convention for S/E/W.
+  const dirMap = {
+    'N': { dLat:  horzBack * latScale, dLng: 0,                     heading: 180 },
+    'S': { dLat: -horzBack * latScale, dLng: 0,                     heading: 0   },
+    'E': { dLat: 0,                    dLng:  horzBack * lngScale,  heading: 270 },
+    'W': { dLat: 0,                    dLng: -horzBack * lngScale,  heading: 90  }
+  };
+  const cfg = dirMap[dir] || dirMap['S'];
+
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(
+      DS_STATE.coords.lng + cfg.dLng,
+      DS_STATE.coords.lat + cfg.dLat,
+      targetHeight + heightAbove
+    ),
+    orientation: {
+      heading: Cesium.Math.toRadians(cfg.heading),
+      pitch: Cesium.Math.toRadians(-pitchDeg),
+      roll: 0
+    },
+    duration: 1.2
+  });
+
+  // Update active button indicator
+  document.querySelectorAll('.ds-compass button').forEach(b => {
+    b.classList.toggle('active', b.dataset.dir === dir);
+  });
+  DS_STATE.currentCompassDir = dir;
 }
 
 // ═════════════════════════════════════════════════════════════
