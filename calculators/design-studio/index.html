@@ -3912,6 +3912,15 @@ html { scroll-behavior: smooth; }
 .ds-compass button:hover{background:rgba(45,130,190,.12)}
 .ds-compass button.active{background:linear-gradient(135deg,#2D82BE,#1B5E8A);color:#fff;box-shadow:0 2px 8px rgba(45,130,190,.4)}
 .ds-compass-label{font-size:.62rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.06em;padding:0 10px;display:flex;align-items:center}
+
+/* Help tips section under the map */
+.ds-help{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:1rem;padding:1.25rem 1.5rem;background:linear-gradient(135deg,rgba(45,130,190,.06),rgba(45,130,190,.02));border:1px solid rgba(45,130,190,.12);border-radius:14px}
+@media(max-width:700px){.ds-help{grid-template-columns:1fr;gap:1rem}}
+.ds-help-col h4{font-size:.85rem;font-weight:800;color:#0B2545;margin:0 0 .7rem 0;display:flex;align-items:center;gap:.45rem;padding-bottom:.5rem;border-bottom:1px solid rgba(45,130,190,.15)}
+.ds-help-col ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.5rem}
+.ds-help-col li{font-size:.76rem;color:#475569;line-height:1.55;padding-left:1.1rem;position:relative}
+.ds-help-col li::before{content:"›";position:absolute;left:.25rem;top:-.05rem;color:#2D82BE;font-weight:800;font-size:.95rem}
+.ds-help-col li strong{color:#0B2545;font-weight:700}
 #ds-map{width:100%;height:600px;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;color:#64748B;font-size:.95rem;text-align:center;padding:2rem}
 .ds-map-placeholder{display:flex;flex-direction:column;gap:.75rem;align-items:center}
 .ds-map-placeholder .icon{font-size:3rem;opacity:.5}
@@ -4207,6 +4216,29 @@ body.ds-mode-ground .ds-ground-only{display:block}
           <div class="ds-legend-title">Panel Energy (kWh/yr)</div>
           <div class="ds-legend-bar"></div>
           <div class="ds-legend-labels"><span id="ds-legend-min">0</span><span id="ds-legend-max">0</span></div>
+        </div>
+      </div>
+
+      <div class="ds-help">
+        <div class="ds-help-col">
+          <h4>🗺 2D Mode</h4>
+          <ul>
+            <li><strong>Tap any panel</strong> on the map to add or remove it individually. Grey outlines are inactive panels you can click to activate.</li>
+            <li><strong>Drag the slider</strong> to quick-select the top N highest-producing panels.</li>
+            <li><strong>Edit segment angles</strong> in the Panel Layout panel — type a new tilt or azimuth and hit Apply to rotate every panel in that segment.</li>
+            <li><strong>Switch to Ground Mount</strong> to manually click-place panels on land, drag to reposition, or duplicate rows/columns.</li>
+            <li><strong>Draw obstructions</strong> to mark chimneys, vents, or skylights — panels inside will be excluded from production.</li>
+          </ul>
+        </div>
+        <div class="ds-help-col">
+          <h4>🌍 3D Mode</h4>
+          <ul>
+            <li><strong>Click N / E / S / W</strong> in the top-right corner to orbit the house at a 45° angle from each compass direction.</li>
+            <li><strong>Drag</strong> the view to rotate · <strong>scroll</strong> to zoom · <strong>right-click drag</strong> to pan the camera.</li>
+            <li><strong>Click any panel in 3D</strong> to add or remove it — same as 2D mode. Inactive panels show as faint outlines you can re-enable.</li>
+            <li><strong>Auto-loads first</strong> when you pick an address. Falls back to 2D if Google Photorealistic 3D Tiles aren't available for the location.</li>
+            <li><strong>Click "🗺 Back to 2D"</strong> to switch to flat editing mode — your choice is remembered for future addresses.</li>
+          </ul>
         </div>
       </div>
 
@@ -4600,6 +4632,16 @@ async function initCesium() {
   DS_STATE.cesiumViewer = viewer;
   DS_STATE.panel3DEntities = [];
   DS_STATE.currentCompassDir = null;
+
+  // Click handler — pick panel entities and toggle their active state
+  const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+  handler.setInputAction((click) => {
+    const picked = viewer.scene.pick(click.position);
+    if (picked && picked.id && picked.id._panelIdx !== undefined) {
+      togglePanel(picked.id._panelIdx);
+    }
+  }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+  DS_STATE.cesiumClickHandler = handler;
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -4673,85 +4715,79 @@ async function render3DPanels() {
   const viewer = DS_STATE.cesiumViewer;
   const scene = viewer.scene;
 
-  // Collect active panels + their cartographic positions
-  const active = DS_STATE.allPanels.filter(p => DS_STATE.activePanels.has(p.idx));
-  if (!active.length) return;
+  // Render ALL non-obstructed roof panels (active + inactive) so users can
+  // toggle them by clicking in 3D — same as 2D mode.
+  const renderable = DS_STATE.allPanels.filter(p =>
+    !p.isGround && !DS_STATE.disabledPanels.has(p.idx)
+  );
+  if (!renderable.length) return;
 
-  // Build array of Cartographic positions to clamp (at ground height first)
-  const cartos = active.map(p =>
-    Cesium.Cartographic.fromDegrees(p.center.longitude, p.center.latitude, 0)
+  // Sample roof height for each panel via the 3D tile mesh
+  const positions = renderable.map(p =>
+    Cesium.Cartographic.toCartesian(
+      Cesium.Cartographic.fromDegrees(p.center.longitude, p.center.latitude, 0)
+    )
   );
 
-  // clampToHeightMostDetailed takes Cartesian3 positions and returns them clamped
-  // We need Cartesian3, so convert first with a dummy height
-  const positions = cartos.map(c => Cesium.Cartographic.toCartesian(c));
-
-  // Clamp to the most detailed 3D tile surface at each position
   let clamped;
   try {
     clamped = await scene.clampToHeightMostDetailed(positions);
   } catch (e) {
-    console.warn('[DS] clampToHeightMostDetailed failed, falling back to sampleHeight', e);
+    console.warn('[DS] clampToHeightMostDetailed failed', e);
     clamped = positions;
   }
 
-  // Compute Cartographics from clamped positions to get the roof height
   const heights = clamped.map(pos => {
     if (!pos) return null;
-    const c = Cesium.Cartographic.fromCartesian(pos);
-    return c.height;
+    return Cesium.Cartographic.fromCartesian(pos).height;
   });
 
   // Create a thin oriented box entity for each panel
-  active.forEach((p, i) => {
+  renderable.forEach((p, i) => {
     const h = heights[i];
     if (h === null || !Number.isFinite(h)) return;
 
+    const isActive = DS_STATE.activePanels.has(p.idx);
     const angles = getPanelAngles(p);
     const tiltRad = Cesium.Math.toRadians(angles.tilt);
-    // Heading = compass azimuth the panel faces (CW from north).
-    // Google Solar + Cesium both use this convention.
     const headingRad = Cesium.Math.toRadians(angles.azimuth);
 
-    // Position: center of the panel, ~1 ft above the roof so panels don't
-    // bury into noisy mesh reconstruction (Google's 3D tiles are not perfectly flat)
     const position = Cesium.Cartesian3.fromDegrees(
       p.center.longitude,
       p.center.latitude,
       h + 0.30
     );
 
-    // Orientation math:
-    // 1) Heading (around -Z) rotates the local frame so +Y points toward the azimuth
-    //    direction (downhill). After this, +X is the ACROSS-slope axis and +Y is the
-    //    fall-line pointing downhill.
-    // 2) Roll (around +X, the across-slope axis) tilts the panel: negative roll drops
-    //    the downhill end and raises the uphill end, so the panel face matches the roof
-    //    plane. Pitch would have rotated around the WRONG axis (tilting sideways).
     const hpr = new Cesium.HeadingPitchRoll(headingRad, 0, -tiltRad);
     const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
 
-    // Dimensions: local X = across-slope (panel WIDTH), local Y = along fall line
-    // (panel LENGTH). Respect PORTRAIT/LANDSCAPE so the long edge sits along the
-    // correct axis.
     const isLandscape = p.orientation === 'LANDSCAPE';
     const dimX = isLandscape ? DS_STATE.panelHeightM : DS_STATE.panelWidthM;
     const dimY = isLandscape ? DS_STATE.panelWidthM : DS_STATE.panelHeightM;
 
-    // Energy-based color (same heat map as 2D)
-    const color = energyToColor(p.yearlyEnergyDcKwh, DS_STATE.energyMin, DS_STATE.energyMax);
-    const cesiumColor = Cesium.Color.fromCssColorString(color).withAlpha(0.92);
+    let material, outlineColor;
+    if (isActive) {
+      const color = energyToColor(p.yearlyEnergyDcKwh, DS_STATE.energyMin, DS_STATE.energyMax);
+      material = Cesium.Color.fromCssColorString(color).withAlpha(0.92);
+      outlineColor = Cesium.Color.fromCssColorString('#0B2545').withAlpha(0.9);
+    } else {
+      // Inactive panel — translucent gray ghost, still clickable
+      material = Cesium.Color.fromCssColorString('#94a3b8').withAlpha(0.20);
+      outlineColor = Cesium.Color.fromCssColorString('#475569').withAlpha(0.6);
+    }
 
     const entity = viewer.entities.add({
       position: position,
       orientation: orientation,
       box: {
         dimensions: new Cesium.Cartesian3(dimX, dimY, 0.035),
-        material: cesiumColor,
+        material: material,
         outline: true,
-        outlineColor: Cesium.Color.fromCssColorString('#0B2545').withAlpha(0.9)
+        outlineColor: outlineColor
       }
     });
+    // Tag the entity with the panel idx so the click handler can toggle it
+    entity._panelIdx = p.idx;
     DS_STATE.panel3DEntities.push(entity);
   });
 }
