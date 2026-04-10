@@ -7,89 +7,171 @@
 <style>
 body{font-family:Inter,-apple-system,sans-serif;margin:0;padding:2rem;background:#f8fafc;color:#0B2545}
 h1{font-size:1.8rem;margin-bottom:.5rem}
-.sub{color:#64748b;margin-bottom:2rem}
-.cat{margin-bottom:2rem}
-.cat h2{font-size:1.1rem;border-bottom:2px solid #2D82BE;padding-bottom:.5rem;margin-bottom:1rem}
-.ds{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem}
+.sub{color:#64748b;margin-bottom:2rem;max-width:720px}
+.cat{margin-bottom:2.5rem}
+.cat h2{font-size:1.1rem;border-bottom:2px solid #2D82BE;padding-bottom:.5rem;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.cat-count{font-size:.7rem;color:#94a3b8;font-weight:600}
+.ds{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem}
 .card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;transition:all .2s}
 .card:hover{border-color:#2D82BE;box-shadow:0 4px 12px rgba(45,130,190,.12)}
-.card h3{font-size:.95rem;margin:0 0 .35rem}
+.card h3{font-size:.95rem;margin:0 0 .35rem;line-height:1.35}
 .card .specs{font-size:.78rem;color:#64748b;line-height:1.6;margin-bottom:.75rem}
-.card a{display:inline-block;padding:.5rem 1rem;background:linear-gradient(135deg,#2D82BE,#1B5E8A);color:#fff;border-radius:100px;text-decoration:none;font-size:.82rem;font-weight:700}
-.card a:hover{opacity:.9}
-.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:.65rem;font-weight:700;margin-left:.5rem}
+.card a.btn{display:inline-block;padding:.5rem 1rem;background:linear-gradient(135deg,#2D82BE,#1B5E8A);color:#fff;border-radius:100px;text-decoration:none;font-size:.8rem;font-weight:700}
+.card a.btn:hover{opacity:.9}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:.62rem;font-weight:700;margin-left:.35rem;vertical-align:middle}
 .badge-res{background:#dcfce7;color:#166534}
 .badge-com{background:#dbeafe;color:#1e40af}
 .badge-usa{background:#fef3c7;color:#92400e}
+.badge-ref{background:#fce7f3;color:#9d174d}
+.badge-new{background:#ede9fe;color:#5b21b6}
+.note{font-size:.75rem;color:#64748b;background:#fff7ed;border-left:3px solid #f59e0b;padding:.75rem 1rem;border-radius:6px;margin-bottom:1.5rem}
+footer{margin-top:2rem;font-size:.78rem;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:1rem}
 </style>
 </head>
 <body>
 <h1>Equipment Datasheets</h1>
-<p class="sub">Technical specifications and manufacturer data sheets for all Solar Mason approved equipment.</p>
+<p class="sub">Technical specifications and manufacturer data sheets for all Solar Mason approved equipment. All datasheets are sourced directly from the manufacturers and linked into the Design Studio proposal workflow.</p>
+
+<div class="note">
+<strong>Warranty note:</strong> Solar Mason does not provide manufacturer warranties. All warranties shown are passed through directly to the customer. Solar Mason provides a separate 10-year limited labor warranty on workmanship.
+</div>
 
 <div class="cat">
-<h2>Solar Panels</h2>
+<h2>Solar Panels <span class="cat-count">5 models</span></h2>
 <div class="ds">
   <div class="card">
     <h3>Sunpro SPDG 445–460W <span class="badge badge-res">Residential Default</span></h3>
-    <div class="specs">TOPCon 210R Bifacial · N-Type · 96 cells · 23.02% efficiency<br>1762×1134×30mm · 23.8 kg · Tier 1 · FEOC Free</div>
-    <a href="/datasheets/panels/sunpro-445-460w-topcon-n96r12.pdf" target="_blank">View Datasheet</a>
+    <div class="specs">TOPCon 210R Bifacial · N-Type · 96 cells · 23.02% efficiency<br>1762×1134×30mm · 23.8 kg · Tier 1 · FEOC Free<br>15-yr product / 30-yr performance warranty</div>
+    <a class="btn" href="/datasheets/panels/sunpro-445-460w-topcon-n96r12.pdf" target="_blank">View Datasheet</a>
   </div>
   <div class="card">
     <h3>Sunpro SPDG 620–635W <span class="badge badge-com">Commercial Default</span></h3>
-    <div class="specs">TOPCon 210R Bifacial · N-Type · 132 cells · 23.51% efficiency<br>2382×1134×30mm · 32.4 kg · Tier 1 · FEOC Free</div>
-    <a href="/datasheets/panels/sunpro-620-635w-topcon-n132r12.pdf" target="_blank">View Datasheet</a>
+    <div class="specs">TOPCon 210R Bifacial · N-Type · 132 cells · 23.51% efficiency<br>2382×1134×30mm · 32.4 kg · Tier 1 · FEOC Free<br>15-yr product / 30-yr performance warranty</div>
+    <a class="btn" href="/datasheets/panels/sunpro-620-635w-topcon-n132r12.pdf" target="_blank">View Datasheet</a>
   </div>
   <div class="card">
     <h3>Sunpro SPDG 585–600W <span class="badge badge-usa">Made in USA</span></h3>
-    <div class="specs">N-Type 182 Bifacial · 144 cells · 23.22% efficiency<br>2278×1134×30mm · 31 kg · Domestic Content Eligible</div>
-    <a href="/datasheets/panels/sunpro-585-600w-usa-n144m10.pdf" target="_blank">View Datasheet</a>
+    <div class="specs">N-Type 182 Bifacial · 144 cells · 23.22% efficiency<br>2278×1134×30mm · 31 kg · Domestic Content Eligible<br>15-yr product / 30-yr performance warranty</div>
+    <a class="btn" href="/datasheets/panels/sunpro-585-600w-usa-n144m10.pdf" target="_blank">View Datasheet</a>
   </div>
   <div class="card">
     <h3>Sunpro SPDG 435–450W</h3>
-    <div class="specs">TOPCon 182 Bifacial · N-Type · 108 cells · 23.04% efficiency<br>1722×1134×30mm · 23.3 kg · Tier 1 · FEOC Free</div>
-    <a href="/datasheets/panels/sunpro-435-450w-topcon-n108m10.pdf" target="_blank">View Datasheet</a>
+    <div class="specs">TOPCon 182 Bifacial · N-Type · 108 cells · 23.04% efficiency<br>1722×1134×30mm · 23.3 kg · Tier 1 · FEOC Free<br>15-yr product / 30-yr performance warranty</div>
+    <a class="btn" href="/datasheets/panels/sunpro-435-450w-topcon-n108m10.pdf" target="_blank">View Datasheet</a>
   </div>
   <div class="card">
     <h3>Solarever USA 450–470W</h3>
-    <div class="specs">N-Type Bifacial Full Black · 96 cells · HC 96 Module<br>1762×1134×30mm · 24.0 kg · Dual Glass</div>
-    <a href="/datasheets/panels/solarever-450-470w-bifacial-n96.pdf" target="_blank">View Datasheet</a>
+    <div class="specs">N-Type Bifacial Full Black · 96 cells · HC 96 Module<br>1762×1134×30mm · 24.0 kg · Dual Glass · 1500V<br>25-yr product / 30-yr performance warranty</div>
+    <a class="btn" href="/datasheets/panels/solarever-450-470w-bifacial-n96.pdf" target="_blank">View Datasheet</a>
   </div>
 </div>
 </div>
 
 <div class="cat">
-<h2>Inverters</h2>
+<h2>Microinverters <span class="cat-count">Enphase — 2 datasheets</span></h2>
 <div class="ds">
   <div class="card">
     <h3>Enphase IQ8 Series <span class="badge badge-res">Residential</span></h3>
-    <div class="specs">Microinverters · IQ8+, IQ8M, IQ8A, IQ8H, IQ8HC<br>25-year warranty (parts only) · Panel-level monitoring</div>
-    <a href="/enphase-micro-inverters/">View Details</a>
+    <div class="specs">IQ8, IQ8+, IQ8M, IQ8A, IQ8H-240, IQ8H-208<br>Peak: 245–384 VA · 97.5% CEC weighted efficiency<br>25-year limited warranty (parts only)<br>Microgrid-forming, split-phase 240V</div>
+    <a class="btn" href="/datasheets/inverters/enphase-iq8-series-residential.pdf" target="_blank">View Datasheet</a>
   </div>
   <div class="card">
-    <h3>SolarEdge HD-Wave <span class="badge badge-com">Commercial</span></h3>
-    <div class="specs">String inverters with power optimizers<br>12-year base warranty (parts only) · String-level monitoring</div>
-    <a href="/solaredge-string-inverters/">View Details</a>
+    <h3>Enphase IQ8 Commercial <span class="badge badge-com">Commercial</span></h3>
+    <div class="specs">IQ8P-3P-72-E-US, IQ8P-3P-72-E-DOM-US (Domestic), IQ8H-3P<br>Peak: 384–480 VA · 97.8% peak efficiency<br>120/208 VAC 3-phase · IEEE 1547 compliant<br>25-year limited warranty (parts only)</div>
+    <a class="btn" href="/datasheets/inverters/enphase-iq8-commercial.pdf" target="_blank">View Datasheet</a>
   </div>
 </div>
 </div>
 
 <div class="cat">
-<h2>Racking Systems</h2>
+<h2>Power Optimizers <span class="cat-count">SolarEdge — 4 datasheets</span></h2>
 <div class="ds">
   <div class="card">
-    <h3>IronRidge Roof Racking</h3>
-    <div class="specs">XR100, XR1000 flush mount systems<br>UL 2703 listed · 25-year warranty</div>
-    <a href="/ironridge-roof-racking/">View Details</a>
+    <h3>SolarEdge S-Series Residential <span class="badge badge-res">Residential</span></h3>
+    <div class="specs">S440, S500, S500B, S650B · 99.5% efficiency<br>For Home Wave, Home Hub &amp; 3-phase inverters<br>Supports bifacial modules, built-in safety (SafeDC™)<br>25-year warranty</div>
+    <a class="btn" href="/datasheets/inverters/solaredge-s-series-residential-optimizer.pdf" target="_blank">View Datasheet</a>
   </div>
   <div class="card">
-    <h3>SEMS AVANS Ground Racking</h3>
-    <div class="specs">AVANS 8.0, AVANS 10.0 fixed-tilt ground mount<br>Helical pile or concrete foundation</div>
-    <a href="/sems-avans-racking-system/">View Details</a>
+    <h3>SolarEdge P-Series Commercial <span class="badge badge-com">Commercial</span></h3>
+    <div class="specs">P605, P650, P701, P730, P801, P800p, P850, P950, P1100<br>99.5% efficiency · Up to 1100W rated<br>Dual input for parallel/series modules<br>25-year warranty</div>
+    <a class="btn" href="/datasheets/inverters/solaredge-p-series-commercial-optimizer.pdf" target="_blank">View Datasheet</a>
+  </div>
+  <div class="card">
+    <h3>SolarEdge S1000 / S1200 Commercial <span class="badge badge-com">Commercial</span> <span class="badge badge-new">New</span></h3>
+    <div class="specs">S1000 (1100W rated) / S1200 (1300W rated) · 99.5% efficiency<br>SolarEdge Sense Connect connector monitoring<br>Up to 2x longer strings · 50% less BoS cost<br>25-year warranty</div>
+    <a class="btn" href="/datasheets/inverters/solaredge-s1000-s1200-commercial-optimizer.pdf" target="_blank">View Datasheet</a>
+  </div>
+  <div class="card">
+    <h3>SolarEdge S1400 Commercial <span class="badge badge-com">Commercial</span> <span class="badge badge-new">High Power</span></h3>
+    <div class="specs">S1400 — Most powerful commercial optimizer<br>Up to 700W/20A modules · G12 bifacial ready<br>30.4 kW per string · 99.5% peak efficiency<br>25-year warranty</div>
+    <a class="btn" href="/datasheets/inverters/solaredge-s1400-commercial-optimizer.pdf" target="_blank">View Datasheet</a>
   </div>
 </div>
 </div>
 
-<p style="margin-top:2rem;font-size:.78rem;color:#94a3b8">Solar Mason LLC · 800 James Ave, Scranton PA 18510 · HIC-181628<br>All manufacturer warranties are passed through directly to the customer. Solar Mason does not provide manufacturer warranties.</p>
+<div class="cat">
+<h2>String Inverters <span class="cat-count">SolarEdge — 1 datasheet</span></h2>
+<div class="ds">
+  <div class="card">
+    <h3>SolarEdge 3-Phase Synergy Commercial <span class="badge badge-com">Commercial</span> <span class="badge badge-new">New</span></h3>
+    <div class="specs">SE66.6K · SE90K · SE100K · SE120K<br>66.6 kW to 120 kW 3-phase · 98.3% peak efficiency<br>Synergy Technology (2–3 Synergy Units per inverter)<br>Built-in arc fault protection · 12–20 year warranty</div>
+    <a class="btn" href="/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf" target="_blank">View Datasheet</a>
+  </div>
+</div>
+</div>
+
+<div class="cat">
+<h2>Battery Storage <span class="cat-count">1 datasheet</span></h2>
+<div class="ds">
+  <div class="card">
+    <h3>Enphase IQ Battery 5P <span class="badge badge-res">Residential</span></h3>
+    <div class="specs">5.0 kWh usable · LFP chemistry · 15-year warranty<br>3.84 kVA continuous / 7.68 kVA peak<br>240V/208V split-phase · UL 9540A certified<br>6 embedded grid-forming microinverters</div>
+    <a class="btn" href="/datasheets/battery/enphase-iq-battery-5p.pdf" target="_blank">View Datasheet</a>
+  </div>
+</div>
+</div>
+
+<div class="cat">
+<h2>Reference Materials <span class="cat-count">Australia market — reference only</span></h2>
+<div class="ds">
+  <div class="card">
+    <h3>SolarEdge Home Battery 10kWh <span class="badge badge-ref">AUS Ref</span></h3>
+    <div class="specs">BAT-10K1P · 9.7 kWh usable · 5 kW continuous<br>350–450 Vdc · 10-year warranty<br><em>Australia model — US spec differs slightly</em></div>
+    <a class="btn" href="/datasheets/battery/solaredge-home-battery-10k-AUS-reference.pdf" target="_blank">View Datasheet</a>
+  </div>
+  <div class="card">
+    <h3>SolarEdge Home Hub Single Phase <span class="badge badge-ref">AUS Ref</span></h3>
+    <div class="specs">SE3000H-MM through SE10000H-MM<br>HD-Wave · 99% weighted efficiency · 300% DC oversizing<br><em>Australia variant — US models use SEnnnnH-US suffix</em></div>
+    <a class="btn" href="/datasheets/inverters/solaredge-home-hub-single-phase-AUS-reference.pdf" target="_blank">View Datasheet</a>
+  </div>
+  <div class="card">
+    <h3>SolarEdge Home Backup Interface <span class="badge badge-ref">AUS Ref</span></h3>
+    <div class="specs">BI-AU1P · 100A rated · Whole home or selected loads<br>12-year warranty · Generator support<br><em>Australia variant — US variant is BI-NAUGN-01</em></div>
+    <a class="btn" href="/datasheets/inverters/solaredge-backup-interface-AUS-reference.pdf" target="_blank">View Datasheet</a>
+  </div>
+</div>
+</div>
+
+<div class="cat">
+<h2>Racking Systems <span class="cat-count">External links — datasheets pending</span></h2>
+<div class="ds">
+  <div class="card">
+    <h3>IronRidge Roof Racking</h3>
+    <div class="specs">XR10, XR100, XR1000 flush mount systems<br>UL 2703 listed · 25-year warranty<br>Universal Fastening Object (UFO) end clamps</div>
+    <a class="btn" href="/ironridge-roof-racking/">Product Details</a>
+  </div>
+  <div class="card">
+    <h3>SEMS AVANS Ground Racking</h3>
+    <div class="specs">AVANS 8.0, AVANS 10.0 fixed-tilt ground mount<br>Helical pile or concrete foundation<br>2×4 or 2×5 module layouts</div>
+    <a class="btn" href="/sems-avans-racking-system/">Product Details</a>
+  </div>
+</div>
+</div>
+
+<footer>
+Solar Mason LLC · 800 James Ave, Scranton PA 18510 · HIC-181628<br>
+All manufacturer warranties are passed through directly to the customer. Solar Mason provides a 10-year limited labor warranty on workmanship only.<br>
+Datasheet versions are subject to change — always verify with the manufacturer for the latest specifications before final system design.
+</footer>
 </body>
 </html>

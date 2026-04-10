@@ -9021,30 +9021,51 @@ const INVERTER_DB = {
       { model: 'IQ8A',       peakAC: 366, maxDC: 500, minPanelW: 295, maxPanelW: 500, voltage: '240V split', notes: 'Higher power residential', datasheet: '/datasheets/inverters/enphase-iq8-series-residential.pdf' },
       { model: 'IQ8H',       peakAC: 384, maxDC: 530, minPanelW: 320, maxPanelW: 530, voltage: '240V split', notes: '240V split-phase backup-ready', datasheet: '/datasheets/inverters/enphase-iq8-series-residential.pdf' },
       { model: 'IQ8P',       peakAC: 480, maxDC: 650, minPanelW: 400, maxPanelW: 650, voltage: '240V split', notes: 'Large residential + commercial modules', datasheet: '/datasheets/inverters/enphase-iq8-commercial.pdf' },
-      { model: 'IQ8X',       peakAC: 530, maxDC: 720, minPanelW: 480, maxPanelW: 720, voltage: '240V split', notes: '80/88/96-cell high-Voc modules', datasheet: '/datasheets/inverters/enphase-iq8-commercial.pdf' },
+      { model: 'IQ8P-3P',    peakAC: 480, maxDC: 640, minPanelW: 380, maxPanelW: 640, voltage: '208V 3-phase', notes: 'Commercial 3-phase (120/208V 4W)', datasheet: '/datasheets/inverters/enphase-iq8-commercial.pdf' },
+      { model: 'IQ8H-3P',    peakAC: 384, maxDC: 540, minPanelW: 320, maxPanelW: 540, voltage: '208V 3-phase', notes: 'Commercial 3-phase (120/208V 4W)', datasheet: '/datasheets/inverters/enphase-iq8-commercial.pdf' },
+    ],
+    battery: [
+      { model: 'IQ Battery 5P', capacityKwh: 5.0, continuousKw: 3.84, peakKw: 7.68, chemistry: 'LFP', warrantyYears: 15, voltage: '240V/208V split-phase', datasheet: '/datasheets/battery/enphase-iq-battery-5p.pdf', notes: '6 embedded microinverters, wall or pedestal mount' },
     ]
   },
   solaredge: {
+    // ─── RESIDENTIAL S-SERIES OPTIMIZERS (verified from DS-000091-ENG Feb 2026) ───
     optimizer: [
-      { model: 'P370',  maxInputW: 370,  maxInputV: 60,   minPanelW: 180, maxPanelW: 370,  notes: 'Residential', datasheet: '/datasheets/inverters/solaredge-p-series-optimizer.pdf' },
-      { model: 'P401',  maxInputW: 405,  maxInputV: 80,   minPanelW: 250, maxPanelW: 405,  notes: 'Residential', datasheet: '/datasheets/inverters/solaredge-p-series-optimizer.pdf' },
-      { model: 'P485',  maxInputW: 485,  maxInputV: 83,   minPanelW: 300, maxPanelW: 485,  notes: 'Residential/light-comm', datasheet: '/datasheets/inverters/solaredge-p-series-optimizer.pdf' },
-      { model: 'P505',  maxInputW: 505,  maxInputV: 83,   minPanelW: 320, maxPanelW: 505,  notes: 'Residential/light-comm', datasheet: '/datasheets/inverters/solaredge-p-series-optimizer.pdf' },
-      { model: 'S440',  maxInputW: 440,  maxInputV: 80,   minPanelW: 250, maxPanelW: 440,  notes: 'S-Series smart optimizer', datasheet: '/datasheets/inverters/solaredge-s-series-optimizer.pdf' },
-      { model: 'S500',  maxInputW: 500,  maxInputV: 83,   minPanelW: 300, maxPanelW: 500,  notes: 'S-Series smart optimizer', datasheet: '/datasheets/inverters/solaredge-s-series-optimizer.pdf' },
-      { model: 'S550',  maxInputW: 550,  maxInputV: 83,   minPanelW: 350, maxPanelW: 550,  notes: 'S-Series smart optimizer', datasheet: '/datasheets/inverters/solaredge-s-series-optimizer.pdf' },
-      { model: 'P850',  maxInputW: 850,  maxInputV: 125,  minPanelW: 500, maxPanelW: 850,  notes: 'Commercial dual-input', datasheet: '/datasheets/inverters/solaredge-p-series-optimizer.pdf' },
+      { model: 'S440',  rated: 440,  maxVoc: 60,  minPanelW: 200, maxPanelW: 440, efficiency: 99.5, notes: 'Residential · up to 15 Adc', application: 'residential', datasheet: '/datasheets/inverters/solaredge-s-series-residential-optimizer.pdf' },
+      { model: 'S500',  rated: 500,  maxVoc: 60,  minPanelW: 230, maxPanelW: 500, efficiency: 99.5, notes: 'Residential · up to 15 Adc', application: 'residential', datasheet: '/datasheets/inverters/solaredge-s-series-residential-optimizer.pdf' },
+      { model: 'S500B', rated: 500,  maxVoc: 125, minPanelW: 230, maxPanelW: 500, efficiency: 99.5, notes: 'Residential · for Home Hub inverters, 16.5 Adc max Isc', application: 'residential', datasheet: '/datasheets/inverters/solaredge-s-series-residential-optimizer.pdf' },
+      { model: 'S650B', rated: 650,  maxVoc: 85,  minPanelW: 320, maxPanelW: 650, efficiency: 99.5, notes: 'Residential · for Home Hub inverters, bifacial ready', application: 'residential', datasheet: '/datasheets/inverters/solaredge-s-series-residential-optimizer.pdf' },
+      // ─── COMMERCIAL P-SERIES OPTIMIZERS (verified from DS-000012-ENG) ───
+      { model: 'P605',  rated: 605,  maxVoc: 65,  minPanelW: 350, maxPanelW: 605, efficiency: 99.5, notes: 'Commercial single-input · 1 x high power module', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-p-series-commercial-optimizer.pdf' },
+      { model: 'P650',  rated: 650,  maxVoc: 96,  minPanelW: 200, maxPanelW: 650, efficiency: 99.5, notes: 'Commercial · up to 2 x 60-cell modules', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-p-series-commercial-optimizer.pdf' },
+      { model: 'P701',  rated: 740,  maxVoc: 96,  minPanelW: 200, maxPanelW: 740, efficiency: 99.5, notes: 'Commercial · up to 2 x 60/120-cell modules', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-p-series-commercial-optimizer.pdf' },
+      { model: 'P730',  rated: 760,  maxVoc: 96,  minPanelW: 300, maxPanelW: 760, efficiency: 99.5, notes: 'Commercial · up to 2 x 72-cell modules', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-p-series-commercial-optimizer.pdf' },
+      { model: 'P801',  rated: 800,  maxVoc: 125, minPanelW: 350, maxPanelW: 800, efficiency: 99.5, notes: 'Commercial · up to 2 x 72/144-cell modules', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-p-series-commercial-optimizer.pdf' },
+      { model: 'P800p', rated: 800,  maxVoc: 83,  minPanelW: 350, maxPanelW: 800, efficiency: 99.5, notes: 'Commercial · 96-cell 5" modules, dual input (parallel)', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-p-series-commercial-optimizer.pdf' },
+      { model: 'P850',  rated: 850,  maxVoc: 125, minPanelW: 400, maxPanelW: 850, efficiency: 99.5, notes: 'Commercial · up to 2 x high power or bifacial modules', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-p-series-commercial-optimizer.pdf' },
+      { model: 'P950',  rated: 950,  maxVoc: 125, minPanelW: 450, maxPanelW: 950, efficiency: 99.5, notes: 'Commercial · up to 2 x high power or bifacial modules', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-p-series-commercial-optimizer.pdf' },
+      { model: 'P1100', rated: 1100, maxVoc: 125, minPanelW: 550, maxPanelW: 1100, efficiency: 99.5, notes: 'Commercial · up to 2 x high power or bifacial modules', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-p-series-commercial-optimizer.pdf' },
+      // ─── COMMERCIAL S-SERIES OPTIMIZERS (verified from DS-000122-ROW May 2025) ───
+      { model: 'S1000', rated: 1100, maxVoc: 125, minPanelW: 500, maxPanelW: 1100, efficiency: 99.5, notes: 'Commercial · 2 x modules in series, Sense Connect', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-s1000-s1200-commercial-optimizer.pdf' },
+      { model: 'S1200', rated: 1300, maxVoc: 125, minPanelW: 550, maxPanelW: 1300, efficiency: 99.5, notes: 'Commercial · 2 x high power modules, Sense Connect', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-s1000-s1200-commercial-optimizer.pdf' },
+      // ─── COMMERCIAL S1400 HIGH POWER (verified from DS-000205-ROW July 2024) ───
+      { model: 'S1400', rated: 1400, maxVoc: 125, minPanelW: 600, maxPanelW: 1400, efficiency: 99.5, notes: 'Commercial · up to 700W/20A modules, G12 ready, 30.4 kW per string', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-s1400-commercial-optimizer.pdf' },
     ],
     stringInverter: [
-      // model, ratedACkW, maxDCoverSizeRatio (SolarEdge allows up to 1.55 typ)
-      { model: 'SE3000H-US', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf',  ratedAC: 3.0,  maxDCkW: 4.65,  voltage: '240V 1Φ', notes: 'Residential', datasheet: '/datasheets/inverters/solaredge-p-series-optimizer.pdf' },
-      { model: 'SE3800H-US', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf',  ratedAC: 3.8,  maxDCkW: 5.90,  voltage: '240V 1Φ', notes: 'Residential', datasheet: '/datasheets/inverters/solaredge-p-series-optimizer.pdf' },
-      { model: 'SE5000H-US', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf',  ratedAC: 5.0,  maxDCkW: 7.75,  voltage: '240V 1Φ', notes: 'Residential', datasheet: '/datasheets/inverters/solaredge-p-series-optimizer.pdf' },
-      { model: 'SE5700H-US', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf',  ratedAC: 5.76, ratedAC208: 5.0, maxDCkW: 8.93, voltage: '208/240V 1Φ', notes: 'Residential', datasheet: '/datasheets/inverters/solaredge-p-series-optimizer.pdf' },
-      { model: 'SE6000H-US', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf',  ratedAC: 6.0,  ratedAC208: 5.0, maxDCkW: 9.30, voltage: '208/240V 1Φ', notes: 'Residential', datasheet: '/datasheets/inverters/solaredge-p-series-optimizer.pdf' },
-      { model: 'SE7600H-US', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf',  ratedAC: 7.6,  maxDCkW: 11.78, voltage: '240V 1Φ', notes: 'Residential', datasheet: '/datasheets/inverters/solaredge-p-series-optimizer.pdf' },
-      { model: 'SE10000H-US', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf', ratedAC: 10.0, maxDCkW: 15.50, voltage: '240V 1Φ', notes: 'Large residential' },
-      { model: 'SE11400H-US', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf', ratedAC: 11.4, ratedAC208: 10.0, maxDCkW: 17.67, voltage: '208/240V 1Φ', notes: 'Max single-phase residential' },
+      // ─── RESIDENTIAL HD-WAVE SINGLE-PHASE (US) ───
+      { model: 'SE3000H-US', ratedAC: 3.0,  maxDCkW: 4.65,  voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE3800H-US', ratedAC: 3.8,  maxDCkW: 5.90,  voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE5000H-US', ratedAC: 5.0,  maxDCkW: 7.75,  voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE5700H-US', ratedAC: 5.76, ratedAC208: 5.0, maxDCkW: 8.93, voltage: '208/240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE6000H-US', ratedAC: 6.0,  ratedAC208: 5.0, maxDCkW: 9.30, voltage: '208/240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE7600H-US', ratedAC: 7.6,  maxDCkW: 11.78, voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE10000H-US', ratedAC: 10.0, maxDCkW: 15.50, voltage: '240V 1Φ', notes: 'Large residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE11400H-US', ratedAC: 11.4, ratedAC208: 10.0, maxDCkW: 17.67, voltage: '208/240V 1Φ', notes: 'Max single-phase residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      // ─── COMMERCIAL 3-PHASE SYNERGY (verified from DS-000019-2.2-ENG) ───
+      { model: 'SE66.6K',  ratedAC: 66.6,  maxDCkW: 100.0, voltage: '380/400V 3Φ', notes: 'Commercial · 2 Synergy Units, pre-commissioning, built-in arc fault', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
+      { model: 'SE90K',    ratedAC: 90.0,  maxDCkW: 135.0, voltage: '380/400V 3Φ', notes: 'Commercial · 3 Synergy Units, 98.1% peak efficiency', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
+      { model: 'SE100K',   ratedAC: 100.0, maxDCkW: 150.0, voltage: '380/400V 3Φ', notes: 'Commercial · 3 Synergy Units, 145 Aac continuous', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
+      { model: 'SE120K',   ratedAC: 120.0, maxDCkW: 180.0, voltage: '480V 3Φ',     notes: 'Commercial · 3 Synergy Units, 480V grid', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
     ]
   }
 };
@@ -9059,19 +9080,33 @@ function recommendEnphaseMicro(panelW) {
   return micros.find(m => panelW >= m.minPanelW && panelW <= m.maxPanelW) || micros[micros.length - 1];
 }
 
-// Return the smallest SolarEdge optimizer that can handle a given panel wattage
+// Return the smallest SolarEdge optimizer that can handle a given panel wattage.
+// Prefers optimizers matching the current customer class (residential vs commercial).
 function recommendSolarEdgeOptimizer(panelW) {
   const opts = INVERTER_DB.solaredge.optimizer;
-  // Prefer P-series first, then S-series as alternate — pick the tightest fit
-  const compatible = opts.filter(o => panelW <= o.maxInputW && panelW >= o.minPanelW * 0.85);
-  return compatible[0] || opts[opts.length - 1];
+  const isCommercial = DS_STATE.customerClass === 'commercial';
+  // Filter by application first (residential panels → residential optimizers)
+  const scoped = opts.filter(o => o.application === (isCommercial ? 'commercial' : 'residential'));
+  // Find tightest fit within scope
+  const compatible = scoped.filter(o => panelW <= o.rated && panelW >= (o.minPanelW || 0) * 0.85);
+  if (compatible.length > 0) {
+    // Sort by rated power ascending — tightest fit first
+    compatible.sort((a, b) => a.rated - b.rated);
+    return compatible[0];
+  }
+  // Fall back: any compatible optimizer across both classes
+  const anyCompat = opts.filter(o => panelW <= o.rated).sort((a, b) => a.rated - b.rated);
+  return anyCompat[0] || opts[0];
 }
 
 // Return the smallest SolarEdge string inverter that fits a given DC size,
-// honoring the maxDCkW oversizing cap on each inverter.
+// honoring the maxDCkW oversizing cap on each inverter. Prefers inverters
+// matching the customer class.
 function recommendSolarEdgeInverter(totalDCkW) {
   const invs = INVERTER_DB.solaredge.stringInverter;
-  return invs.find(i => totalDCkW <= i.maxDCkW) || invs[invs.length - 1];
+  const isCommercial = DS_STATE.customerClass === 'commercial';
+  const scoped = invs.filter(i => i.application === (isCommercial ? 'commercial' : 'residential'));
+  return scoped.find(i => totalDCkW <= i.maxDCkW) || scoped[scoped.length - 1] || invs[invs.length - 1];
 }
 
 // ------- UI wiring -------
@@ -9096,11 +9131,15 @@ function populateSolarEdgeDropdowns(panelW, totalDCkW) {
   const invSel = document.getElementById('ds-inv-se-inv');
   if (!optSel || !invSel) return;
 
+  const isCommercial = DS_STATE.customerClass === 'commercial';
+  const scopedOpts = INVERTER_DB.solaredge.optimizer.filter(
+    o => o.application === (isCommercial ? 'commercial' : 'residential')
+  );
   const recOpt = recommendSolarEdgeOptimizer(panelW);
-  optSel.innerHTML = INVERTER_DB.solaredge.optimizer.map(o => {
-    const compat = panelW <= o.maxInputW;
+  optSel.innerHTML = scopedOpts.map(o => {
+    const compat = panelW <= o.rated;
     const badge = compat ? '' : ' <svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-    return `<option value="${o.model}" ${o.model === recOpt.model ? 'selected' : ''}>${o.model} — ${o.maxInputW}W max${badge}</option>`;
+    return `<option value="${o.model}" ${o.model === recOpt.model ? 'selected' : ''}>${o.model} — ${o.rated}W max${badge}</option>`;
   }).join('');
   DS_STATE.inverterSelection.optimizer = recOpt.model;
   const optRec = document.getElementById('ds-inv-se-opt-rec');
@@ -9181,12 +9220,12 @@ function updateInverterCompatDisplay() {
     const opt = INVERTER_DB.solaredge.optimizer.find(o => o.model === DS_STATE.inverterSelection.optimizer);
     const inv = INVERTER_DB.solaredge.stringInverter.find(i => i.model === DS_STATE.inverterSelection.stringInverter);
     if (!opt || !inv) { el.textContent = ''; return; }
-    const optOK = panelW <= opt.maxInputW;
+    const optOK = panelW <= opt.rated;
     const invOK = totalDCkW <= inv.maxDCkW;
     const dcAcRatio = inv.ratedAC > 0 ? (totalDCkW / inv.ratedAC) : 0;
     if (!optOK) {
       el.className = 'ds-inv-compat err';
-      el.innerHTML = `<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> <strong>${panelW}W panel exceeds ${opt.model}'s ${opt.maxInputW}W max input.</strong> Pick a larger optimizer.`;
+      el.innerHTML = `<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> <strong>${panelW}W panel exceeds ${opt.model}'s ${opt.rated}W max input.</strong> Pick a larger optimizer.`;
     } else if (!invOK) {
       el.className = 'ds-inv-compat warn';
       el.innerHTML = `<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> <strong>${totalDCkW.toFixed(2)} kW DC exceeds ${inv.model}'s ${inv.maxDCkW.toFixed(1)} kW cap.</strong> Pick a larger string inverter.`;
@@ -9249,7 +9288,7 @@ function computeBOM() {
       items.push({
         category: 'Optimizers',
         name: `SolarEdge ${opt.model}`,
-        meta: `${opt.maxInputW}W max input · ${opt.notes}`,
+        meta: `${opt.rated}W max input · ${opt.notes}`,
         qty: activeCount
       });
     }
