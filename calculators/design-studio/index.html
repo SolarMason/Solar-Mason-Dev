@@ -4224,6 +4224,13 @@ body.ds-mode-ground .ds-ground-only{display:block}
         <div class="ds-bill-title">Drop PDF here or tap to upload</div>
         <div class="ds-bill-sub">PPL · PECO · Met-Ed · Penelec · Duquesne · others</div>
       </div>
+      <div style="margin-top:.6rem;padding-top:.6rem;border-top:1px dashed rgba(0,0,0,.08)">
+        <div style="font-size:.7rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem">Or enter manually</div>
+        <div class="ds-row">
+          <div class="ds-field"><label>Annual kWh</label><input type="number" id="ds-manual-kwh" placeholder="12000" min="0" max="500000" step="100"></div>
+          <div class="ds-field" style="display:flex;align-items:flex-end"><button class="ds-btn ds-btn-sec" style="padding:.55rem .8rem;font-size:.78rem;width:100%" onclick="applyManualBill()">Apply</button></div>
+        </div>
+      </div>
       <div class="ds-bill-result" id="ds-bill-result" style="display:none"></div>
     </div>
 
@@ -4301,6 +4308,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
           <div class="ds-result"><div class="ds-result-label">Year 1 Savings</div><div class="ds-result-value" id="r-save">—</div><div class="ds-result-sub">at current rate</div></div>
           <div class="ds-result"><div class="ds-result-label">Payback</div><div class="ds-result-value" id="r-pb">—</div><div class="ds-result-sub">years</div></div>
           <div class="ds-result"><div class="ds-result-label">25-Year Savings</div><div class="ds-result-value" id="r-25">—</div><div class="ds-result-sub">with escalation</div></div>
+          <div class="ds-result" id="r-offset-card" style="display:none"><div class="ds-result-label">Annual Offset</div><div class="ds-result-value" id="r-offset">—</div><div class="ds-result-sub">vs. your bill</div></div>
         </div>
 
         <div class="ds-chart-wrap">
@@ -5939,6 +5947,18 @@ async function runDesignStudio() {
     document.getElementById('r-pb').textContent = paybackYear ? paybackYear.toFixed(1) : '25+';
     document.getElementById('r-25').textContent = '$' + Math.round(totalSavings25).toLocaleString();
 
+    // Annual offset card — only shown when a bill has been uploaded/entered
+    const offsetCard = document.getElementById('r-offset-card');
+    if (DS_STATE.billData && DS_STATE.billData.annualKwh) {
+      const offset = (annualProd / DS_STATE.billData.annualKwh) * 100;
+      const offsetEl = document.getElementById('r-offset');
+      offsetEl.textContent = offset.toFixed(0) + '%';
+      offsetEl.style.color = offset >= 100 ? '#059669' : (offset >= 80 ? '#0B2545' : '#dc2626');
+      offsetCard.style.display = '';
+    } else {
+      offsetCard.style.display = 'none';
+    }
+
     // Render monthly chart + table
     if (pv.ac_monthly) {
       renderMonthlyChart(pv.ac_monthly);
@@ -6121,6 +6141,33 @@ function bindBillUpload() {
   fi.addEventListener('change', e => {
     if (e.target.files[0]) processBillFile(e.target.files[0]);
   });
+}
+
+// Manual fallback: user enters annual kWh directly
+function applyManualBill() {
+  const v = parseFloat(document.getElementById('ds-manual-kwh').value);
+  const result = document.getElementById('ds-bill-result');
+  if (!v || v < 100 || v > 500000) {
+    result.style.display = 'block';
+    result.className = 'ds-bill-result error';
+    result.innerHTML = '❌ Enter a realistic annual usage between 100 and 500,000 kWh.';
+    return;
+  }
+  const billData = {
+    utility: 'Manual entry',
+    annualKwh: Math.round(v),
+    ratePerKwh: parseFloat(document.getElementById('ds-rate').value) || null,
+    monthlyConsumption: distributeAnnualToMonthly(v)
+  };
+  DS_STATE.billData = billData;
+  result.style.display = 'block';
+  result.className = 'ds-bill-result';
+  result.innerHTML = `
+    <div style="font-weight:800;color:#065f46;margin-bottom:.4rem">✅ Manual entry applied</div>
+    <div class="row"><span>Annual usage</span><span><strong>${billData.annualKwh.toLocaleString()} kWh</strong></span></div>
+    <div class="row"><span>Monthly average</span><span>${Math.round(billData.annualKwh/12).toLocaleString()} kWh</span></div>
+    <div style="font-size:.7rem;color:#475569;margin-top:.5rem">Hit <strong>Calculate &amp; Model</strong> to see the production-vs-consumption chart with monthly offset.</div>
+  `;
 }
 
 async function processBillFile(file) {
