@@ -7563,6 +7563,16 @@ function setCustomerClass(cls, auto = false) {
     }
   }
   updateItcDisplay();
+
+  // Auto-switch to recommended panel for the customer class
+  // (only if user hasn't manually picked a different panel)
+  if (!auto) {
+    const defKey = cls === 'commercial'
+      ? 'Sunpro Power|SPDG635-N132R12 635W'
+      : 'Sunpro Power|SPDG460-N96R12 460W';
+    const sel = document.getElementById('ds-panel-model');
+    if (sel) { sel.value = defKey; onPanelModelChange(); }
+  }
 }
 
 // Show/hide low-income category picker when checkbox changes
@@ -8709,6 +8719,21 @@ function exportProposal() {
 // ============================================================
 
 const PANEL_DB = {
+  'Sunpro Power': [
+    { model: 'SPDG460-N96R12 460W', w: 460, voc: 36.30, vmp: 30.39, isc: 15.99, imp: 15.14, length_mm: 1762, width_mm: 1134, thick_mm: 30, weight_kg: 23.8, cells: 96, tech: 'N-type TOPCon Bifacial (Residential)', datasheet: '/datasheets/panels/sunpro-445-460w-topcon-n96r12.pdf', defaultRes: true },
+    { model: 'SPDG450-N96R12 450W', w: 450, voc: 35.80, vmp: 29.93, isc: 15.90, imp: 15.04, length_mm: 1762, width_mm: 1134, thick_mm: 30, weight_kg: 23.8, cells: 96, tech: 'N-type TOPCon Bifacial', datasheet: '/datasheets/panels/sunpro-445-460w-topcon-n96r12.pdf' },
+    { model: 'SPDG445-N96R12 445W', w: 445, voc: 35.54, vmp: 29.69, isc: 15.86, imp: 14.99, length_mm: 1762, width_mm: 1134, thick_mm: 30, weight_kg: 23.8, cells: 96, tech: 'N-type TOPCon Bifacial', datasheet: '/datasheets/panels/sunpro-445-460w-topcon-n96r12.pdf' },
+    { model: 'SPDG450-N108M10 450W', w: 450, voc: 38.75, vmp: 32.41, isc: 14.63, imp: 13.89, length_mm: 1722, width_mm: 1134, thick_mm: 30, weight_kg: 23.3, cells: 108, tech: 'TOPCon 182 Bifacial', datasheet: '/datasheets/panels/sunpro-435-450w-topcon-n108m10.pdf' },
+    { model: 'SPDG635-N132R12 635W', w: 635, voc: 49.97, vmp: 41.95, isc: 16.03, imp: 15.14, length_mm: 2382, width_mm: 1134, thick_mm: 30, weight_kg: 32.4, cells: 132, tech: 'N-type TOPCon Bifacial (Commercial)', datasheet: '/datasheets/panels/sunpro-620-635w-topcon-n132r12.pdf', defaultCom: true },
+    { model: 'SPDG620-N132R12 620W', w: 620, voc: 49.25, vmp: 41.20, isc: 15.92, imp: 15.05, length_mm: 2382, width_mm: 1134, thick_mm: 30, weight_kg: 32.4, cells: 132, tech: 'N-type TOPCon Bifacial (Commercial)', datasheet: '/datasheets/panels/sunpro-620-635w-topcon-n132r12.pdf' },
+    { model: 'SPDG600-N144M10 600W (USA)', w: 600, voc: 51.97, vmp: 43.18, isc: 14.62, imp: 13.90, length_mm: 2278, width_mm: 1134, thick_mm: 30, weight_kg: 31, cells: 144, tech: 'N-type Bifacial · Made in USA · Domestic Content', datasheet: '/datasheets/panels/sunpro-585-600w-usa-n144m10.pdf' },
+    { model: 'SPDG585-N144M10 585W (USA)', w: 585, voc: 51.58, vmp: 42.72, isc: 14.41, imp: 13.70, length_mm: 2278, width_mm: 1134, thick_mm: 30, weight_kg: 31, cells: 144, tech: 'N-type Bifacial · Made in USA · Domestic Content', datasheet: '/datasheets/panels/sunpro-585-600w-usa-n144m10.pdf' }
+  ],
+  'Solarever USA': [
+    { model: 'SE-470M-96-BD 470W', w: 470, voc: 35.75, vmp: 30.80, isc: 16.25, imp: 15.26, length_mm: 1762, width_mm: 1134, thick_mm: 30, weight_kg: 24.0, cells: 96, tech: 'N-type Bifacial Full Black', datasheet: '/datasheets/panels/solarever-450-470w-bifacial-n96.pdf' },
+    { model: 'SE-460M-96-BD 460W', w: 460, voc: 35.39, vmp: 30.44, isc: 16.15, imp: 15.11, length_mm: 1762, width_mm: 1134, thick_mm: 30, weight_kg: 24.0, cells: 96, tech: 'N-type Bifacial Full Black', datasheet: '/datasheets/panels/solarever-450-470w-bifacial-n96.pdf' },
+    { model: 'SE-450M-96-BD 450W', w: 450, voc: 35.03, vmp: 30.08, isc: 16.05, imp: 14.97, length_mm: 1762, width_mm: 1134, thick_mm: 30, weight_kg: 24.0, cells: 96, tech: 'N-type Bifacial Full Black', datasheet: '/datasheets/panels/solarever-450-470w-bifacial-n96.pdf' }
+  ],
   'Qcells': [
     { model: 'Q.PEAK DUO BLK ML-G10+ 400', w: 400, voc: 45.13, vmp: 37.67, isc: 11.23, imp: 10.62, length_mm: 1879, width_mm: 1045, thick_mm: 32, weight_kg: 21.5, cells: 132, tech: 'Mono PERC' },
     { model: 'Q.PEAK DUO BLK ML-G10+ 410', w: 410, voc: 45.40, vmp: 37.95, isc: 11.31, imp: 10.80, length_mm: 1879, width_mm: 1045, thick_mm: 32, weight_kg: 21.5, cells: 132, tech: 'Mono PERC' },
@@ -8810,7 +8835,7 @@ function findPanelByKey(key) {
 }
 
 // Current panel selection — mirrors the Panel Model dropdown
-DS_STATE.selectedPanelKey = 'Qcells|Q.TRON BLK M-G2+ 440';
+DS_STATE.selectedPanelKey = 'Sunpro Power|SPDG460-N96R12 460W';
 
 // ============================================================
 // IRONRIDGE RACKING BOM LOGIC
@@ -8963,7 +8988,7 @@ function renderPanelSpecs(brand, p) {
     <div class="row"><span><strong>${brand}</strong> · ${p.w} W</span><span>${p.cells}-cell</span></div>
     <div class="row"><span>${p.voc}V Voc · ${p.vmp}V Vmp</span><span>${p.isc}A Isc · ${p.imp}A Imp</span></div>
     <div class="row"><span>${p.length_mm}×${p.width_mm}×${p.thick_mm} mm</span><span>${lengthIn}"×${widthIn}" · ${p.weight_kg} kg</span></div>
-    <div class="tech">${p.tech}</div>
+    <div class="tech">${p.tech}${p.datasheet ? ' · <a href="' + p.datasheet + '" target="_blank" style="color:var(--brand)">Datasheet PDF</a>' : ''}</div>
   `;
 }
 
