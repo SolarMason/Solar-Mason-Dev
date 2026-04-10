@@ -3895,6 +3895,54 @@ html { scroll-behavior: smooth; }
 
 <style>
 /* ═══ DESIGN STUDIO V2 STYLES ═══ */
+/* ═══ DESIGN STUDIO V3 — FULL-VIEWPORT LAYOUT (OpenSolar-style) ═══ */
+/* Breaks out of the content-section's 1280px cap so the map fills the screen */
+.ds-studio-fullscreen{position:relative;width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);height:calc(100vh - 72px);min-height:640px;background:#e2e8f0;overflow:hidden}
+
+/* Full-viewport map background */
+.ds-map-background{position:absolute;inset:0;z-index:1}
+.ds-map-background #ds-map,.ds-map-background #ds-cesium{width:100%!important;height:100%!important}
+.ds-map-background .ds-map-wrap{width:100%;height:100%;position:relative}
+
+/* Floating left overlay — scrollable tools column */
+.ds-tools-overlay{position:absolute;top:1rem;left:1rem;bottom:1rem;width:440px;max-width:calc(100vw - 2rem);background:rgba(255,255,255,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.8);border-radius:18px;box-shadow:0 10px 40px rgba(15,23,42,.18);z-index:100;display:flex;flex-direction:column;overflow:hidden;transition:transform .3s ease,width .3s ease}
+.ds-tools-overlay.collapsed{transform:translateX(calc(-100% + 54px))}
+.ds-tools-header{padding:.85rem 1.1rem;border-bottom:1px solid rgba(0,0,0,.08);display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-shrink:0;background:linear-gradient(135deg,rgba(45,130,190,.04),rgba(45,130,190,.01))}
+.ds-tools-header-title{font-size:.82rem;font-weight:900;color:#0B2545;letter-spacing:.02em;display:flex;align-items:center;gap:.5rem}
+.ds-tools-header-title .logo{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#2D82BE,#1B5E8A);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.8rem}
+.ds-tools-toggle{background:transparent;border:1px solid rgba(0,0,0,.1);color:#64748B;width:32px;height:32px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:700;transition:all .2s}
+.ds-tools-toggle:hover{background:rgba(45,130,190,.08);color:#2D82BE}
+.ds-tools-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:.9rem;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(45,130,190,.3) transparent}
+.ds-tools-body::-webkit-scrollbar{width:8px}
+.ds-tools-body::-webkit-scrollbar-track{background:transparent}
+.ds-tools-body::-webkit-scrollbar-thumb{background:rgba(45,130,190,.25);border-radius:4px}
+.ds-tools-body::-webkit-scrollbar-thumb:hover{background:rgba(45,130,190,.45)}
+
+/* Collapsed state shows just a tab with an expand icon */
+.ds-tools-overlay.collapsed .ds-tools-header-title{opacity:0}
+.ds-tools-overlay.collapsed .ds-tools-toggle{transform:rotate(180deg)}
+
+/* Inside the overlay, panels are tighter */
+.ds-tools-body .ds-panel{margin-bottom:.8rem;padding:1rem 1.1rem;border-radius:14px;box-shadow:none;border:1px solid rgba(0,0,0,.06)}
+.ds-tools-body .ds-panel h3{font-size:.88rem;margin-bottom:.8rem;padding-bottom:.55rem}
+
+/* Floating map controls */
+.ds-map-fab{position:absolute;top:1rem;right:1rem;z-index:50;display:flex;flex-direction:column;gap:.5rem}
+.ds-map-fab button{padding:.6rem .95rem;border-radius:100px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#0B2545;font-size:.78rem;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(15,23,42,.12);white-space:nowrap;transition:all .2s}
+.ds-map-fab button:hover{background:#fff;transform:translateY(-1px);box-shadow:0 6px 18px rgba(15,23,42,.15)}
+
+/* When map background takes over, old placeholder + legend reposition */
+.ds-map-background .ds-map-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.75rem;text-align:center;padding:2rem;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);color:#475569;z-index:2}
+.ds-map-background .ds-compass{top:5rem;right:1rem}
+.ds-map-background .ds-legend{bottom:1rem;right:1rem}
+
+@media(max-width:768px){
+  .ds-studio-fullscreen{height:calc(100vh - 60px)}
+  .ds-tools-overlay{width:calc(100vw - 1rem);top:.5rem;left:.5rem;right:.5rem;bottom:.5rem;max-width:none}
+  .ds-tools-overlay.collapsed{transform:translateY(calc(-100% + 54px));bottom:auto;max-height:none}
+  .ds-map-fab{top:auto;bottom:1rem;right:.5rem}
+}
+
 .ds-wrap{display:grid;grid-template-columns:380px 1fr;gap:1.25rem;margin-bottom:2rem}
 @media(max-width:900px){.ds-wrap{grid-template-columns:1fr}}
 .ds-panel{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:18px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,.03);margin-bottom:1rem}
@@ -3905,7 +3953,8 @@ html { scroll-behavior: smooth; }
 .ds-addr input:focus{outline:none;border-color:#2D82BE;background:#fff;box-shadow:0 0 0 3px rgba(45,130,190,.08)}
 .ds-addr::before{content:"📍";position:absolute;left:.85rem;top:50%;transform:translateY(-50%);font-size:1rem}
 .ds-addr-hint{font-size:.72rem;color:#94a3b8;margin-top:.4rem}
-.ds-map-wrap{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(0,0,0,.08);background:#e5e7eb;min-height:600px}
+.ds-map-wrap{position:relative;border-radius:0;overflow:hidden;background:#e5e7eb;width:100%;height:100%}
+.ds-map-background .ds-map-wrap{border-radius:0}
 .ds-compass{position:absolute;top:14px;right:14px;z-index:30;display:none;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-radius:100px;padding:5px;box-shadow:0 6px 20px rgba(0,0,0,.18);gap:3px}
 .ds-compass.show{display:flex}
 .ds-compass button{width:38px;height:38px;border-radius:50%;border:none;background:transparent;color:#0B2545;font-weight:800;font-size:.88rem;cursor:pointer;transition:all .15s}
@@ -3921,7 +3970,7 @@ html { scroll-behavior: smooth; }
 .ds-help-col li{font-size:.76rem;color:#475569;line-height:1.55;padding-left:1.1rem;position:relative}
 .ds-help-col li::before{content:"›";position:absolute;left:.25rem;top:-.05rem;color:#2D82BE;font-weight:800;font-size:.95rem}
 .ds-help-col li strong{color:#0B2545;font-weight:700}
-#ds-map{width:100%;height:600px;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;color:#64748B;font-size:.95rem;text-align:center;padding:2rem}
+#ds-map{width:100%;height:100%;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;color:#64748B;font-size:.95rem;text-align:center}
 .ds-map-placeholder{display:flex;flex-direction:column;gap:.75rem;align-items:center}
 .ds-map-placeholder .icon{font-size:3rem;opacity:.5}
 .ds-map-overlay{position:absolute;top:.85rem;left:.85rem;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);padding:.55rem .9rem;border-radius:10px;font-size:.78rem;font-weight:600;color:#0B2545;display:none;max-width:320px}
@@ -4117,10 +4166,51 @@ body.ds-mode-ground .ds-ground-only{display:block}
 .ds-panel-popup button{padding:.35rem .7rem;border-radius:5px;border:none;background:#2D82BE;color:#fff;font-size:.72rem;font-weight:700;cursor:pointer}
 </style>
 
-<div class="ds-wrap">
+<div class="ds-studio-fullscreen">
 
-  <!-- LEFT PANEL -->
-  <div>
+  <!-- Full-viewport map background -->
+  <div class="ds-map-background">
+    <div class="ds-map-wrap">
+      <div id="ds-map">
+        <div class="ds-map-placeholder">
+          <div class="icon" style="font-size:2.5rem">🛰️</div>
+          <div style="font-weight:800;color:#0B2545">Enter an address or upload a utility bill</div>
+          <div style="font-size:.82rem;opacity:.8;max-width:340px">Satellite imagery, automatic roof detection, and panel placement will load once you pick a location.</div>
+        </div>
+      </div>
+      <div id="ds-cesium" style="display:none;position:absolute;inset:0;width:100%;height:100%"></div>
+      <div class="ds-compass" id="ds-compass">
+        <span class="ds-compass-label">View</span>
+        <button data-dir="N" onclick="flyToCompass('N')" title="From the north — shows the NORTH face">N</button>
+        <button data-dir="E" onclick="flyToCompass('E')" title="From the east — shows the EAST face">E</button>
+        <button data-dir="S" onclick="flyToCompass('S')" title="From the south — shows the SOUTH face">S</button>
+        <button data-dir="W" onclick="flyToCompass('W')" title="From the west — shows the WEST face">W</button>
+      </div>
+      <div id="ds-cesium-loading" style="display:none;position:absolute;inset:0;background:rgba(15,23,42,.85);color:#fff;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:.75rem;text-align:center;padding:2rem">
+        <div style="font-size:2.5rem">🌍</div>
+        <div style="font-weight:700;font-size:1rem" id="ds-cesium-status">Loading Cesium + Google 3D Tiles…</div>
+        <div style="font-size:.78rem;opacity:.75;max-width:380px" id="ds-cesium-hint">First load: ~2 MB library + 3D tile fetch. Subsequent toggles are instant.</div>
+      </div>
+      <div class="ds-map-overlay" id="ds-map-overlay"></div>
+      <div class="ds-legend" id="ds-legend">
+        <div class="ds-legend-title">Panel Energy (kWh/yr)</div>
+        <div class="ds-legend-bar"></div>
+        <div class="ds-legend-labels"><span id="ds-legend-min">0</span><span id="ds-legend-max">0</span></div>
+      </div>
+    </div>
+    <!-- Floating map controls (2D/3D toggle) -->
+    <div class="ds-map-fab">
+      <button id="ds-view-toggle" onclick="toggleMapView()" style="display:none">🔲 Flatten (2D)</button>
+    </div>
+  </div>
+
+  <!-- Left tools overlay — scrollable -->
+  <aside class="ds-tools-overlay" id="ds-tools-overlay">
+    <div class="ds-tools-header">
+      <div class="ds-tools-header-title"><span class="logo">⚡</span> Solar Design Studio</div>
+      <button class="ds-tools-toggle" onclick="toggleToolsOverlay()" title="Collapse / expand panel">◀</button>
+    </div>
+    <div class="ds-tools-body" id="ds-tools-body">
     <!-- Step 1: Utility Bill Upload (parses address, usage, rate) -->
     <div class="ds-panel">
       <h3><span class="step">1</span> Upload Utility Bill <span style="font-size:.7rem;font-weight:600;color:#94a3b8;margin-left:.4rem">recommended</span></h3>
@@ -4373,45 +4463,33 @@ body.ds-mode-ground .ds-ground-only{display:block}
     </div>
     <button class="ds-btn ds-btn-full" id="ds-calc" onclick="runDesignStudio()">⚡ Calculate &amp; Model</button>
     <button class="ds-btn ds-btn-sec ds-btn-full" id="ds-pdf" onclick="exportProposal()" style="margin-top:.6rem;display:none">📄 Export Proposal PDF</button>
-  </div>
 
-  <!-- RIGHT PANEL -->
-  <div>
-    <div class="ds-panel">
-      <h3 style="display:flex;align-items:center;justify-content:space-between;gap:.75rem">
-        <span><span class="step">🗺</span> Satellite View · Roof Analysis · Panel Placement</span>
-        <button id="ds-view-toggle" onclick="toggleMapView()" style="display:none;padding:.4rem .8rem;border-radius:100px;border:1px solid rgba(45,130,190,.25);background:#fff;color:#2D82BE;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap">🔲 Flatten (2D)</button>
-      </h3>
-      <div class="ds-map-wrap">
-        <div id="ds-map">
-          <div class="ds-map-placeholder">
-            <div class="icon">🛰️</div>
-            <div><strong>Enter an address to begin</strong></div>
-            <div style="font-size:.78rem;opacity:.7;max-width:320px">Satellite imagery, automatic roof detection, and panel placement will load once you select an address.</div>
-          </div>
-        </div>
-        <div id="ds-cesium" style="display:none;position:absolute;inset:0;width:100%;height:100%"></div>
-        <div class="ds-compass" id="ds-compass">
-          <span class="ds-compass-label">View</span>
-          <button data-dir="N" onclick="flyToCompass('N')" title="From the north — shows the NORTH face">N</button>
-          <button data-dir="E" onclick="flyToCompass('E')" title="From the east — shows the EAST face">E</button>
-          <button data-dir="S" onclick="flyToCompass('S')" title="From the south — shows the SOUTH face">S</button>
-          <button data-dir="W" onclick="flyToCompass('W')" title="From the west — shows the WEST face">W</button>
-        </div>
-        <div id="ds-cesium-loading" style="display:none;position:absolute;inset:0;background:rgba(15,23,42,.85);color:#fff;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:.75rem;text-align:center;padding:2rem">
-          <div style="font-size:2.5rem">🌍</div>
-          <div style="font-weight:700;font-size:1rem" id="ds-cesium-status">Loading Cesium + Google 3D Tiles…</div>
-          <div style="font-size:.78rem;opacity:.75;max-width:380px" id="ds-cesium-hint">First load: ~2 MB library + 3D tile fetch. Subsequent toggles are instant.</div>
-        </div>
-        <div class="ds-map-overlay" id="ds-map-overlay"></div>
-        <div class="ds-legend" id="ds-legend">
-          <div class="ds-legend-title">Panel Energy (kWh/yr)</div>
-          <div class="ds-legend-bar"></div>
-          <div class="ds-legend-labels"><span id="ds-legend-min">0</span><span id="ds-legend-max">0</span></div>
-        </div>
+    <!-- Results (populated after Calculate) -->
+    <div class="ds-results" id="ds-results">
+      <h3 style="margin-top:1.5rem"><span class="step">📊</span> Modeling Results</h3>
+      <div class="ds-results-grid">
+        <div class="ds-result"><div class="ds-result-label">System Size</div><div class="ds-result-value" id="r-kw">—</div><div class="ds-result-sub">kW DC</div></div>
+        <div class="ds-result"><div class="ds-result-label">Annual Production</div><div class="ds-result-value" id="r-prod">—</div><div class="ds-result-sub">kWh/year (NREL)</div></div>
+        <div class="ds-result"><div class="ds-result-label">Specific Yield</div><div class="ds-result-value" id="r-yield">—</div><div class="ds-result-sub">kWh/kW/year</div></div>
+        <div class="ds-result"><div class="ds-result-label">System Cost</div><div class="ds-result-value" id="r-cost">—</div><div class="ds-result-sub">before incentives</div></div>
+        <div class="ds-result"><div class="ds-result-label">Net Cost</div><div class="ds-result-value" id="r-net">—</div><div class="ds-result-sub">after ITC</div></div>
+        <div class="ds-result"><div class="ds-result-label">Year 1 Savings</div><div class="ds-result-value" id="r-save">—</div><div class="ds-result-sub">at current rate</div></div>
+        <div class="ds-result"><div class="ds-result-label">Payback</div><div class="ds-result-value" id="r-pb">—</div><div class="ds-result-sub">years</div></div>
+        <div class="ds-result"><div class="ds-result-label">25-Year Savings</div><div class="ds-result-value" id="r-25">—</div><div class="ds-result-sub">with escalation</div></div>
+        <div class="ds-result" id="r-offset-card" style="display:none"><div class="ds-result-label">Annual Offset</div><div class="ds-result-value" id="r-offset">—</div><div class="ds-result-sub">vs. your bill</div></div>
       </div>
 
-      <div class="ds-help">
+      <div class="ds-chart-wrap">
+        <div class="ds-chart-title">📈 Monthly Production Breakdown (PVWatts)</div>
+        <div id="ds-monthly-chart"></div>
+        <div id="ds-monthly-table-wrap"></div>
+      </div>
+    </div>
+
+    <!-- Help (collapsible at the bottom of the overlay) -->
+    <details class="ds-help-details" style="margin-top:1rem">
+      <summary style="cursor:pointer;padding:.7rem 1rem;background:#f8fafc;border-radius:10px;font-size:.78rem;font-weight:800;color:#0B2545;border:1px solid #e2e8f0">💡 How to use 2D &amp; 3D modes</summary>
+      <div class="ds-help" style="margin-top:.5rem">
         <div class="ds-help-col">
           <h4>🗺 2D Mode</h4>
           <ul>
@@ -4433,31 +4511,12 @@ body.ds-mode-ground .ds-ground-only{display:block}
           </ul>
         </div>
       </div>
+    </details>
 
-      <div class="ds-results" id="ds-results">
-        <h3 style="margin-top:1.5rem"><span class="step">📊</span> Modeling Results</h3>
-        <div class="ds-results-grid">
-          <div class="ds-result"><div class="ds-result-label">System Size</div><div class="ds-result-value" id="r-kw">—</div><div class="ds-result-sub">kW DC</div></div>
-          <div class="ds-result"><div class="ds-result-label">Annual Production</div><div class="ds-result-value" id="r-prod">—</div><div class="ds-result-sub">kWh/year (NREL)</div></div>
-          <div class="ds-result"><div class="ds-result-label">Specific Yield</div><div class="ds-result-value" id="r-yield">—</div><div class="ds-result-sub">kWh/kW/year</div></div>
-          <div class="ds-result"><div class="ds-result-label">System Cost</div><div class="ds-result-value" id="r-cost">—</div><div class="ds-result-sub">before incentives</div></div>
-          <div class="ds-result"><div class="ds-result-label">Net Cost</div><div class="ds-result-value" id="r-net">—</div><div class="ds-result-sub">after ITC</div></div>
-          <div class="ds-result"><div class="ds-result-label">Year 1 Savings</div><div class="ds-result-value" id="r-save">—</div><div class="ds-result-sub">at current rate</div></div>
-          <div class="ds-result"><div class="ds-result-label">Payback</div><div class="ds-result-value" id="r-pb">—</div><div class="ds-result-sub">years</div></div>
-          <div class="ds-result"><div class="ds-result-label">25-Year Savings</div><div class="ds-result-value" id="r-25">—</div><div class="ds-result-sub">with escalation</div></div>
-          <div class="ds-result" id="r-offset-card" style="display:none"><div class="ds-result-label">Annual Offset</div><div class="ds-result-value" id="r-offset">—</div><div class="ds-result-sub">vs. your bill</div></div>
-        </div>
+    </div><!-- /.ds-tools-body -->
+  </aside><!-- /.ds-tools-overlay -->
 
-        <div class="ds-chart-wrap">
-          <div class="ds-chart-title">📈 Monthly Production Breakdown (PVWatts)</div>
-          <div id="ds-monthly-chart"></div>
-          <div id="ds-monthly-table-wrap"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div>
+</div><!-- /.ds-studio-fullscreen -->
 
 <script>
 // ═════════════════════════════════════════════════════════════
@@ -4644,7 +4703,7 @@ function initMap() {
   if (!DS_STATE.coords) return;
   const mapEl = document.getElementById('ds-map');
   mapEl.innerHTML = '';
-  mapEl.style.cssText = 'width:100%;height:600px';
+  mapEl.style.cssText = 'width:100%;height:100%';
 
   DS_STATE.map = new google.maps.Map(mapEl, {
     center: DS_STATE.coords,
@@ -6928,6 +6987,12 @@ updateSystemStats();
 bindBillUpload();
 updateItcDisplay();
 setCustomerClass('residential');
+
+// Tools overlay collapse/expand
+function toggleToolsOverlay() {
+  const el = document.getElementById('ds-tools-overlay');
+  if (el) el.classList.toggle('collapsed');
+}
 
 window.initGoogleMaps = function() {
   initGooglePlaces();
