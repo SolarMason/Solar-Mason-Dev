@@ -5160,6 +5160,13 @@ function setMountMode(mode) {
     hint.textContent = 'Ground mode: drop AVANS 8.0 or AVANS 10.0 arrays. All panels portrait, 30° tilt, 6 ft above ground. Drag any panel to move the entire array.';
   }
 
+  // Ground mode requires the 2D map for placement clicks/taps. If we're currently
+  // in 3D, drop back to 2D first — but DON'T touch userViewPreference, so 3D will
+  // still auto-load on the next address.
+  if (mode === 'ground' && DS_STATE.cesiumMode) {
+    forceShow2D();
+  }
+
   // Hide panel polygons that don't belong to the new mode (keep state intact)
   for (const panel of DS_STATE.allPanels) {
     const poly = DS_STATE.panelPolygons.get(panel.idx);
@@ -5187,7 +5194,7 @@ function setMountMode(mode) {
     const arrCount = DS_STATE.groundArrays.length;
     setStatus('ready', arrCount
       ? `Ground mode — ${arrCount} array${arrCount !== 1 ? 's' : ''} placed`
-      : 'Ground mode — click map to drop an AVANS array');
+      : 'Ground mode — tap the map to drop an AVANS array');
   } else if (DS_STATE.roofSegments.length) {
     setStatus('ready', `${DS_STATE.roofSegments.length} segments · ${DS_STATE.maxPanels} max panels`);
   } else {
@@ -5198,6 +5205,22 @@ function setMountMode(mode) {
   updateSliderDisplay(activeCountForMode());
   updateSystemStats();
   renderArrayList();
+}
+
+// Force the 2D map back into view without touching the user's view preference.
+// Used when entering ground mode (which requires the 2D map for placement).
+function forceShow2D() {
+  if (!DS_STATE.cesiumMode) return;
+  document.getElementById('ds-cesium').style.display = 'none';
+  document.getElementById('ds-map').style.display = 'block';
+  const compass = document.getElementById('ds-compass');
+  if (compass) compass.classList.remove('show');
+  const vbtn = document.getElementById('ds-view-toggle');
+  if (vbtn) vbtn.textContent = '🌍 View True 3D';
+  DS_STATE.cesiumMode = false;
+  setTimeout(() => {
+    if (DS_STATE.map) google.maps.event.trigger(DS_STATE.map, 'resize');
+  }, 50);
 }
 
 // Count active panels matching current mode (for display + system size)
