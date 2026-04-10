@@ -5407,7 +5407,11 @@ function applyPanelStyle(idx) {
   if (!poly) return;
   const isActive = DS_STATE.activePanels.has(idx);
   const isDisabled = DS_STATE.disabledPanels.has(idx);
-  const panel = DS_STATE.allPanels[idx];
+  // Look up by .idx property — ground panels have idx starting at 100000,
+  // which is NOT an array index. Roof panels also have sparse idx after
+  // obstruction filtering, so relying on array-index lookup is wrong in both cases.
+  const panel = DS_STATE.allPanels.find(p => p.idx === idx);
+  if (!panel) return;
 
   if (isDisabled) {
     poly.setOptions({
