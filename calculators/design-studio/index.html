@@ -6507,6 +6507,9 @@ function refreshOffsetPresets() {
     }
   });
 }
+
+// Lightweight bill parser (PA-focused, supports most common utilities)
+function parseUtilityBill(text) {
   const t = text.replace(/\s+/g, ' ');
   const data = {
     utility: null,
