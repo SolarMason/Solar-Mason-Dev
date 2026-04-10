@@ -4021,6 +4021,20 @@ html { scroll-behavior: smooth; }
 .ds-itc-title{font-size:.78rem;font-weight:800;color:#0B2545;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.7rem}
 .ds-itc-locked{background:linear-gradient(135deg,rgba(16,185,129,.06),rgba(16,185,129,.02));border:1px solid rgba(16,185,129,.22);border-radius:12px;padding:1rem 1.1rem;display:flex;align-items:center;gap:1rem}
 .ds-itc-pct{font-size:2.2rem;font-weight:900;color:#059669;line-height:1;flex-shrink:0}
+
+/* Residential §25D terminated (OBBB Jan 1, 2026) */
+.ds-itc-terminated{background:linear-gradient(135deg,rgba(220,38,38,.05),rgba(220,38,38,.01));border:1px solid rgba(220,38,38,.22);border-radius:12px;padding:1rem 1.1rem;display:flex;align-items:center;gap:1rem;margin-bottom:.7rem}
+.ds-itc-pct-gone{font-size:2.2rem;font-weight:900;color:#dc2626;line-height:1;flex-shrink:0;text-decoration:line-through;text-decoration-thickness:3px}
+
+/* TPO (lease/PPA) callout */
+.ds-tpo-callout{background:linear-gradient(135deg,rgba(45,130,190,.06),rgba(45,130,190,.02));border:1px solid rgba(45,130,190,.22);border-radius:12px;padding:.85rem 1rem}
+.ds-tpo-title{font-size:.82rem;font-weight:800;color:#0B2545;margin-bottom:.35rem}
+.ds-tpo-desc{font-size:.72rem;color:#475569;line-height:1.55}
+.ds-tpo-desc strong{color:#0B2545;font-weight:800}
+
+/* Commercial deadline warning banner */
+.ds-deadline-warning{background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(245,158,11,.02));border:1px solid rgba(245,158,11,.35);border-radius:10px;padding:.7rem .9rem;font-size:.7rem;color:#78350f;line-height:1.5;margin-bottom:.8rem}
+.ds-deadline-warning strong{color:#78350f;font-weight:800}
 .ds-itc-desc{font-size:.72rem;color:#475569;line-height:1.5}
 .ds-itc-desc strong{color:#0B2545;font-weight:800}
 .ds-itc-base,.ds-itc-adders,.ds-macrs-block{margin-bottom:.55rem}
@@ -4396,18 +4410,25 @@ body.ds-mode-ground .ds-ground-only{display:block}
       <!-- Single source of truth for ITC% — updated by updateItcDisplay() based on active mode -->
       <input type="hidden" id="ds-itc" value="30">
 
-      <!-- RESIDENTIAL: ITC is locked at 30% -->
+      <!-- RESIDENTIAL: no federal ITC after OBBB termination -->
       <div class="ds-itc-block" id="ds-itc-residential">
-        <div class="ds-itc-title">🏠 Residential Clean Energy Credit</div>
-        <div class="ds-itc-locked">
-          <div class="ds-itc-pct">30%</div>
-          <div class="ds-itc-desc"><strong>Locked by IRC §25D.</strong> Residential installations receive a flat 30% federal tax credit through 2032. No stackable bonuses apply — MACRS depreciation and bonus adders (energy community, domestic content, low-income) are available only to commercial, industrial, and non-profit projects.</div>
+        <div class="ds-itc-title">🏠 Residential Federal Tax Credit</div>
+        <div class="ds-itc-terminated">
+          <div class="ds-itc-pct-gone">0%</div>
+          <div class="ds-itc-desc"><strong>§25D terminated by the One Big Beautiful Bill Act (Public Law 119-21, signed July 4 2025).</strong> The 30% Residential Clean Energy Credit ended for systems placed in service after December 31, 2025 — with no phase-down or transition period. Homeowners purchasing with cash or a loan in 2026 or later are <strong>not eligible</strong> for any federal tax credit on owned solar. State incentives, SRECs, and net metering where applicable still apply.</div>
+        </div>
+        <div class="ds-tpo-callout">
+          <div class="ds-tpo-title">💡 Access the 30% credit via lease or PPA</div>
+          <div class="ds-tpo-desc">Third-party-owned (TPO) residential systems — leases, PPAs, prepaid solar — remain eligible under the commercial <strong>§48E</strong> credit through 2027. The leasing company claims the credit and reflects the benefit in a lower monthly rate. If the customer is interested, switch to the Commercial class above to model a TPO arrangement.</div>
         </div>
       </div>
 
       <!-- COMMERCIAL: full ITC + adders + MACRS -->
       <div class="ds-itc-block" id="ds-itc-commercial" style="display:none">
         <div class="ds-itc-title">🏢 Commercial ITC + Adders</div>
+        <div class="ds-deadline-warning">
+          ⏳ <strong>Commercial §48E deadline:</strong> projects must <strong>begin construction by July 4, 2026</strong> OR be <strong>placed in service by December 31, 2027</strong> to qualify for the full 30% base ITC under OBBB. Safe-harbor a 5% equipment deposit before the deadline to lock in the current credit structure.
+        </div>
         <div class="ds-itc-base">
           <label class="ds-adder">
             <input type="checkbox" checked disabled>
@@ -6660,9 +6681,9 @@ function setCustomerClass(cls, auto = false) {
     if (auto && DS_STATE.billData && DS_STATE.billData.classDetection) {
       hint.innerHTML = `✅ <strong>${cls === 'residential' ? 'Residential' : 'Commercial'}</strong> auto-detected (${DS_STATE.billData.classDetection}). Tap to override.`;
     } else if (cls === 'residential') {
-      hint.innerHTML = '🏠 Residential projects qualify for the flat 30% Residential Clean Energy Credit (§25D). ITC is locked; MACRS and bonus adders do not apply.';
+      hint.innerHTML = '🏠 Residential purchases no longer qualify for a federal tax credit — the §25D Residential Clean Energy Credit was terminated by the OBBB Act effective Jan 1, 2026. Homeowners can still access 30% indirectly via lease / PPA arrangements (which use the commercial §48E credit through 2027).';
     } else {
-      hint.innerHTML = '🏢 Commercial projects stack the 30% base ITC with energy-community, domestic-content, and low-income bonus adders (up to 70%), plus MACRS depreciation.';
+      hint.innerHTML = '🏢 Commercial projects stack the 30% base ITC with energy-community, domestic-content, and low-income bonus adders (up to 70%), plus MACRS depreciation. Deadline: begin construction by July 4, 2026 or place in service by Dec 31, 2027.';
     }
   }
   updateItcDisplay();
@@ -6676,8 +6697,11 @@ function toggleLowIncomeRow() {
 }
 
 // Compute current effective ITC rate from toggles
+// Residential §25D was terminated by the OBBB Act effective Jan 1, 2026 — zero federal credit
+// for homeowner cash/loan purchases. Commercial §48E still available through the deadlines
+// noted in the UI (begin construction by July 4 2026 or placed in service by Dec 31 2027).
 function computeItcRate() {
-  if (DS_STATE.customerClass === 'residential') return 0.30;
+  if (DS_STATE.customerClass === 'residential') return 0;
   let rate = 0.30;
   if (document.getElementById('ds-adder-ec')?.checked) rate += 0.10;
   if (document.getElementById('ds-adder-dc')?.checked) rate += 0.10;
