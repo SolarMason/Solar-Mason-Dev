@@ -5530,13 +5530,12 @@ async function render3DPanels() {
   const viewer = DS_STATE.cesiumViewer;
   const scene = viewer.scene;
 
-  // Render only panels matching the current mount mode (filters out the hidden mode's panels)
   const renderable = DS_STATE.allPanels.filter(p =>
     panelInCurrentMode(p) && !DS_STATE.disabledPanels.has(p.idx)
   );
   if (!renderable.length) return;
 
-  // Sample roof/ground height for each panel via the 3D tile mesh
+  // Sample roof/ground height for each panel center
   const positions = renderable.map(p =>
     Cesium.Cartographic.toCartesian(
       Cesium.Cartographic.fromDegrees(p.center.longitude, p.center.latitude, 0)
@@ -5556,7 +5555,6 @@ async function render3DPanels() {
     return Cesium.Cartographic.fromCartesian(pos).height;
   });
 
-  // Create a thin oriented box entity for each panel
   renderable.forEach((p, i) => {
     const h = heights[i];
     if (h === null || !Number.isFinite(h)) return;
@@ -5564,51 +5562,72 @@ async function render3DPanels() {
     const isActive = DS_STATE.activePanels.has(p.idx);
     const angles = getPanelAngles(p);
     const tiltRad = Cesium.Math.toRadians(angles.tilt);
-    const headingRad = Cesium.Math.toRadians(angles.azimuth);
+    const azRad = Cesium.Math.toRadians(angles.azimuth);
 
-    // Roof panels: float above the sampled roof to avoid mesh clipping
-    // Ground panels: use the per-panel groundOffsetM (lower row at ~6 ft, upper row higher)
-    const zOffset = p.isGround ? (p.groundOffsetM || 1.83) : 0.5;
+    const zOffset = p.isGround ? (p.groundOffsetM || 1.83) : 0.45;
+    const baseHeight = h + zOffset;
 
-    const position = Cesium.Cartesian3.fromDegrees(
-      p.center.longitude,
-      p.center.latitude,
-      h + zOffset
-    );
-
-    // Heading = roof azimuth (compass direction of the downslope)
-    // Pitch = negative tilt (tilts the front edge down to match the roof slope)
-    // Roll = 0 (no lateral tilt)
-    const hpr = new Cesium.HeadingPitchRoll(headingRad, -tiltRad, 0);
-    const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
-
-    // Panel dimensions: X = across-slope (left-right), Y = along-slope (up-down the roof)
+    // Panel dimensions
     const isLandscape = p.orientation === 'LANDSCAPE';
-    const dimX = isLandscape ? DS_STATE.panelHeightM : DS_STATE.panelWidthM;
-    const dimY = isLandscape ? DS_STATE.panelWidthM : DS_STATE.panelHeightM;
+    const panelW = isLandscape ? DS_STATE.panelHeightM : DS_STATE.panelWidthM;  // across-slope
+    const panelH = isLandscape ? DS_STATE.panelWidthM : DS_STATE.panelHeightM;  // along-slope
+
+    // Compute 4 corners in local ENU offsets from panel center:
+    // across-slope direction = perpendicular to azimuth (90° counterclockwise)
+    // along-slope direction = opposite to azimuth (uphill), tilted by roof pitch
+    const acrossAz = azRad - Math.PI / 2;  // perpendicular to downslope
+    const halfW = panelW / 2;
+    const halfH = panelH / 2;
+
+    // Across-slope offsets (horizontal, no height change)
+    const dxAcross = Math.sin(acrossAz);  // east component per meter
+    const dyAcross = Math.cos(acrossAz);  // north component per meter
+
+    // Along-slope offsets: uphill direction with height change from tilt
+    // Uphill azimuth = azimuth + 180° (opposite of downslope)
+    const uphillAz = azRad + Math.PI;
+    const dxAlong = Math.sin(uphillAz) * Math.cos(tiltRad);  // horizontal east per meter
+    const dyAlong = Math.cos(uphillAz) * Math.cos(tiltRad);  // horizontal north per meter
+    const dzAlong = Math.sin(tiltRad);                         // height gain per meter uphill
+
+    // Convert meter offsets to approximate degree offsets
+    const lat = p.center.latitude;
+    const mPerDegLat = 111320;
+    const mPerDegLng = 111320 * Math.cos(Cesium.Math.toRadians(lat));
+
+    // 4 corners: TL, TR, BR, BL (relative to panel center)
+    const corners = [
+      { dx: -halfW * dxAcross + halfH * dxAlong, dy: -halfW * dyAcross + halfH * dyAlong, dz: halfH * dzAlong },
+      { dx:  halfW * dxAcross + halfH * dxAlong, dy:  halfW * dyAcross + halfH * dyAlong, dz: halfH * dzAlong },
+      { dx:  halfW * dxAcross - halfH * dxAlong, dy:  halfW * dyAcross - halfH * dyAlong, dz: -halfH * dzAlong },
+      { dx: -halfW * dxAcross - halfH * dxAlong, dy: -halfW * dyAcross - halfH * dyAlong, dz: -halfH * dzAlong }
+    ];
+
+    const cornerPositions = corners.map(c => Cesium.Cartesian3.fromDegrees(
+      p.center.longitude + c.dx / mPerDegLng,
+      p.center.latitude + c.dy / mPerDegLat,
+      baseHeight + c.dz
+    ));
 
     let material, outlineColor;
     if (isActive) {
-      // Use energy heat color for roof panels; ground panels get a uniform Solar Mason blue
-      // (no per-panel energy data until PVWatts runs)
       const color = p.isGround
         ? '#2D82BE'
         : energyToColor(p.yearlyEnergyDcKwh, DS_STATE.energyMin, DS_STATE.energyMax);
-      material = Cesium.Color.fromCssColorString(color).withAlpha(0.92);
-      outlineColor = Cesium.Color.fromCssColorString('#0B2545').withAlpha(0.9);
+      material = Cesium.Color.fromCssColorString(color).withAlpha(0.88);
+      outlineColor = Cesium.Color.fromCssColorString('#0B2545');
     } else {
-      material = Cesium.Color.fromCssColorString('#94a3b8').withAlpha(0.20);
-      outlineColor = Cesium.Color.fromCssColorString('#475569').withAlpha(0.6);
+      material = Cesium.Color.fromCssColorString('#94a3b8').withAlpha(0.15);
+      outlineColor = Cesium.Color.fromCssColorString('#64748b').withAlpha(0.4);
     }
 
     const entity = viewer.entities.add({
-      position: position,
-      orientation: orientation,
-      box: {
-        dimensions: new Cesium.Cartesian3(dimX, dimY, 0.035),
+      polygon: {
+        hierarchy: new Cesium.PolygonHierarchy(cornerPositions),
         material: material,
         outline: true,
-        outlineColor: outlineColor
+        outlineColor: outlineColor,
+        perPositionHeight: true
       }
     });
     entity._panelIdx = p.idx;
