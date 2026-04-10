@@ -5844,6 +5844,62 @@ function deleteAvansArray(arrayId) {
   refresh3DIfActive();
 }
 
+// Rotate an existing AVANS array around its center to a new azimuth. Recomputes every panel's
+// world position from its stored (rowIdx, colIdx) in local coordinates, then re-transforms into
+// world space by the new azimuth. Updates polygons, panel records, and the array record.
+function rotateArray(arrayId, newAz) {
+  const arr = DS_STATE.groundArrays.find(a => a.id === arrayId);
+  if (!arr) return;
+
+  const tilt = arr.tilt ?? parseFloat(document.getElementById('ds-ground-tilt')?.value) ?? 30;
+  const panelW = DS_STATE.panelWidthM || 1.045;
+  const panelH = DS_STATE.panelHeightM || 1.879;
+  const colGap = panelW * 0.02;
+  const rowProjected = panelH * Math.cos(tilt * Math.PI / 180);
+  const cols = arr.type === 'AVANS_10' ? 5 : 4;
+
+  const azRad = newAz * Math.PI / 180;
+  const sinA = Math.sin(azRad), cosA = Math.cos(azRad);
+  const centerLat = arr.center.latitude;
+  const latScale = 1 / 111320;
+  const lngScale = 1 / (111320 * Math.cos(centerLat * Math.PI / 180));
+
+  for (const idx of arr.panelIds) {
+    const panel = DS_STATE.allPanels.find(p => p.idx === idx);
+    if (!panel) continue;
+    const r = panel.rowIdx;
+    const c = panel.colIdx;
+    const yLocal = r === 0 ? +(rowProjected / 2) : -(rowProjected / 2);
+    const xLocal = (c - (cols - 1) / 2) * (panelW + colGap);
+
+    // Same transform as placeAvansArray: +Y → (cosA, sinA), +X → (−sinA, cosA)
+    const worldNorth = xLocal * (-sinA) + yLocal * cosA;
+    const worldEast  = xLocal * cosA    + yLocal * sinA;
+
+    const newCenter = {
+      latitude:  arr.center.latitude  + worldNorth * latScale,
+      longitude: arr.center.longitude + worldEast  * lngScale
+    };
+    panel.center = newCenter;
+    panel.azimuth = newAz;
+
+    const poly = DS_STATE.panelPolygons.get(idx);
+    if (poly) {
+      const corners = panelCorners(
+        newCenter,
+        panelW,
+        panelH * Math.cos(tilt * Math.PI / 180),
+        'PORTRAIT',
+        newAz
+      );
+      poly.setPath(corners);
+    }
+  }
+
+  arr.azimuth = newAz;
+  refresh3DIfActive();
+}
+
 // Render the list of placed AVANS arrays with delete buttons
 function renderArrayList() {
   const el = document.getElementById('ds-array-list');
@@ -7049,6 +7105,24 @@ document.getElementById('ds-slider').addEventListener('input', function() {
   refresh3DIfActive();
   // Deactivate any preset highlight if user drags the slider manually
   document.querySelectorAll('.ds-preset-btn').forEach(b => b.classList.remove('active'));
+});
+
+// Live rotation — adjusting the ground azimuth input rotates the selected array
+// (or the most recently placed one if nothing is selected) in real time on the map.
+document.getElementById('ds-ground-az').addEventListener('input', function() {
+  const newAz = parseFloat(this.value);
+  if (isNaN(newAz) || !DS_STATE.groundArrays.length) return;
+  // Priority: rotate the array that owns the currently selected panel.
+  // Fallback: rotate the most recently placed array.
+  let targetArrayId = null;
+  if (DS_STATE.selectedGroundPanel != null) {
+    const sel = DS_STATE.allPanels.find(p => p.idx === DS_STATE.selectedGroundPanel);
+    if (sel && sel.arrayId != null) targetArrayId = sel.arrayId;
+  }
+  if (targetArrayId == null) {
+    targetArrayId = DS_STATE.groundArrays[DS_STATE.groundArrays.length - 1].id;
+  }
+  rotateArray(targetArrayId, newAz);
 });
 
 ['ds-panel-w'].forEach(id => {
