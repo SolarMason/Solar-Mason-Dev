@@ -4271,6 +4271,7 @@ const DS_STATE = {
   cesiumTileset: null,
   cesiumMode: false,
   panel3DEntities: [],
+  userViewPreference: null,    // null = auto-3D, '2d' = forced 2D, '3d' = forced 3D
   renderedPanels: [],   // Legacy: all polygon instances currently on map
   disabledPanels: new Set(),  // Indices disabled by obstructions
   obstructions: [],     // google.maps.Polygon instances
@@ -4306,6 +4307,12 @@ function initGooglePlaces() {
     initMap();
     await fetchSolarInsights();
     await fetchUtilityRate();
+    // Auto-enter 3D view if user hasn't explicitly opted out
+    if (DS_STATE.userViewPreference !== '2d') {
+      enterCesium3D({ silent: true }).catch((e) => {
+        console.warn('[DS] Auto 3D failed, staying in 2D:', e);
+      });
+    }
   });
 }
 
@@ -4385,42 +4392,85 @@ function toggleMapView() {
   const btn = document.getElementById('ds-view-toggle');
   const compass = document.getElementById('ds-compass');
   if (DS_STATE.cesiumMode) {
-    // Switch back to 2D
+    // User explicitly chose 2D — remember preference
+    DS_STATE.userViewPreference = '2d';
     document.getElementById('ds-cesium').style.display = 'none';
     document.getElementById('ds-map').style.display = 'block';
     if (compass) compass.classList.remove('show');
     if (btn) btn.textContent = '🌍 View True 3D';
     DS_STATE.cesiumMode = false;
-    // Trigger map resize after it's visible again
     setTimeout(() => {
       if (DS_STATE.map) google.maps.event.trigger(DS_STATE.map, 'resize');
     }, 50);
     return;
   }
-  // Switch to 3D — lazy-load Cesium first
+  // User explicitly chose 3D — remember preference
+  DS_STATE.userViewPreference = '3d';
   enterCesium3D();
 }
 
-async function enterCesium3D() {
-  if (!DS_STATE.coords) { alert('Load an address first'); return; }
+function show3DToast(text) {
+  let toast = document.getElementById('ds-3d-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'ds-3d-toast';
+    toast.style.cssText = 'position:absolute;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.92);color:#fff;padding:.6rem 1rem;border-radius:100px;font-size:.78rem;font-weight:600;z-index:25;box-shadow:0 6px 20px rgba(0,0,0,.25);pointer-events:none;opacity:0;transition:opacity .3s';
+    document.querySelector('.ds-map-wrap').appendChild(toast);
+  }
+  toast.textContent = text;
+  toast.style.opacity = '1';
+  setTimeout(() => { toast.style.opacity = '0'; }, 4500);
+}
+
+async function enterCesium3D(opts = {}) {
+  const silent = !!opts.silent;
+  if (!DS_STATE.coords) {
+    if (!silent) alert('Load an address first');
+    return;
+  }
   const mapDiv = document.getElementById('ds-map');
   const cesDiv = document.getElementById('ds-cesium');
   const loadingDiv = document.getElementById('ds-cesium-loading');
   const btn = document.getElementById('ds-view-toggle');
   const compass = document.getElementById('ds-compass');
 
+  // Show loading overlay (positioned over the 2D map area — 2D stays visible behind)
   loadingDiv.style.display = 'flex';
   loadingDiv.style.alignItems = 'center';
   loadingDiv.style.justifyContent = 'center';
+  document.getElementById('ds-cesium-status').textContent = silent
+    ? 'Auto-loading 3D view…'
+    : 'Loading 3D viewer…';
+  document.getElementById('ds-cesium-hint').textContent = '';
+
+  const failQuietly = (e) => {
+    console.warn('[DS] 3D unavailable, staying in 2D:', e && e.message);
+    loadingDiv.style.display = 'none';
+    // Make sure 2D is visible
+    mapDiv.style.display = 'block';
+    cesDiv.style.display = 'none';
+    DS_STATE.cesiumMode = false;
+    if (compass) compass.classList.remove('show');
+    if (btn) btn.textContent = '🌍 View True 3D';
+    if (silent) {
+      show3DToast('3D not available here — staying in 2D');
+    }
+  };
 
   try {
     await loadCesium();
     document.getElementById('ds-cesium-status').textContent = 'Initializing 3D viewer…';
     const firstLoad = !DS_STATE.cesiumViewer;
     if (firstLoad) {
-      await initCesium();
+      try {
+        await initCesium();
+      } catch (initErr) {
+        if (silent) { failQuietly(initErr); return; }
+        throw initErr;
+      }
     }
 
+    // ONLY after successful init: hide 2D and show 3D
     mapDiv.style.display = 'none';
     cesDiv.style.display = 'block';
     DS_STATE.cesiumMode = true;
@@ -4431,25 +4481,23 @@ async function enterCesium3D() {
       ? 'Loading Google 3D tiles…'
       : 'Re-positioning…';
 
-    // On first load, give tiles a moment to populate before sampling ground height
-    // On subsequent loads, skip the wait
     const delay = firstLoad ? 2000 : 100;
     setTimeout(async () => {
       try {
         document.getElementById('ds-cesium-status').textContent = 'Positioning camera…';
-        // Position camera based on real ground height (fixes "nose in dirt" bug)
         await flyToCompass(DS_STATE.currentCompassDir || 'S');
-
         document.getElementById('ds-cesium-status').textContent = 'Placing panels on roof…';
         await render3DPanels();
         loadingDiv.style.display = 'none';
       } catch (e) {
+        if (silent) { failQuietly(e); return; }
         document.getElementById('ds-cesium-status').textContent = '⚠ Could not finish 3D setup';
         document.getElementById('ds-cesium-hint').textContent = e.message || 'Sampling the 3D surface failed. The location may not have Photorealistic 3D Tile coverage.';
         console.error('[DS] 3D setup error:', e);
       }
     }, delay);
   } catch (e) {
+    if (silent) { failQuietly(e); return; }
     console.error('[DS] Cesium load/init error:', e);
     document.getElementById('ds-cesium-status').textContent = '⚠ 3D load failed';
     document.getElementById('ds-cesium-hint').textContent = (e.message || String(e)) + ' — make sure the Map Tiles API is enabled on your Google Cloud project.';
