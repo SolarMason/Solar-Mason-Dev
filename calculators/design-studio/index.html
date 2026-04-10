@@ -4208,6 +4208,14 @@ html { scroll-behavior: smooth; }
 .ds-compass button:hover{background:rgba(45,130,190,.12)}
 .ds-compass button.active{background:linear-gradient(135deg,#2D82BE,#1B5E8A);color:#fff;box-shadow:0 2px 8px rgba(45,130,190,.4)}
 .ds-compass-label{font-size:.62rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.06em;padding:0 10px;display:flex;align-items:center}
+.ds-ctx-menu{position:absolute;z-index:60;background:rgba(255,255,255,.97);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(0,0,0,.1);border-radius:14px;padding:12px;box-shadow:0 8px 30px rgba(0,0,0,.18);width:220px;font-size:.78rem}
+.ds-ctx-header{font-weight:800;font-size:.82rem;color:#0B2545;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(0,0,0,.08)}
+.ds-ctx-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ds-ctx-row label{font-weight:700;color:#64748b;min-width:48px;font-size:.72rem}
+.ds-ctx-btn{flex:1;padding:6px;border:1px solid rgba(0,0,0,.1);border-radius:8px;background:#fff;font-size:.72rem;font-weight:700;cursor:pointer;color:#475569;transition:all .15s}
+.ds-ctx-btn:hover{background:#f8fafc;border-color:#2D82BE}
+.ds-ctx-btn-p{background:linear-gradient(135deg,#2D82BE,#1B5E8A);color:#fff;border-color:transparent}
+.ds-ctx-btn-p:hover{opacity:.9}
 
 /* Help tips section under the map */
 .ds-help{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:1rem;padding:1.25rem 1.5rem;background:linear-gradient(135deg,rgba(45,130,190,.06),rgba(45,130,190,.02));border:1px solid rgba(45,130,190,.12);border-radius:14px}
@@ -4550,6 +4558,28 @@ body.ds-mode-ground .ds-ground-only{display:block}
         <div style="font-size:.78rem;opacity:.75;max-width:380px" id="ds-cesium-hint">First load: ~2 MB library + 3D tile fetch. Subsequent toggles are instant.</div>
       </div>
       <div class="ds-map-overlay" id="ds-map-overlay"></div>
+      <!-- Panel context menu (right-click / two-finger tap) -->
+      <div class="ds-ctx-menu" id="ds-ctx-menu" style="display:none">
+        <div class="ds-ctx-header" id="ds-ctx-title">Segment 0</div>
+        <div class="ds-ctx-row">
+          <label>Rotation</label>
+          <div style="display:flex;align-items:center;gap:6px;flex:1">
+            <input type="range" id="ds-ctx-az" min="0" max="359" step="1" style="flex:1;accent-color:#2D82BE">
+            <span id="ds-ctx-az-val" style="font-weight:800;min-width:32px;text-align:right">180°</span>
+          </div>
+        </div>
+        <div class="ds-ctx-row">
+          <label>Tilt</label>
+          <div style="display:flex;align-items:center;gap:6px;flex:1">
+            <input type="range" id="ds-ctx-tilt" min="0" max="60" step="1" style="flex:1;accent-color:#2D82BE">
+            <span id="ds-ctx-tilt-val" style="font-weight:800;min-width:32px;text-align:right">25°</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button class="ds-ctx-btn" onclick="resetSegmentOverrides()">Reset</button>
+          <button class="ds-ctx-btn ds-ctx-btn-p" onclick="closeCtxMenu()">Done</button>
+        </div>
+      </div>
       <div class="ds-legend" id="ds-legend">
         <div class="ds-legend-title">Panel Energy (kWh/yr)</div>
         <div class="ds-legend-bar"></div>
@@ -5233,6 +5263,11 @@ function initMap() {
       strokeWeight: 2
     }
   });
+
+  // Close panel context menu on map click
+  DS_STATE.map.addListener('click', closeCtxMenu);
+  // Suppress browser default right-click menu on map
+  mapEl.addEventListener('contextmenu', (e) => e.preventDefault());
 
   // Trigger a resize after the container has settled into its full-viewport size.
   // This fixes the case where the map was created before CSS/layout finished applying,
@@ -5975,6 +6010,106 @@ function clearRenderedPanels() {
   DS_STATE.panelPolygons.clear();
 }
 
+// ═════════════════════════════════════════════════════════════
+// PANEL CONTEXT MENU — right-click rotation/tilt control
+// ═════════════════════════════════════════════════════════════
+let _ctxSegIdx = null;
+
+function showPanelContextMenu(panelIdx, latLng) {
+  const panel = DS_STATE.allPanels.find(p => p.idx === panelIdx);
+  if (!panel) return;
+  
+  _ctxSegIdx = panel.isGround ? -1 : panel.segmentIndex;
+  const seg = DS_STATE.roofSegments[_ctxSegIdx] || { pitchDeg: 25, azimuthDeg: 180 };
+  const angles = getPanelAngles(panel);
+  
+  const menu = document.getElementById('ds-ctx-menu');
+  const title = document.getElementById('ds-ctx-title');
+  title.textContent = panel.isGround ? 'Ground Array' : `Roof Segment ${_ctxSegIdx}`;
+  
+  const azSlider = document.getElementById('ds-ctx-az');
+  const tiltSlider = document.getElementById('ds-ctx-tilt');
+  azSlider.value = Math.round(angles.azimuth);
+  tiltSlider.value = Math.round(angles.tilt);
+  document.getElementById('ds-ctx-az-val').textContent = Math.round(angles.azimuth) + '°';
+  document.getElementById('ds-ctx-tilt-val').textContent = Math.round(angles.tilt) + '°';
+  
+  // Position the menu near the click point on the map
+  const mapDiv = document.getElementById('ds-map');
+  const mapRect = mapDiv.getBoundingClientRect();
+  const projection = DS_STATE.map.getProjection();
+  const bounds = DS_STATE.map.getBounds();
+  if (projection && bounds) {
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+    const topRight = projection.fromLatLngToPoint(ne);
+    const bottomLeft = projection.fromLatLngToPoint(sw);
+    const scale = Math.pow(2, DS_STATE.map.getZoom());
+    const worldPoint = projection.fromLatLngToPoint(latLng);
+    const px = (worldPoint.x - bottomLeft.x) * scale;
+    const py = (worldPoint.y - topRight.y) * scale;
+    menu.style.left = Math.min(px, mapRect.width - 240) + 'px';
+    menu.style.top = Math.min(py, mapRect.height - 180) + 'px';
+  } else {
+    menu.style.right = '1rem';
+    menu.style.top = '4rem';
+  }
+  
+  menu.style.display = 'block';
+  
+  // Live update on slider change
+  azSlider.oninput = function() {
+    const val = parseInt(this.value);
+    document.getElementById('ds-ctx-az-val').textContent = val + '°';
+    if (_ctxSegIdx >= 0) {
+      DS_STATE.segmentAzOverride.set(_ctxSegIdx, val);
+    }
+    renderPanels();
+    refresh3DIfActive();
+  };
+  tiltSlider.oninput = function() {
+    const val = parseInt(this.value);
+    document.getElementById('ds-ctx-tilt-val').textContent = val + '°';
+    if (_ctxSegIdx >= 0) {
+      DS_STATE.segmentTiltOverride.set(_ctxSegIdx, val);
+    }
+    renderPanels();
+    refresh3DIfActive();
+  };
+}
+
+function closeCtxMenu() {
+  document.getElementById('ds-ctx-menu').style.display = 'none';
+  _ctxSegIdx = null;
+}
+
+function resetSegmentOverrides() {
+  if (_ctxSegIdx !== null && _ctxSegIdx >= 0) {
+    DS_STATE.segmentAzOverride.delete(_ctxSegIdx);
+    DS_STATE.segmentTiltOverride.delete(_ctxSegIdx);
+    const seg = DS_STATE.roofSegments[_ctxSegIdx] || { pitchDeg: 25, azimuthDeg: 180 };
+    document.getElementById('ds-ctx-az').value = Math.round(seg.azimuthDeg);
+    document.getElementById('ds-ctx-az-val').textContent = Math.round(seg.azimuthDeg) + '°';
+    document.getElementById('ds-ctx-tilt').value = Math.round(seg.pitchDeg);
+    document.getElementById('ds-ctx-tilt-val').textContent = Math.round(seg.pitchDeg) + '°';
+    renderPanels();
+    refresh3DIfActive();
+  }
+}
+
+// Close context menu on map click
+if (typeof google !== 'undefined' && google.maps) {
+  // Will be bound after map init — see initMap
+}
+
+// Close context menu when clicking anywhere else
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('ds-ctx-menu');
+  if (menu && menu.style.display !== 'none' && !menu.contains(e.target)) {
+    closeCtxMenu();
+  }
+});
+
 function applyPanelStyle(idx) {
   const poly = DS_STATE.panelPolygons.get(idx);
   if (!poly) return;
@@ -6693,6 +6828,11 @@ function renderPanels() {
 
     DS_STATE.panelPolygons.set(panelIdx, poly);
     DS_STATE.renderedPanels.push(poly);
+
+    // Right-click / two-finger tap → context menu for rotation
+    poly.addListener('rightclick', (e) => {
+      showPanelContextMenu(panelIdx, e.latLng);
+    });
 
     // Apply initial style based on active/disabled state
     applyPanelStyle(panelIdx);
