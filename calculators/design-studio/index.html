@@ -4490,7 +4490,8 @@ body.ds-mode-ground .ds-ground-only{display:block}
       <summary><h3><span class="step">1</span> Upload Utility Bill</h3></summary>
       <div class="ds-panel-body">
       <div class="ds-bill-upload" id="ds-bill-upload" onclick="document.getElementById('ds-bill-input').click()">
-        <input type="file" id="ds-bill-input" accept="application/pdf" style="display:none">
+        <input type="file" id="ds-bill-input" accept="application/pdf" style="display:none"
+          onchange="if(this.files[0])processBillFile(this.files[0]).catch(function(e){console.error('[DS] Bill error:',e)})">
         <div class="ds-bill-icon">📄</div>
         <div class="ds-bill-title">Upload Your Utility Bill</div>
         <div class="ds-bill-sub">Tap here or drag a PDF. Processed in-browser.</div>
@@ -7016,7 +7017,7 @@ function bindBillUpload() {
   const dz = document.getElementById('ds-bill-upload');
   const fi = document.getElementById('ds-bill-input');
   if (!dz || !fi) { console.error('[DS] Bill upload elements not found'); return; }
-  // Drag & drop (desktop)
+  // Drag & drop (desktop only)
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
   dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
   dz.addEventListener('drop', e => {
@@ -7024,18 +7025,7 @@ function bindBillUpload() {
     dz.classList.remove('dragover');
     if (e.dataTransfer.files[0]) processBillFile(e.dataTransfer.files[0]);
   });
-  // File picker selection — MUST await before resetting value
-  fi.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      await processBillFile(file);
-    } catch (err) {
-      console.error('[DS] processBillFile threw:', err);
-    }
-    // Reset AFTER async processing so File object stays valid
-    fi.value = '';
-  });
+  // File change is handled by inline onchange on the input element
   console.log('[DS] Bill upload bound OK');
 }
 
