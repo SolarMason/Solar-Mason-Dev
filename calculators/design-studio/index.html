@@ -4028,6 +4028,15 @@ html { scroll-behavior: smooth; }
 .ds-ground-btn.active{background:#2D82BE;color:#fff;border-color:#2D82BE}
 .ds-ground-info{font-size:.7rem;color:#64748B;line-height:1.5;padding:.5rem .65rem;background:#f8fafc;border-radius:8px;margin-top:.5rem;border-left:3px solid #2D82BE}
 
+/* AVANS array placement */
+.ds-avans-btn.active{background:linear-gradient(135deg,#2D82BE,#1B5E8A);color:#fff;border-color:#2D82BE;box-shadow:0 3px 10px rgba(45,130,190,.3)}
+.ds-array-list{display:flex;flex-direction:column;gap:.4rem;max-height:200px;overflow-y:auto;padding:.2rem 0}
+.ds-array-item{display:flex;align-items:center;justify-content:space-between;padding:.55rem .75rem;background:#fff;border:1px solid rgba(45,130,190,.15);border-radius:8px;font-size:.78rem;color:#0B2545}
+.ds-array-item strong{color:#0B2545;font-weight:800}
+.ds-array-meta{display:block;font-size:.68rem;color:#64748B;font-weight:600;margin-top:.1rem}
+.ds-array-del{padding:.4rem .55rem;border-radius:6px;border:1px solid rgba(220,38,38,.2);background:#fff;color:#dc2626;font-size:.85rem;cursor:pointer;line-height:1}
+.ds-array-del:hover{background:#fef2f2}
+
 /* Roof-only and Ground-only sections */
 .ds-roof-only{display:block}
 .ds-ground-only{display:none}
@@ -4100,22 +4109,23 @@ body.ds-mode-ground .ds-ground-only{display:block}
       <!-- Ground Mode Controls -->
       <div class="ds-ground-only">
         <div class="ds-ground-info">
-          <strong>Ground mount mode.</strong> Click the map to place panels. Drag placed panels to reposition. Use Duplicate Row/Column to build arrays quickly.
+          <strong>Ground mount mode.</strong> Drop AVANS 8.0 or 10.0 arrays directly on the map. All panels portrait, 30° tilt, 6 ft above ground. Drag any panel to move the entire array as a rigid body.
         </div>
         <div class="ds-row" style="margin-top:.6rem">
-          <div class="ds-field"><label>Default Tilt (°)</label><input type="number" id="ds-ground-tilt" value="30" min="0" max="60"></div>
-          <div class="ds-field"><label>Default Azimuth (°)</label><input type="number" id="ds-ground-az" value="180" min="0" max="360"></div>
+          <div class="ds-field"><label>Tilt (°)</label><input type="number" id="ds-ground-tilt" value="30" min="0" max="60"></div>
+          <div class="ds-field"><label>Azimuth (°)</label><input type="number" id="ds-ground-az" value="180" min="0" max="360"></div>
         </div>
+        <div style="font-size:.7rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin:.85rem 0 .35rem 0">Array Type</div>
         <div class="ds-ground-btn-row">
-          <button class="ds-ground-btn" id="ds-ground-place" onclick="toggleGroundPlacement()">📍 Place Mode</button>
-          <button class="ds-ground-btn" onclick="clearGroundPanels()">🗑 Clear All</button>
+          <button class="ds-ground-btn ds-avans-btn active" data-type="AVANS_8" onclick="setAvansType('AVANS_8')">📦 AVANS 8.0 <span style="opacity:.7;font-size:.66rem;margin-left:.25rem">(2×4)</span></button>
+          <button class="ds-ground-btn ds-avans-btn" data-type="AVANS_10" onclick="setAvansType('AVANS_10')">📦 AVANS 10.0 <span style="opacity:.7;font-size:.66rem;margin-left:.25rem">(2×5)</span></button>
         </div>
-        <div class="ds-ground-btn-row">
-          <button class="ds-ground-btn" id="ds-dup-row" onclick="duplicateRow()" disabled>➡️ Duplicate Row</button>
-          <button class="ds-ground-btn" id="ds-dup-col" onclick="duplicateCol()" disabled>⬇️ Duplicate Col</button>
+        <div class="ds-ground-btn-row" style="margin-top:.4rem">
+          <button class="ds-ground-btn" onclick="clearGroundPanels()">🗑 Clear All Arrays</button>
         </div>
-        <div class="ds-ground-info" style="margin-top:.6rem;border-left-color:#f59e0b">
-          <strong>Selected panel:</strong> <span id="ds-selected-panel">None</span> — click a placed panel first, then use Duplicate Row/Col to multiply.
+        <div style="font-size:.7rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin:.85rem 0 .35rem 0">Placed Arrays</div>
+        <div class="ds-array-list" id="ds-array-list">
+          <em style="font-size:.74rem;color:#94a3b8">No arrays placed yet</em>
         </div>
       </div>
 
@@ -4294,9 +4304,12 @@ const DS_STATE = {
   // Ground mode state
   mountMode: 'roof',           // 'roof' or 'ground'
   groundPlacementActive: false,
+  groundPlacementType: null,   // 'AVANS_8' or 'AVANS_10' — which array to place on next click
   groundMapClickListener: null,
   selectedGroundPanel: null,   // idx of currently selected ground panel (for duplication)
   nextGroundIdx: 100000,       // starting idx for ground panels (separate from roof)
+  groundArrays: [],            // list of placed arrays: { id, type, panelIds, center }
+  nextArrayId: 1,
   // Cesium 3D state
   cesiumLoadPromise: null,
   cesiumViewer: null,
@@ -4715,14 +4728,13 @@ async function render3DPanels() {
   const viewer = DS_STATE.cesiumViewer;
   const scene = viewer.scene;
 
-  // Render ALL non-obstructed roof panels (active + inactive) so users can
-  // toggle them by clicking in 3D — same as 2D mode.
+  // Render only panels matching the current mount mode (filters out the hidden mode's panels)
   const renderable = DS_STATE.allPanels.filter(p =>
-    !p.isGround && !DS_STATE.disabledPanels.has(p.idx)
+    panelInCurrentMode(p) && !DS_STATE.disabledPanels.has(p.idx)
   );
   if (!renderable.length) return;
 
-  // Sample roof height for each panel via the 3D tile mesh
+  // Sample roof/ground height for each panel via the 3D tile mesh
   const positions = renderable.map(p =>
     Cesium.Cartographic.toCartesian(
       Cesium.Cartographic.fromDegrees(p.center.longitude, p.center.latitude, 0)
@@ -4752,10 +4764,14 @@ async function render3DPanels() {
     const tiltRad = Cesium.Math.toRadians(angles.tilt);
     const headingRad = Cesium.Math.toRadians(angles.azimuth);
 
+    // Roof panels: ~30cm above the sampled roof to avoid mesh clipping
+    // Ground panels: use the per-panel groundOffsetM (lower row at ~6 ft, upper row higher)
+    const zOffset = p.isGround ? (p.groundOffsetM || 1.83) : 0.30;
+
     const position = Cesium.Cartesian3.fromDegrees(
       p.center.longitude,
       p.center.latitude,
-      h + 0.30
+      h + zOffset
     );
 
     const hpr = new Cesium.HeadingPitchRoll(headingRad, 0, -tiltRad);
@@ -4767,11 +4783,14 @@ async function render3DPanels() {
 
     let material, outlineColor;
     if (isActive) {
-      const color = energyToColor(p.yearlyEnergyDcKwh, DS_STATE.energyMin, DS_STATE.energyMax);
+      // Use energy heat color for roof panels; ground panels get a uniform Solar Mason blue
+      // (no per-panel energy data until PVWatts runs)
+      const color = p.isGround
+        ? '#2D82BE'
+        : energyToColor(p.yearlyEnergyDcKwh, DS_STATE.energyMin, DS_STATE.energyMax);
       material = Cesium.Color.fromCssColorString(color).withAlpha(0.92);
       outlineColor = Cesium.Color.fromCssColorString('#0B2545').withAlpha(0.9);
     } else {
-      // Inactive panel — translucent gray ghost, still clickable
       material = Cesium.Color.fromCssColorString('#94a3b8').withAlpha(0.20);
       outlineColor = Cesium.Color.fromCssColorString('#475569').withAlpha(0.6);
     }
@@ -4786,7 +4805,6 @@ async function render3DPanels() {
         outlineColor: outlineColor
       }
     });
-    // Tag the entity with the panel idx so the click handler can toggle it
     entity._panelIdx = p.idx;
     DS_STATE.panel3DEntities.push(entity);
   });
@@ -4869,9 +4887,9 @@ async function fetchSolarInsights() {
     DS_STATE.obstructions.forEach(o => o.setMap(null));
     DS_STATE.obstructions = [];
   }
-  document.getElementById('ds-dup-row').disabled = true;
-  document.getElementById('ds-dup-col').disabled = true;
-  document.getElementById('ds-selected-panel').textContent = 'None';
+  const dr = document.getElementById('ds-dup-row'); if (dr) dr.disabled = true;
+  const dc = document.getElementById('ds-dup-col'); if (dc) dc.disabled = true;
+  const sp = document.getElementById('ds-selected-panel'); if (sp) sp.textContent = 'None';
 
   // Also pre-compute a "best config" count from solarPanelConfigs
   const configs = sp.solarPanelConfigs || [];
@@ -5122,7 +5140,14 @@ function getPanelAngles(panel) {
 // ═════════════════════════════════════════════════════════════
 // MOUNT MODE SWITCHING
 // ═════════════════════════════════════════════════════════════
+// Helper: does a panel belong to the currently active mount mode?
+function panelInCurrentMode(panel) {
+  if (DS_STATE.mountMode === 'ground') return !!panel.isGround;
+  return !panel.isGround;
+}
+
 function setMountMode(mode) {
+  if (DS_STATE.mountMode === mode) return;
   DS_STATE.mountMode = mode;
   document.body.classList.toggle('ds-mode-ground', mode === 'ground');
   document.getElementById('ds-mode-roof').classList.toggle('active', mode === 'roof');
@@ -5132,41 +5157,84 @@ function setMountMode(mode) {
   if (mode === 'roof') {
     hint.textContent = 'Roof mode: auto-detects segments from Google Solar API and places panels on detected roof faces.';
   } else {
-    hint.textContent = 'Ground mode: click the map to place each panel. Drag to reposition. Duplicate rows or columns to build an array.';
+    hint.textContent = 'Ground mode: drop AVANS 8.0 or AVANS 10.0 arrays. All panels portrait, 30° tilt, 6 ft above ground. Drag any panel to move the entire array.';
   }
 
-  // Turn off ground placement if switching away
-  if (mode !== 'ground' && DS_STATE.groundPlacementActive) {
+  // Hide panel polygons that don't belong to the new mode (keep state intact)
+  for (const panel of DS_STATE.allPanels) {
+    const poly = DS_STATE.panelPolygons.get(panel.idx);
+    if (!poly) continue;
+    const visible = panelInCurrentMode(panel);
+    poly.setMap(visible ? DS_STATE.map : null);
+  }
+
+  // Refresh 3D if active (filters by mode internally)
+  refresh3DIfActive();
+
+  // In ground mode, auto-arm placement so user just clicks
+  if (mode === 'ground') {
+    if (!DS_STATE.groundPlacementType) DS_STATE.groundPlacementType = 'AVANS_8';
+    document.querySelectorAll('.ds-avans-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.type === DS_STATE.groundPlacementType);
+    });
+    if (!DS_STATE.groundPlacementActive) toggleGroundPlacement();
+  } else if (DS_STATE.groundPlacementActive) {
     toggleGroundPlacement();
   }
 
-  // Update status line
+  // Update status + stats reflect the new mode
   if (mode === 'ground') {
-    setStatus('ready', 'Ground mode — click map to place panels');
+    const arrCount = DS_STATE.groundArrays.length;
+    setStatus('ready', arrCount
+      ? `Ground mode — ${arrCount} array${arrCount !== 1 ? 's' : ''} placed`
+      : 'Ground mode — click map to drop an AVANS array');
   } else if (DS_STATE.roofSegments.length) {
     setStatus('ready', `${DS_STATE.roofSegments.length} segments · ${DS_STATE.maxPanels} max panels`);
   } else {
     setStatus('waiting', 'Enter an address to auto-detect roof');
   }
+
+  syncSliderToActive();
+  updateSliderDisplay(activeCountForMode());
+  updateSystemStats();
+  renderArrayList();
+}
+
+// Count active panels matching current mode (for display + system size)
+function activeCountForMode() {
+  let n = 0;
+  for (const p of DS_STATE.allPanels) {
+    if (!DS_STATE.activePanels.has(p.idx)) continue;
+    if (!panelInCurrentMode(p)) continue;
+    n++;
+  }
+  return n;
 }
 
 // ═════════════════════════════════════════════════════════════
-// GROUND MODE: click to place, drag to move, duplicate
+// GROUND MODE: AVANS 8.0 / AVANS 10.0 array placement
 // ═════════════════════════════════════════════════════════════
+function setAvansType(type) {
+  DS_STATE.groundPlacementType = type;
+  document.querySelectorAll('.ds-avans-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.type === type);
+  });
+  if (!DS_STATE.groundPlacementActive) toggleGroundPlacement();
+}
+
 function toggleGroundPlacement() {
-  const btn = document.getElementById('ds-ground-place');
   DS_STATE.groundPlacementActive = !DS_STATE.groundPlacementActive;
   if (DS_STATE.groundPlacementActive) {
-    if (!DS_STATE.map) { alert('Load an address first to see the map'); DS_STATE.groundPlacementActive = false; return; }
-    btn.classList.add('active');
-    btn.innerHTML = '🖱 Click map...';
+    if (!DS_STATE.map) {
+      alert('Load an address first to see the map');
+      DS_STATE.groundPlacementActive = false;
+      return;
+    }
     DS_STATE.map.setOptions({ draggableCursor: 'crosshair' });
     DS_STATE.groundMapClickListener = DS_STATE.map.addListener('click', (e) => {
-      placeGroundPanel({ latitude: e.latLng.lat(), longitude: e.latLng.lng() });
+      placeAvansArray({ latitude: e.latLng.lat(), longitude: e.latLng.lng() }, DS_STATE.groundPlacementType || 'AVANS_8');
     });
   } else {
-    btn.classList.remove('active');
-    btn.innerHTML = '📍 Place Mode';
     if (DS_STATE.map) DS_STATE.map.setOptions({ draggableCursor: null });
     if (DS_STATE.groundMapClickListener) {
       google.maps.event.removeListener(DS_STATE.groundMapClickListener);
@@ -5175,70 +5243,212 @@ function toggleGroundPlacement() {
   }
 }
 
-function placeGroundPanel(center) {
+// Place an AVANS 8.0 (2x4) or AVANS 10.0 (2x5) array centered at clicked point
+function placeAvansArray(center, type) {
   const tilt = parseFloat(document.getElementById('ds-ground-tilt').value) || 30;
   const az = parseFloat(document.getElementById('ds-ground-az').value) || 180;
-  const idx = DS_STATE.nextGroundIdx++;
+  const cols = type === 'AVANS_10' ? 5 : 4;
+  const rows = 2;
 
-  const panel = {
-    idx,
-    center,
-    orientation: 'LANDSCAPE',
-    yearlyEnergyDcKwh: 500, // placeholder — PVWatts will replace in calc
-    segmentIndex: -1,
-    isGround: true,
-    tilt,
-    azimuth: az
-  };
-  DS_STATE.allPanels.push(panel);
-  DS_STATE.activePanels.add(idx);
+  // Geometry: PORTRAIT panels (long side along the slope/fall line)
+  const panelW = DS_STATE.panelWidthM || 1.045;     // short side, perpendicular to fall line
+  const panelH = DS_STATE.panelHeightM || 1.879;    // long side, along fall line
+  const colGap = panelW * 0.02;                     // 2% gap between columns
+  const rowProjected = panelH * Math.cos(tilt * Math.PI / 180);  // projected fall-line length per row
+  const tiltSin = Math.sin(tilt * Math.PI / 180);
+  const groundClearM = 1.83;                        // 6 ft above ground (lower edge of lower row)
 
-  // Create draggable polygon
-  const corners = panelCorners(center, DS_STATE.panelWidthM, DS_STATE.panelHeightM, 'LANDSCAPE', az);
-  const poly = new google.maps.Polygon({
-    paths: corners,
-    clickable: true,
-    draggable: true,
-    map: DS_STATE.map
-  });
+  // Local frame: +X = perpendicular to azimuth (across), +Y = azimuth direction (downhill/front)
+  // Azimuth rotation: world axes rotated by compass azimuth
+  const azRad = az * Math.PI / 180;
+  const sinA = Math.sin(azRad), cosA = Math.cos(azRad);
+  const latScale = 1 / 111320;
+  const lngScale = 1 / (111320 * Math.cos(center.latitude * Math.PI / 180));
 
-  // Click to select/toggle
-  poly.addListener('click', () => {
-    if (DS_STATE.selectedGroundPanel === idx) {
-      togglePanel(idx);
-    } else {
-      selectGroundPanel(idx);
+  const arrayId = DS_STATE.nextArrayId++;
+  const panelIds = [];
+
+  for (let r = 0; r < rows; r++) {
+    // Row 0 = lower (front, +Y), Row 1 = upper (back, -Y)
+    const yLocal = r === 0 ? +(rowProjected / 2) : -(rowProjected / 2);
+    // Lower row center is half a panel-height up (in the tilted plane), upper row is 1.5x
+    const groundOffset = groundClearM + (r === 0 ? 0.5 : 1.5) * panelH * tiltSin;
+
+    for (let c = 0; c < cols; c++) {
+      const xLocal = (c - (cols - 1) / 2) * (panelW + colGap);
+
+      // Rotate local (xLocal, yLocal) into world (north, east) by compass azimuth
+      // Local +Y maps to world (cos(A), sin(A)) — i.e. azimuth direction
+      // Local +X maps to world 90° clockwise from +Y = (cos(A+90°), sin(A+90°)) = (-sin(A), cos(A))
+      const worldNorth = xLocal * (-sinA) + yLocal * cosA;
+      const worldEast  = xLocal * cosA    + yLocal * sinA;
+
+      const panelCenter = {
+        latitude:  center.latitude  + worldNorth * latScale,
+        longitude: center.longitude + worldEast  * lngScale
+      };
+
+      const idx = DS_STATE.nextGroundIdx++;
+      const panel = {
+        idx,
+        center: panelCenter,
+        orientation: 'PORTRAIT',
+        yearlyEnergyDcKwh: 500,  // placeholder
+        segmentIndex: -1,
+        isGround: true,
+        tilt,
+        azimuth: az,
+        groundOffsetM: groundOffset,
+        arrayId,
+        arrayType: type,
+        rowIdx: r,
+        colIdx: c
+      };
+      DS_STATE.allPanels.push(panel);
+      DS_STATE.activePanels.add(idx);
+      panelIds.push(idx);
+
+      // 2D polygon
+      const corners = panelCorners(
+        panelCenter,
+        panelW,
+        panelH * Math.cos(tilt * Math.PI / 180),  // foreshortened along fall line
+        'PORTRAIT',
+        az
+      );
+      const poly = new google.maps.Polygon({
+        paths: corners,
+        clickable: true,
+        draggable: true,
+        map: DS_STATE.map
+      });
+
+      poly.addListener('click', () => {
+        if (DS_STATE.selectedGroundPanel === idx) {
+          togglePanel(idx);
+        } else {
+          selectGroundPanel(idx);
+        }
+      });
+
+      // Drag any panel → translate the WHOLE array as a rigid body
+      let dragStartCenter = null;
+      poly.addListener('dragstart', () => {
+        dragStartCenter = { ...panel.center };
+      });
+      poly.addListener('dragend', () => {
+        if (!dragStartCenter) return;
+        const path = poly.getPath();
+        let latSum = 0, lngSum = 0;
+        const n = path.getLength();
+        for (let i = 0; i < n; i++) {
+          latSum += path.getAt(i).lat();
+          lngSum += path.getAt(i).lng();
+        }
+        const newCenter = { latitude: latSum / n, longitude: lngSum / n };
+        const dLat = newCenter.latitude  - dragStartCenter.latitude;
+        const dLng = newCenter.longitude - dragStartCenter.longitude;
+        // Move every other panel in the same array by the same delta
+        const arr = DS_STATE.groundArrays.find(a => a.id === panel.arrayId);
+        if (arr) {
+          for (const otherIdx of arr.panelIds) {
+            if (otherIdx === idx) {
+              // already moved by user
+              panel.center = newCenter;
+              continue;
+            }
+            const other = DS_STATE.allPanels.find(p => p.idx === otherIdx);
+            if (!other) continue;
+            other.center = {
+              latitude:  other.center.latitude  + dLat,
+              longitude: other.center.longitude + dLng
+            };
+            const otherPoly = DS_STATE.panelPolygons.get(otherIdx);
+            if (otherPoly) {
+              const c2 = panelCorners(
+                other.center,
+                panelW,
+                panelH * Math.cos(tilt * Math.PI / 180),
+                'PORTRAIT',
+                az
+              );
+              otherPoly.setPath(c2);
+            }
+          }
+          arr.center = {
+            latitude:  arr.center.latitude  + dLat,
+            longitude: arr.center.longitude + dLng
+          };
+        }
+        dragStartCenter = null;
+        refresh3DIfActive();
+      });
+
+      DS_STATE.panelPolygons.set(idx, poly);
+      DS_STATE.renderedPanels.push(poly);
+      applyPanelStyle(idx);
     }
-  });
+  }
 
-  // Drag end to reposition
-  poly.addListener('dragend', () => {
-    const path = poly.getPath();
-    // Compute new centroid from dragged polygon corners
-    let latSum = 0, lngSum = 0;
-    const n = path.getLength();
-    for (let i = 0; i < n; i++) {
-      latSum += path.getAt(i).lat();
-      lngSum += path.getAt(i).lng();
-    }
-    panel.center = { latitude: latSum / n, longitude: lngSum / n };
-  });
+  // Track this array
+  DS_STATE.groundArrays.push({ id: arrayId, type, panelIds, center: { ...center } });
 
-  DS_STATE.panelPolygons.set(idx, poly);
-  DS_STATE.renderedPanels.push(poly);
-  applyPanelStyle(idx);
-
-  // Update stats and slider
   syncSliderToActive();
-  updateSliderDisplay(DS_STATE.activePanels.size);
+  updateSliderDisplay(activeCountForMode());
   updateSystemStats();
+  renderArrayList();
+  refresh3DIfActive();
+
+  setStatus('ready',
+    `Ground mode — ${DS_STATE.groundArrays.length} array${DS_STATE.groundArrays.length !== 1 ? 's' : ''} placed`);
+}
+
+// Delete a single AVANS array (all panels in it)
+function deleteAvansArray(arrayId) {
+  const arr = DS_STATE.groundArrays.find(a => a.id === arrayId);
+  if (!arr) return;
+  for (const idx of arr.panelIds) {
+    const poly = DS_STATE.panelPolygons.get(idx);
+    if (poly) poly.setMap(null);
+    DS_STATE.panelPolygons.delete(idx);
+    DS_STATE.activePanels.delete(idx);
+  }
+  DS_STATE.allPanels = DS_STATE.allPanels.filter(p => !arr.panelIds.includes(p.idx));
+  DS_STATE.groundArrays = DS_STATE.groundArrays.filter(a => a.id !== arrayId);
+  syncSliderToActive();
+  updateSliderDisplay(activeCountForMode());
+  updateSystemStats();
+  renderArrayList();
+  refresh3DIfActive();
+}
+
+// Render the list of placed AVANS arrays with delete buttons
+function renderArrayList() {
+  const el = document.getElementById('ds-array-list');
+  if (!el) return;
+  if (!DS_STATE.groundArrays.length) {
+    el.innerHTML = '<em style="font-size:.74rem;color:#94a3b8">No arrays placed yet</em>';
+    return;
+  }
+  el.innerHTML = DS_STATE.groundArrays.map(a => `
+    <div class="ds-array-item">
+      <div>
+        <strong>${a.type === 'AVANS_10' ? 'AVANS 10.0' : 'AVANS 8.0'}</strong>
+        <span class="ds-array-meta">${a.panelIds.length} panels</span>
+      </div>
+      <button class="ds-array-del" onclick="deleteAvansArray(${a.id})" title="Delete this array">🗑</button>
+    </div>
+  `).join('');
+}
+
+function placeGroundPanel(center) {
+  // Backwards compatibility: any legacy callers route to AVANS 8.0
+  placeAvansArray(center, 'AVANS_8');
 }
 
 function selectGroundPanel(idx) {
   DS_STATE.selectedGroundPanel = idx;
-  document.getElementById('ds-selected-panel').textContent = `Panel #${idx - 99999}`;
-  document.getElementById('ds-dup-row').disabled = false;
-  document.getElementById('ds-dup-col').disabled = false;
+  const sp = document.getElementById('ds-selected-panel'); if (sp) sp.textContent = `Panel #${idx - 99999}`;
   // Highlight selected
   for (const pidx of DS_STATE.panelPolygons.keys()) applyPanelStyle(pidx);
   const poly = DS_STATE.panelPolygons.get(idx);
@@ -5246,22 +5456,25 @@ function selectGroundPanel(idx) {
 }
 
 function clearGroundPanels() {
-  if (!confirm('Remove all ground-placed panels?')) return;
-  const toRemove = DS_STATE.allPanels.filter(p => p.isGround).map(p => p.idx);
-  for (const idx of toRemove) {
-    const poly = DS_STATE.panelPolygons.get(idx);
-    if (poly) poly.setMap(null);
-    DS_STATE.panelPolygons.delete(idx);
-    DS_STATE.activePanels.delete(idx);
+  if (!DS_STATE.groundArrays.length) return;
+  if (!confirm('Remove all placed AVANS arrays?')) return;
+  for (const arr of [...DS_STATE.groundArrays]) {
+    for (const idx of arr.panelIds) {
+      const poly = DS_STATE.panelPolygons.get(idx);
+      if (poly) poly.setMap(null);
+      DS_STATE.panelPolygons.delete(idx);
+      DS_STATE.activePanels.delete(idx);
+    }
   }
   DS_STATE.allPanels = DS_STATE.allPanels.filter(p => !p.isGround);
+  DS_STATE.groundArrays = [];
   DS_STATE.selectedGroundPanel = null;
-  document.getElementById('ds-selected-panel').textContent = 'None';
-  document.getElementById('ds-dup-row').disabled = true;
-  document.getElementById('ds-dup-col').disabled = true;
+  const sp2 = document.getElementById('ds-selected-panel'); if (sp2) sp2.textContent = 'None';
   syncSliderToActive();
-  updateSliderDisplay(DS_STATE.activePanels.size);
+  updateSliderDisplay(activeCountForMode());
   updateSystemStats();
+  renderArrayList();
+  refresh3DIfActive();
 }
 
 function duplicateRow() {
@@ -5486,7 +5699,7 @@ function updateObstructionList() {
 // ═════════════════════════════════════════════════════════════
 function updateSystemStats() {
   const panelW = parseFloat(document.getElementById('ds-panel-w').value);
-  const count = DS_STATE.activePanels.size;
+  const count = activeCountForMode();
   const systemKw = (panelW * count) / 1000;
   document.getElementById('ds-kw').innerHTML = systemKw.toFixed(2) + '<span class="ds-stat-unit">kW DC</span>';
   document.getElementById('ds-active-count').innerHTML = count.toLocaleString() + '<span class="ds-stat-unit">panels</span>';
@@ -5565,7 +5778,7 @@ async function runDesignStudio() {
 
   try {
     const panelW = parseFloat(document.getElementById('ds-panel-w').value);
-    const count = DS_STATE.activePanels.size || parseInt(document.getElementById('ds-slider').value) || 20;
+    const count = activeCountForMode() || parseInt(document.getElementById('ds-slider').value) || 20;
     const losses = parseFloat(document.getElementById('ds-losses').value);
     const arrayType = parseInt(document.getElementById('ds-array').value);
     const cpw = parseFloat(document.getElementById('ds-cpw').value);
@@ -5577,11 +5790,12 @@ async function runDesignStudio() {
     const systemKw = (panelW * count) / 1000;
     const systemWatts = panelW * count;
 
-    // Group active panels by (tilt, azimuth) for multi-angle PVWatts
-    const groups = new Map(); // key="tilt_az" -> { tilt, azimuth, count }
-    if (DS_STATE.activePanels.size > 0) {
+    // Group active panels MATCHING THE CURRENT MOUNT MODE by (tilt, azimuth)
+    const groups = new Map();
+    if (count > 0) {
       for (const p of DS_STATE.allPanels) {
         if (!DS_STATE.activePanels.has(p.idx)) continue;
+        if (!panelInCurrentMode(p)) continue;
         const angles = getPanelAngles(p);
         const key = `${Math.round(angles.tilt)}_${Math.round(angles.azimuth)}`;
         if (!groups.has(key)) {
@@ -5590,7 +5804,6 @@ async function runDesignStudio() {
         groups.get(key).count++;
       }
     } else {
-      // Fallback: single group with form inputs
       const tilt = parseFloat(document.getElementById('ds-tilt').value);
       const az = parseFloat(document.getElementById('ds-azimuth').value);
       groups.set(`${tilt}_${az}`, { tilt, azimuth: az, count });
@@ -5798,20 +6011,23 @@ function exportProposal() {
 // ═════════════════════════════════════════════════════════════
 document.getElementById('ds-slider').addEventListener('input', function() {
   const target = parseInt(this.value) || 0;
-  // Rebuild active set as top N panels by energy, excluding obstructed ones
-  DS_STATE.activePanels.clear();
+  // Rebuild active ROOF panels as top N by energy, excluding obstructed ones.
+  // Ground panels are managed separately and stay in activePanels untouched.
+  for (const p of DS_STATE.allPanels) {
+    if (!p.isGround) DS_STATE.activePanels.delete(p.idx);
+  }
   let added = 0;
   for (const p of DS_STATE.allPanels) {
+    if (p.isGround) continue;
     if (added >= target) break;
     if (DS_STATE.disabledPanels.has(p.idx)) continue;
     DS_STATE.activePanels.add(p.idx);
     added++;
   }
-  // Update styles of all rendered panels in place
   for (const idx of DS_STATE.panelPolygons.keys()) {
     applyPanelStyle(idx);
   }
-  updateSliderDisplay(DS_STATE.activePanels.size);
+  updateSliderDisplay(activeCountForMode());
   updateSystemStats();
   refresh3DIfActive();
 });
