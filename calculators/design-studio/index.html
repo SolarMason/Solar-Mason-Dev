@@ -5216,7 +5216,8 @@ function initMap() {
   const vbtn = document.getElementById('ds-view-toggle');
   if (vbtn) {
     vbtn.style.display = 'inline-flex';
-    vbtn.textContent = '<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/><path d="M3 10h14M10 2.5c-3 3-3 11 0 15M10 2.5c3 3 3 11 0 15" stroke="currentColor" stroke-width="1.1"/></svg> View True 3D';
+    var _vi=document.getElementById('ds-view-icon'),_vl=document.getElementById('ds-view-label');
+    if(_vi)_vi.innerHTML='<svg viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';if(_vl)_vl.textContent='3D';
     vbtn.disabled = false;
   }
 
@@ -5380,7 +5381,7 @@ async function enterCesium3D(opts = {}) {
         loadingDiv.style.display = 'none';
       } catch (e) {
         if (silent) { failQuietly(e); return; }
-        document.getElementById('ds-cesium-status').textContent = '<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Could not finish 3D setup';
+        document.getElementById('ds-cesium-status').innerHTML = '⚠ Could not finish 3D setup';
         document.getElementById('ds-cesium-hint').textContent = e.message || 'Sampling the 3D surface failed. The location may not have Photorealistic 3D Tile coverage.';
         console.error('[DS] 3D setup error:', e);
       }
@@ -5388,7 +5389,7 @@ async function enterCesium3D(opts = {}) {
   } catch (e) {
     if (silent) { failQuietly(e); return; }
     console.error('[DS] Cesium load/init error:', e);
-    document.getElementById('ds-cesium-status').textContent = '<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> 3D load failed';
+    document.getElementById('ds-cesium-status').innerHTML = '⚠ 3D load failed';
     document.getElementById('ds-cesium-hint').textContent = (e.message || String(e)) + ' — make sure the Map Tiles API is enabled on your Google Cloud project.';
   }
 }
