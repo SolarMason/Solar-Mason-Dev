@@ -4889,7 +4889,7 @@ async function fetchSolarInsights() {
   }
   const dr = document.getElementById('ds-dup-row'); if (dr) dr.disabled = true;
   const dc = document.getElementById('ds-dup-col'); if (dc) dc.disabled = true;
-  const sp = document.getElementById('ds-selected-panel'); if (sp) sp.textContent = 'None';
+  const selPanelEl = document.getElementById('ds-selected-panel'); if (selPanelEl) selPanelEl.textContent = 'None';
 
   // Also pre-compute a "best config" count from solarPanelConfigs
   const configs = sp.solarPanelConfigs || [];
@@ -5448,7 +5448,7 @@ function placeGroundPanel(center) {
 
 function selectGroundPanel(idx) {
   DS_STATE.selectedGroundPanel = idx;
-  const sp = document.getElementById('ds-selected-panel'); if (sp) sp.textContent = `Panel #${idx - 99999}`;
+  const selPanelEl = document.getElementById('ds-selected-panel'); if (selPanelEl) selPanelEl.textContent = `Panel #${idx - 99999}`;
   // Highlight selected
   for (const pidx of DS_STATE.panelPolygons.keys()) applyPanelStyle(pidx);
   const poly = DS_STATE.panelPolygons.get(idx);
@@ -5469,7 +5469,7 @@ function clearGroundPanels() {
   DS_STATE.allPanels = DS_STATE.allPanels.filter(p => !p.isGround);
   DS_STATE.groundArrays = [];
   DS_STATE.selectedGroundPanel = null;
-  const sp2 = document.getElementById('ds-selected-panel'); if (sp2) sp2.textContent = 'None';
+  const selPanelEl = document.getElementById('ds-selected-panel'); if (selPanelEl) selPanelEl.textContent = 'None';
   syncSliderToActive();
   updateSliderDisplay(activeCountForMode());
   updateSystemStats();
