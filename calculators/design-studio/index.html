@@ -5603,6 +5603,7 @@ function activeCountForMode() {
 // GROUND MODE: AVANS 8.0 / AVANS 10.0 array placement
 // ═════════════════════════════════════════════════════════════
 function setAvansType(type) {
+  console.log('[DS] setAvansType', type, 'existing arrays:', DS_STATE.groundArrays.length);
   DS_STATE.groundPlacementType = type;
   document.querySelectorAll('.ds-avans-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.type === type);
@@ -5612,12 +5613,18 @@ function setAvansType(type) {
   // placed one with a 2 ft gap — user doesn't have to click the map again.
   if (DS_STATE.groundArrays.length > 0 && DS_STATE.map) {
     const last = DS_STATE.groundArrays[DS_STATE.groundArrays.length - 1];
-    const snapCenter = computeSnapCenter(last, type);
-    placeAvansArray(snapCenter, type);
-    // Pan the map so the new array is visible if it ends up off-screen
-    if (DS_STATE.map && snapCenter) {
-      DS_STATE.map.panTo(new google.maps.LatLng(snapCenter.latitude, snapCenter.longitude));
+    console.log('[DS] Snapping next to last array:', last);
+    if (!last.azimuth && last.azimuth !== 0) {
+      // Back-compat: older arrays placed before azimuth was stored — read from the first panel
+      const firstPanel = DS_STATE.allPanels.find(p => p.idx === last.panelIds[0]);
+      last.azimuth = firstPanel?.azimuth ?? parseFloat(document.getElementById('ds-ground-az')?.value) ?? 180;
     }
+    const snapCenter = computeSnapCenter(last, type);
+    console.log('[DS] Snap center computed:', snapCenter, 'last center:', last.center);
+    placeAvansArray(snapCenter, type);
+    // Fit the map to include all arrays so the new one is visible
+    fitMapToGroundArrays();
+    setStatus('ready', `✅ Array #${DS_STATE.groundArrays.length} snapped 2 ft away from #${DS_STATE.groundArrays.length - 1}`);
     return;
   }
 
@@ -5625,8 +5632,24 @@ function setAvansType(type) {
   if (!DS_STATE.groundPlacementActive) toggleGroundPlacement();
 }
 
-// Compute the center point for a new AVANS array snapped 2 ft to the right (local +X axis)
-// of an existing one, accounting for both arrays' widths and the shared azimuth.
+// Fit the Google Map viewport to include every placed ground array
+function fitMapToGroundArrays() {
+  if (!DS_STATE.map || !DS_STATE.groundArrays.length) return;
+  const bounds = new google.maps.LatLngBounds();
+  for (const arr of DS_STATE.groundArrays) {
+    bounds.extend(new google.maps.LatLng(arr.center.latitude, arr.center.longitude));
+  }
+  DS_STATE.map.fitBounds(bounds, 120); // 120px padding
+  // Don't zoom out past 20
+  const listener = google.maps.event.addListenerOnce(DS_STATE.map, 'idle', () => {
+    if (DS_STATE.map.getZoom() > 21) DS_STATE.map.setZoom(21);
+  });
+}
+
+// Compute the center point for a new AVANS array snapped 2 ft EAST (on a typical
+// south-facing map) of an existing one. Uses local −X axis — this is the direction
+// that points right-on-map for south-facing arrays (the common PA case), top-on-map
+// for east-facing, etc. Accounts for both arrays' widths plus the 2 ft gap.
 function computeSnapCenter(lastArray, newType) {
   const panelW = DS_STATE.panelWidthM || 1.045;
   const colGap = panelW * 0.02;
@@ -5637,15 +5660,15 @@ function computeSnapCenter(lastArray, newType) {
   const lastHalfW = ((lastCols - 1) * (panelW + colGap)) / 2 + panelW / 2;
   const newHalfW  = ((newCols  - 1) * (panelW + colGap)) / 2 + panelW / 2;
   const gapM = 0.6096; // 2 ft
-  const dx = lastHalfW + gapM + newHalfW;
+  const dist = lastHalfW + gapM + newHalfW;
 
-  // Translate along the last array's local +X axis (across columns)
-  // Local +X maps to world (−sin(az), cos(az)) in (north, east)
-  const az = lastArray.azimuth ?? (parseFloat(document.getElementById('ds-ground-az')?.value) || 180);
+  // Translate along local −X axis: for az=180° (south-facing) this gives EAST on the map.
+  // Local +X maps to world (−sin(az), cos(az)); local −X maps to (sin(az), −cos(az)).
+  const az = lastArray.azimuth ?? 180;
   const azRad = az * Math.PI / 180;
   const sinA = Math.sin(azRad), cosA = Math.cos(azRad);
-  const worldNorth = dx * (-sinA);
-  const worldEast  = dx * cosA;
+  const worldNorth = dist * sinA;
+  const worldEast  = dist * (-cosA);
 
   const lat = lastArray.center.latitude;
   const latScale = 1 / 111320;
