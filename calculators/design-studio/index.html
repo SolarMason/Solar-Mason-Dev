@@ -3959,6 +3959,36 @@ html { scroll-behavior: smooth; }
 .ds-preset-pct{font-size:1.15rem;font-weight:900;color:#0B2545;line-height:1;margin-bottom:.2rem}
 .ds-preset-btn.active .ds-preset-pct{color:#2D82BE}
 .ds-preset-meta{font-size:.65rem;font-weight:700;color:#64748B;line-height:1.2}
+
+/* Customer class toggle (residential/commercial) */
+.ds-class-toggle{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;background:#f1f5f9;border-radius:10px;padding:.3rem}
+.ds-class-btn{background:transparent;border:none;border-radius:8px;padding:.7rem .5rem;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:800;color:#64748B;transition:all .2s}
+.ds-class-btn.active{background:#fff;color:#0B2545;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.ds-class-btn:hover:not(.active){color:#334155}
+.ds-class-hint{font-size:.7rem;color:#94a3b8;margin-top:.45rem;line-height:1.4}
+
+/* ITC blocks */
+.ds-itc-block{margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(0,0,0,.08)}
+.ds-itc-title{font-size:.78rem;font-weight:800;color:#0B2545;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.7rem}
+.ds-itc-locked{background:linear-gradient(135deg,rgba(16,185,129,.06),rgba(16,185,129,.02));border:1px solid rgba(16,185,129,.22);border-radius:12px;padding:1rem 1.1rem;display:flex;align-items:center;gap:1rem}
+.ds-itc-pct{font-size:2.2rem;font-weight:900;color:#059669;line-height:1;flex-shrink:0}
+.ds-itc-desc{font-size:.72rem;color:#475569;line-height:1.5}
+.ds-itc-desc strong{color:#0B2545;font-weight:800}
+.ds-itc-base,.ds-itc-adders,.ds-macrs-block{margin-bottom:.55rem}
+.ds-adder{display:flex;align-items:flex-start;gap:.65rem;padding:.7rem .8rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;margin-bottom:.5rem;transition:all .2s}
+.ds-adder:hover{background:#f1f5f9;border-color:rgba(45,130,190,.3)}
+.ds-adder input[type=checkbox]{margin-top:.1rem;flex-shrink:0;width:16px;height:16px;accent-color:#2D82BE;cursor:pointer}
+.ds-adder input[type=checkbox]:disabled{cursor:default;accent-color:#10b981}
+.ds-adder-name{font-size:.8rem;font-weight:800;color:#0B2545;line-height:1.3;margin-bottom:.2rem;display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
+.ds-adder-amt{color:#2D82BE;font-weight:900;font-size:.82rem;background:rgba(45,130,190,.08);padding:.12rem .5rem;border-radius:100px;white-space:nowrap}
+.ds-adder-desc{font-size:.68rem;color:#64748B;line-height:1.5}
+.ds-adder:has(input:checked){background:rgba(45,130,190,.05);border-color:#2D82BE}
+.ds-itc-adders label:first-child .ds-adder-amt{background:rgba(16,185,129,.1);color:#059669}
+.ds-itc-total{display:flex;justify-content:space-between;align-items:center;padding:.85rem 1rem;background:linear-gradient(135deg,#0B2545,#1B5E8A);border-radius:10px;color:#fff;font-size:.85rem;font-weight:800;margin-top:.25rem;margin-bottom:.75rem}
+.ds-itc-total strong{font-size:1.35rem;font-weight:900;color:#fff}
+.ds-li-row{padding-top:.25rem}
+.ds-li-row select{font-size:.75rem}
+.ds-macrs-block{padding-top:.8rem;border-top:1px dashed rgba(0,0,0,.1);margin-top:.75rem}
 .ds-slider-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.5rem}
 .ds-slider-head label{font-size:.72rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em}
 .ds-slider-val{font-size:1.5rem;font-weight:900;color:#0B2545;line-height:1}
@@ -4238,14 +4268,13 @@ body.ds-mode-ground .ds-ground-only{display:block}
       </div>
       <div class="ds-row">
         <div class="ds-field"><label>Losses (%)</label><input type="number" id="ds-losses" value="14" min="0" max="30" step="0.5"></div>
-        <div class="ds-field">
-          <label>Project Type</label>
-          <select id="ds-type">
-            <option value="residential">Residential</option>
-            <option value="commercial" selected>Commercial</option>
-          </select>
-        </div>
+        <div class="ds-field" style="visibility:hidden"><label>—</label><input type="number" disabled></div>
       </div>
+      <!-- Hidden: kept for backwards compat with runDesignStudio; driven by customer-class toggle in Step 7 -->
+      <select id="ds-type" style="display:none">
+        <option value="residential">Residential</option>
+        <option value="commercial">Commercial</option>
+      </select>
       <div class="ds-stats">
         <div class="ds-stat"><div class="ds-stat-label">System Size</div><div class="ds-stat-value" id="ds-kw">0.00<span class="ds-stat-unit">kW DC</span></div></div>
         <div class="ds-stat"><div class="ds-stat-label">Active Panels</div><div class="ds-stat-value" id="ds-active-count">0<span class="ds-stat-unit">panels</span></div></div>
@@ -4255,13 +4284,90 @@ body.ds-mode-ground .ds-ground-only{display:block}
     <!-- Financials -->
     <div class="ds-panel">
       <h3><span class="step">7</span> Financial Inputs</h3>
-      <div class="ds-row">
+
+      <!-- Residential vs Commercial toggle (auto-detected from bill, user can override) -->
+      <div class="ds-class-toggle">
+        <button type="button" class="ds-class-btn active" id="ds-class-res" onclick="setCustomerClass('residential')">🏠 Residential</button>
+        <button type="button" class="ds-class-btn" id="ds-class-com" onclick="setCustomerClass('commercial')">🏢 Commercial</button>
+      </div>
+      <div class="ds-class-hint" id="ds-class-hint">Defaults to residential. Upload a utility bill to auto-detect from rate class or demand charges.</div>
+
+      <div class="ds-row" style="margin-top:.75rem">
         <div class="ds-field"><label>Cost per Watt</label><input type="number" id="ds-cpw" value="3.00" min="1" max="6" step="0.05"></div>
-        <div class="ds-field"><label>Rate ($/kWh)</label><input type="number" id="ds-rate" value="0.17" min="0.05" max="0.50" step="0.01"></div>
+        <div class="ds-field"><label>Rate ($/kWh)</label><input type="number" id="ds-rate" value="0.17" min="0.05" max="0.60" step="0.0001"></div>
       </div>
       <div class="ds-row">
         <div class="ds-field"><label>Rate Escalation (%)</label><input type="number" id="ds-esc" value="5" min="0" max="15" step="0.5"></div>
-        <div class="ds-field"><label>Federal ITC (%)</label><input type="number" id="ds-itc" value="30" min="0" max="50"></div>
+        <div class="ds-field" id="ds-esc-placeholder" style="visibility:hidden"><label>—</label><input type="number" disabled></div>
+      </div>
+
+      <!-- RESIDENTIAL: ITC is locked at 30% -->
+      <div class="ds-itc-block" id="ds-itc-residential">
+        <div class="ds-itc-title">🏠 Residential Clean Energy Credit</div>
+        <div class="ds-itc-locked">
+          <div class="ds-itc-pct">30%</div>
+          <div class="ds-itc-desc"><strong>Locked by IRC §25D.</strong> Residential installations receive a flat 30% federal tax credit through 2032. No stackable bonuses apply — MACRS depreciation and bonus adders (energy community, domestic content, low-income) are available only to commercial, industrial, and non-profit projects.</div>
+        </div>
+        <input type="hidden" id="ds-itc" value="30">
+      </div>
+
+      <!-- COMMERCIAL: full ITC + adders + MACRS -->
+      <div class="ds-itc-block" id="ds-itc-commercial" style="display:none">
+        <div class="ds-itc-title">🏢 Commercial ITC + Adders</div>
+        <div class="ds-itc-base">
+          <label class="ds-adder">
+            <input type="checkbox" checked disabled>
+            <div>
+              <div class="ds-adder-name">Base Investment Tax Credit <span class="ds-adder-amt">+30%</span></div>
+              <div class="ds-adder-desc">IRC §48E base credit — applies to every qualifying commercial project.</div>
+            </div>
+          </label>
+        </div>
+        <div class="ds-itc-adders">
+          <label class="ds-adder">
+            <input type="checkbox" id="ds-adder-ec" onchange="updateItcDisplay()">
+            <div>
+              <div class="ds-adder-name">Energy Community Bonus <span class="ds-adder-amt">+10%</span></div>
+              <div class="ds-adder-desc">Brownfield sites, coal-closure communities, or statistical areas meeting fossil-fuel employment thresholds.</div>
+            </div>
+          </label>
+          <label class="ds-adder">
+            <input type="checkbox" id="ds-adder-dc" onchange="updateItcDisplay()">
+            <div>
+              <div class="ds-adder-name">Domestic Content Bonus <span class="ds-adder-amt">+10%</span></div>
+              <div class="ds-adder-desc">≥40% of manufactured components (US-made steel/iron) are produced domestically.</div>
+            </div>
+          </label>
+          <label class="ds-adder">
+            <input type="checkbox" id="ds-adder-li" onchange="toggleLowIncomeRow(); updateItcDisplay()">
+            <div>
+              <div class="ds-adder-name">Low-Income Community Bonus <span class="ds-adder-amt ds-adder-amt-li">+10–20%</span></div>
+              <div class="ds-adder-desc">Projects ≤5 MW in qualifying low-income census tracts, tribal lands, affordable housing, or benefitting low-income households.</div>
+            </div>
+          </label>
+          <div class="ds-field ds-li-row" id="ds-li-row" style="display:none;margin-left:1.85rem">
+            <label>Low-Income Category</label>
+            <select id="ds-adder-li-pct" onchange="updateItcDisplay()">
+              <option value="10">Category 1 / 2: +10% (low-income tract or tribal land)</option>
+              <option value="20">Category 3 / 4: +20% (qualified LIHTC / low-income economic benefit)</option>
+            </select>
+          </div>
+        </div>
+        <div class="ds-itc-total" id="ds-itc-total-row">
+          <span>Total Federal ITC</span>
+          <strong id="ds-itc-total">30%</strong>
+        </div>
+        <input type="hidden" id="ds-itc" value="30">
+
+        <div class="ds-macrs-block">
+          <label class="ds-adder">
+            <input type="checkbox" id="ds-macrs" checked onchange="updateItcDisplay()">
+            <div>
+              <div class="ds-adder-name">5-Year MACRS Depreciation <span class="ds-adder-amt">~22% NPV</span></div>
+              <div class="ds-adder-desc">Accelerated depreciation of 85% of system cost (basis reduced by ½ of ITC). Estimated net present value assumes a 21% effective corporate tax rate — your tax advisor can refine based on your bracket and state treatment.</div>
+            </div>
+          </label>
+        </div>
       </div>
     </div>
     <button class="ds-btn ds-btn-full" id="ds-calc" onclick="runDesignStudio()">⚡ Calculate &amp; Model</button>
@@ -4393,6 +4499,7 @@ const DS_STATE = {
   cesiumMode: false,
   panel3DEntities: [],
   userViewPreference: null,    // null = auto-3D, '2d' = forced 2D, '3d' = forced 3D
+  customerClass: 'residential',// 'residential' | 'commercial' — drives ITC/MACRS UI
   billData: null,              // parsed utility bill { utility, annualKwh, ratePerKwh, monthlyConsumption[12] }
   renderedPanels: [],   // Legacy: all polygon instances currently on map
   disabledPanels: new Set(),  // Indices disabled by obstructions
@@ -6043,9 +6150,16 @@ async function runDesignStudio() {
     const specificYield = systemKw ? annualProd / systemKw : 0;
 
     const grossCost = systemWatts * cpw;
-    let netCost = grossCost * (1 - itcPct);
-    if (projectType === 'commercial') {
-      netCost = grossCost * (1 - itcPct - DS_CONFIG.MACRS_NET_BENEFIT_PCT);
+    const itcAmount = grossCost * itcPct;
+    let netCost = grossCost - itcAmount;
+    let macrsBenefit = 0;
+    // Commercial projects can claim 5-year MACRS accelerated depreciation in addition to ITC.
+    // Depreciable basis = cost × (1 − ½ × ITC rate), per IRC §50(c)(3) half-basis reduction.
+    // NPV benefit ≈ basis × 0.22 (5-yr MACRS, ~21% effective corp rate, modest discount).
+    if (isMacrsActive()) {
+      const depBasis = grossCost * (1 - 0.5 * itcPct);
+      macrsBenefit = depBasis * 0.22;
+      netCost -= macrsBenefit;
     }
 
     let cumulativeSavings = 0;
@@ -6340,6 +6454,11 @@ async function processBillFile(file) {
     billData.monthlyConsumption = distributeAnnualToMonthly(billData.annualKwh);
     DS_STATE.billData = billData;
 
+    // Apply detected customer class (residential/commercial) to the ITC UI
+    if (billData.customerClass) {
+      setCustomerClass(billData.customerClass, /* auto */ true);
+    }
+
     // Auto-fill rate (keep 4 decimals of precision — matches bill-analyzer approach)
     if (billData.ratePerKwh && billData.ratePerKwh > 0.04 && billData.ratePerKwh < 0.60) {
       document.getElementById('ds-rate').value = billData.ratePerKwh.toFixed(4);
@@ -6413,6 +6532,7 @@ async function processBillFile(file) {
     result.innerHTML = `
       <div style="font-weight:800;color:#065f46;margin-bottom:.4rem">✅ Bill parsed successfully</div>
       <div class="row"><span>Utility</span><span><strong>${billData.utility || 'Unknown'}</strong></span></div>
+      <div class="row"><span>Project type</span><span><strong>${billData.customerClass === 'commercial' ? '🏢 Commercial' : '🏠 Residential'}</strong> <em style="opacity:.7;font-size:.68rem">(${billData.classDetection})</em></span></div>
       ${addressNote}
       <div class="row"><span>Annual usage</span><span><strong>${billData.annualKwh.toLocaleString()} kWh</strong></span></div>
       <div class="row"><span>Monthly average</span><span>${monthlyAvg} kWh</span></div>
@@ -6437,8 +6557,70 @@ async function processBillFile(file) {
 }
 
 // ═════════════════════════════════════════════════════════════
-// OFFSET PRESETS — 80% / 100% / 120% auto-sizing from bill
+// CUSTOMER CLASS (residential vs commercial) + ITC / MACRS UI
 // ═════════════════════════════════════════════════════════════
+
+// User-toggleable (auto-set from bill, but overridable)
+function setCustomerClass(cls, auto = false) {
+  if (cls !== 'residential' && cls !== 'commercial') return;
+  DS_STATE.customerClass = cls;
+  document.getElementById('ds-class-res').classList.toggle('active', cls === 'residential');
+  document.getElementById('ds-class-com').classList.toggle('active', cls === 'commercial');
+  document.getElementById('ds-itc-residential').style.display = cls === 'residential' ? '' : 'none';
+  document.getElementById('ds-itc-commercial').style.display  = cls === 'commercial'  ? '' : 'none';
+
+  // Keep the legacy hidden ds-type select in sync (runDesignStudio still reads it for MACRS gating)
+  const legacy = document.getElementById('ds-type');
+  if (legacy) legacy.value = cls;
+
+  const hint = document.getElementById('ds-class-hint');
+  if (hint) {
+    if (auto && DS_STATE.billData && DS_STATE.billData.classDetection) {
+      hint.innerHTML = `✅ <strong>${cls === 'residential' ? 'Residential' : 'Commercial'}</strong> auto-detected (${DS_STATE.billData.classDetection}). Tap to override.`;
+    } else if (cls === 'residential') {
+      hint.innerHTML = '🏠 Residential projects qualify for the flat 30% Residential Clean Energy Credit (§25D). ITC is locked; MACRS and bonus adders do not apply.';
+    } else {
+      hint.innerHTML = '🏢 Commercial projects stack the 30% base ITC with energy-community, domestic-content, and low-income bonus adders (up to 70%), plus MACRS depreciation.';
+    }
+  }
+  updateItcDisplay();
+}
+
+// Show/hide low-income category picker when checkbox changes
+function toggleLowIncomeRow() {
+  const cb = document.getElementById('ds-adder-li');
+  const row = document.getElementById('ds-li-row');
+  if (row) row.style.display = cb && cb.checked ? '' : 'none';
+}
+
+// Compute current effective ITC rate from toggles
+function computeItcRate() {
+  if (DS_STATE.customerClass === 'residential') return 0.30;
+  let rate = 0.30;
+  if (document.getElementById('ds-adder-ec')?.checked) rate += 0.10;
+  if (document.getElementById('ds-adder-dc')?.checked) rate += 0.10;
+  if (document.getElementById('ds-adder-li')?.checked) {
+    rate += parseFloat(document.getElementById('ds-adder-li-pct')?.value || '10') / 100;
+  }
+  return rate;
+}
+
+// Whether MACRS is active (commercial only + checkbox checked)
+function isMacrsActive() {
+  if (DS_STATE.customerClass !== 'commercial') return false;
+  return document.getElementById('ds-macrs')?.checked ?? false;
+}
+
+// Refresh the ITC total display + the hidden ds-itc input (which runDesignStudio reads)
+function updateItcDisplay() {
+  const rate = computeItcRate();
+  const pct = Math.round(rate * 100);
+  const totalEl = document.getElementById('ds-itc-total');
+  if (totalEl) totalEl.textContent = pct + '%';
+  // Mirror into the hidden field that runDesignStudio already reads
+  const itcInput = document.getElementById('ds-itc');
+  if (itcInput) itcInput.value = pct;
+}
 
 // Compute how many top-energy roof panels are needed to hit an offset percentage
 function panelCountForOffset(offsetPct) {
@@ -6517,8 +6699,10 @@ function parseUtilityBill(text) {
     ratePerKwh: null,
     billingKwh: null,
     address: null,
+    customerClass: 'residential',   // 'residential' | 'commercial'
+    classDetection: 'default',      // how it was determined, for UI disclosure
     charges: { supply: null, delivery: null, customerCharge: null, totalBill: null },
-    rateBreakdown: null   // populated below with supply / delivery / effective / blended
+    rateBreakdown: null
   };
 
   // Utility identification
@@ -6623,6 +6807,26 @@ function parseUtilityBill(text) {
     if (m) data.ratePerKwh = parseFloat(m[1]);
   }
 
+  // ── Customer class detection (residential vs commercial) ──
+  // Priority 1: explicit rate schedule/class labels
+  if (/Residential\s*Service|Residential\s*Rate|Rate\s*Schedule\s*RS\b|\bRate\s*Class\s*RS\b|Schedule\s*R\b/i.test(t)) {
+    data.customerClass = 'residential';
+    data.classDetection = 'rate schedule "Residential"';
+  } else if (/General\s*Service|Commercial\s*Service|Small\s*Business\s*Service|Industrial\s*Service|Large\s*Power|Rate\s*(?:Schedule|Class)?\s*(?:GS|GP|LP|LS|IS|GH|GT)-?\d?/i.test(t)) {
+    data.customerClass = 'commercial';
+    data.classDetection = 'rate schedule "Commercial / General Service"';
+  }
+  // Priority 2: demand charges are a strong commercial signal
+  else if (/Demand\s*Charge|Billing\s*Demand|kW\s*Demand|Maximum\s*Demand\s*:?\s*\d/i.test(t)) {
+    data.customerClass = 'commercial';
+    data.classDetection = 'demand charges present on bill';
+  }
+  // Priority 3: usage heuristic — typical residential maxes around 20–25k kWh/yr
+  else if (data.annualKwh && data.annualKwh > 30000) {
+    data.customerClass = 'commercial';
+    data.classDetection = `high annual usage (${data.annualKwh.toLocaleString()} kWh > 30,000)`;
+  }
+
   return data;
 }
 
@@ -6716,6 +6920,8 @@ document.getElementById('ds-slider').addEventListener('input', function() {
 // Initialize
 updateSystemStats();
 bindBillUpload();
+updateItcDisplay();
+setCustomerClass('residential');
 
 window.initGoogleMaps = function() {
   initGooglePlaces();
