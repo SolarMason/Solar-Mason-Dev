@@ -3361,6 +3361,10 @@ html { scroll-behavior: smooth; }
 .photo-section-content{position:relative;z-index:1;padding:3rem;max-width:600px}
 .photo-section-content h2{color:#fff;font-size:1.6rem;margin-bottom:1rem}
 .photo-section-content p{color:rgba(255,255,255,.9);line-height:1.7}
+
+/* Inline SVG icons replacing emojis */
+.gc-ico{width:1.1em;height:1.1em;vertical-align:-.15em;display:inline-block;margin-right:.25em;flex-shrink:0}
+.ic-icon .gc-ico,.hc-row-icon .gc-ico,.calc-cat-icon .gc-ico,.sm-trust-icon .gc-ico,.tc-icon .gc-ico{width:1.4em;height:1.4em;margin:0;vertical-align:-.2em}
 </style>
 </head>
 <body>
@@ -3602,8 +3606,8 @@ html { scroll-behavior: smooth; }
     </div>
     <div class="mega-footer">
       <span class="mega-footer-label">Also:</span>
-      <a href="/carports/" class="mf-chip">🅿️ Solar Carports</a>
-      <a href="/ev-charging/" class="mf-chip">⚡ EV Charging</a>
+      <a href="/carports/" class="mf-chip"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.4"/><path d="M7 15V5h4a3 3 0 010 6H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Solar Carports</a>
+      <a href="/ev-charging/" class="mf-chip"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M11 2L5 11h4l-2 7 8-9h-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg> EV Charging</a>
     </div>
   </div>
 </div>
@@ -3972,10 +3976,10 @@ html { scroll-behavior: smooth; }
 <p>Photovoltaic (PV) technology converts sunlight directly into electricity using semiconductor materials. When photons from sunlight strike a solar cell, they knock electrons free from atoms in the semiconductor, creating an electrical current. This process — the photovoltaic effect — was first discovered in 1839 and has since evolved into one of the fastest-growing energy technologies in the world.</p>
 <p>Modern solar panels consist of dozens of interconnected PV cells, typically made from crystalline silicon. These cells are encapsulated in protective glass and framing, creating durable modules rated to produce electricity for 25–30+ years.</p></div>
 <div class="glass-grid">
-<div class="glass-grid-card"><h3>☀️ How PV Cells Work</h3><p>Sunlight hits the silicon semiconductor, exciting electrons and creating a flow of direct current (DC) electricity. An inverter converts this to alternating current (AC) for use in your home or business.</p></div>
-<div class="glass-grid-card"><h3>📊 Efficiency Ratings</h3><p>Modern residential panels achieve 19–22% efficiency, meaning they convert roughly one-fifth of incoming sunlight into usable electricity. Premium panels from manufacturers like Q CELLS push even higher.</p></div>
-<div class="glass-grid-card"><h3>🌡️ Temperature Coefficient</h3><p>Solar panels actually perform better in cooler conditions. Each panel has a temperature coefficient rating — NEPA's moderate climate is ideal for maximizing annual energy production.</p></div>
-<div class="glass-grid-card"><h3>🔋 Net Metering</h3><p>Excess electricity your system produces flows back to the grid, spinning your meter backward. You receive credits from your utility for every kilowatt-hour exported — effectively using the grid as a free battery.</p></div>
+<div class="glass-grid-card"><h3><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="4" stroke="currentColor" stroke-width="1.4"/><path d="M10 2v3M10 15v3M2 10h3M15 10h3M4.9 4.9l2.1 2.1M12.9 12.9l2.1 2.1M4.9 15.1l2.1-2.1M12.9 7l2.1-2.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> How PV Cells Work</h3><p>Sunlight hits the silicon semiconductor, exciting electrons and creating a flow of direct current (DC) electricity. An inverter converts this to alternating current (AC) for use in your home or business.</p></div>
+<div class="glass-grid-card"><h3><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 17h14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="5" y="9" width="2.5" height="7" rx=".5" fill="currentColor" opacity=".5"/><rect x="9" y="5" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".65"/><rect x="13" y="7" width="2.5" height="9" rx=".5" fill="currentColor" opacity=".8"/></svg> Efficiency Ratings</h3><p>Modern residential panels achieve 19–22% efficiency, meaning they convert roughly one-fifth of incoming sunlight into usable electricity. Premium panels from manufacturers like Q CELLS push even higher.</p></div>
+<div class="glass-grid-card"><h3><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="7" y="2" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="15" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M10 6v7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Temperature Coefficient</h3><p>Solar panels actually perform better in cooler conditions. Each panel has a temperature coefficient rating — NEPA's moderate climate is ideal for maximizing annual energy production.</p></div>
+<div class="glass-grid-card"><h3><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="6" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M15 9h2v2h-2" fill="currentColor" opacity=".5"/><path d="M6 9h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 7v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Net Metering</h3><p>Excess electricity your system produces flows back to the grid, spinning your meter backward. You receive credits from your utility for every kilowatt-hour exported — effectively using the grid as a free battery.</p></div>
 </div>
 <div class="glass-card"><h2>Types of Solar PV Systems</h2>
 <p><strong>Grid-Tied Systems</strong> — The most common residential and commercial configuration. Your system connects to the utility grid, allowing you to draw power when needed and export excess production. No batteries required.</p>

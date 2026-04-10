@@ -3361,6 +3361,10 @@ html { scroll-behavior: smooth; }
 .photo-section-content{position:relative;z-index:1;padding:3rem;max-width:600px}
 .photo-section-content h2{color:#fff;font-size:1.6rem;margin-bottom:1rem}
 .photo-section-content p{color:rgba(255,255,255,.9);line-height:1.7}
+
+/* Inline SVG icons replacing emojis */
+.gc-ico{width:1.1em;height:1.1em;vertical-align:-.15em;display:inline-block;margin-right:.25em;flex-shrink:0}
+.ic-icon .gc-ico,.hc-row-icon .gc-ico,.calc-cat-icon .gc-ico,.sm-trust-icon .gc-ico,.tc-icon .gc-ico{width:1.4em;height:1.4em;margin:0;vertical-align:-.2em}
 </style>
 </head>
 <body>
@@ -3597,8 +3601,8 @@ html { scroll-behavior: smooth; }
     </div>
     <div class="mega-footer">
       <span class="mega-footer-label">Also:</span>
-      <a href="/carports/" class="mf-chip">🅿️ Solar Carports</a>
-      <a href="/ev-charging/" class="mf-chip">⚡ EV Charging</a>
+      <a href="/carports/" class="mf-chip"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.4"/><path d="M7 15V5h4a3 3 0 010 6H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Solar Carports</a>
+      <a href="/ev-charging/" class="mf-chip"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M11 2L5 11h4l-2 7 8-9h-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg> EV Charging</a>
     </div>
   </div>
 </div>
@@ -3976,7 +3980,7 @@ html { scroll-behavior: smooth; }
 <script>
 function calc(){var wireArea=parseFloat(document.getElementById('wire').value),qty=parseInt(document.getElementById('qty').value),condArea=parseFloat(document.getElementById('size').value);
 var totalWire=wireArea*qty,fill=(totalWire/condArea*100).toFixed(1),maxFill=qty===1?53:qty===2?31:40,ok=fill<=maxFill;
-document.getElementById('rPct').textContent=fill+'%';document.getElementById('rStatus').textContent=ok?'✅ Pass':'⚠️ Over limit';
+document.getElementById('rPct').textContent=fill+'%';document.getElementById('rStatus').textContent=ok?'<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Pass':'<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>️ Over limit';
 document.getElementById('rI').innerHTML='Total conductor area: <strong>'+(totalWire).toFixed(4)+' sq in</strong> in <strong>'+condArea+' sq in</strong> conduit. Fill: <strong>'+fill+'%</strong>. NEC limit for '+qty+' conductor'+(qty>1?'s':'')+': <strong>'+maxFill+'%</strong>. '+(ok?'This passes NEC.':'Upsize conduit or reduce conductors.');
 document.getElementById('results').style.display='block';document.getElementById('results').scrollIntoView({behavior:'smooth'});}
 </script>

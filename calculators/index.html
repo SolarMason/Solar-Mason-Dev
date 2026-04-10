@@ -3361,6 +3361,10 @@ html { scroll-behavior: smooth; }
 .photo-section-content{position:relative;z-index:1;padding:3rem;max-width:600px}
 .photo-section-content h2{color:#fff;font-size:1.6rem;margin-bottom:1rem}
 .photo-section-content p{color:rgba(255,255,255,.9);line-height:1.7}
+
+/* Inline SVG icons replacing emojis */
+.gc-ico{width:1.1em;height:1.1em;vertical-align:-.15em;display:inline-block;margin-right:.25em;flex-shrink:0}
+.ic-icon .gc-ico,.hc-row-icon .gc-ico,.calc-cat-icon .gc-ico,.sm-trust-icon .gc-ico,.tc-icon .gc-ico{width:1.4em;height:1.4em;margin:0;vertical-align:-.2em}
 </style>
 </head>
 <body>
@@ -3597,8 +3601,8 @@ html { scroll-behavior: smooth; }
     </div>
     <div class="mega-footer">
       <span class="mega-footer-label">Also:</span>
-      <a href="/carports/" class="mf-chip">🅿️ Solar Carports</a>
-      <a href="/ev-charging/" class="mf-chip">⚡ EV Charging</a>
+      <a href="/carports/" class="mf-chip"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.4"/><path d="M7 15V5h4a3 3 0 010 6H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Solar Carports</a>
+      <a href="/ev-charging/" class="mf-chip"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M11 2L5 11h4l-2 7 8-9h-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg> EV Charging</a>
     </div>
   </div>
 </div>
@@ -3989,7 +3993,7 @@ html { scroll-behavior: smooth; }
 .cc:hover .cc-arrow{opacity:1}
 </style>
 
-<div class="calc-cat-head"><div class="calc-cat-icon">⚡</div><div class="calc-cat-title">AI Tools</div></div>
+<div class="calc-cat-head"><div class="calc-cat-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M11 2L5 11h4l-2 7 8-9h-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div><div class="calc-cat-title">AI Tools</div></div>
 <div class="cg" style="margin-bottom:2rem">
   <a href="/calculators/bill-analyzer/" class="cc" data-t="res comm" style="border:2px solid rgba(45,130,190,.25)">
     <span class="cc-badge" style="background:rgba(45,130,190,.12);color:#1B5E8A">AI Tool</span>
@@ -4012,21 +4016,21 @@ html { scroll-behavior: smooth; }
   <button class="calc-filter-btn" onclick="filterT('eng',this)">Engineering</button>
 </div>
 
-<div class="calc-cat-head"><div class="calc-cat-icon">☀️</div><div class="calc-cat-title">System Sizing & Production</div></div>
+<div class="calc-cat-head"><div class="calc-cat-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="4" stroke="currentColor" stroke-width="1.4"/><path d="M10 2v3M10 15v3M2 10h3M15 10h3M4.9 4.9l2.1 2.1M12.9 12.9l2.1 2.1M4.9 15.1l2.1-2.1M12.9 7l2.1-2.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><div class="calc-cat-title">System Sizing & Production</div></div>
 <div class="cg">
   <a href="/calculators/system-size/" class="cc" data-t="res comm"><span class="cc-badge b-b">Res + Comm</span><h3>Solar System Size Calculator</h3><p>Determine the optimal solar system size based on your energy usage and location.</p><span class="cc-arrow">→</span></a>
   <a href="/calculators/solar-production/" class="cc" data-t="res comm"><span class="cc-badge b-b">Res + Comm</span><h3>Solar Production Calculator</h3><p>Estimate annual and monthly energy production for any system size.</p><span class="cc-arrow">→</span></a>
   <a href="/calculators/bill-offset/" class="cc" data-t="res"><span class="cc-badge b-r">Residential</span><h3>Utility Bill Offset Calculator</h3><p>Calculate how much of your electric bill solar will eliminate.</p><span class="cc-arrow">→</span></a>
 </div>
 
-<div class="calc-cat-head"><div class="calc-cat-icon">🏠</div><div class="calc-cat-title">Mounting & Project Type</div></div>
+<div class="calc-cat-head"><div class="calc-cat-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 10l7-7 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v7h10V9" stroke="currentColor" stroke-width="1.4"/><path d="M8 16v-4h4v4" stroke="currentColor" stroke-width="1.3"/></svg></div><div class="calc-cat-title">Mounting & Project Type</div></div>
 <div class="cg">
   <a href="/calculators/roof-mount/" class="cc" data-t="res"><span class="cc-badge b-r">Residential</span><h3>Roof Mount Solar Calculator</h3><p>Estimate system size, production, and cost for roof-mounted installations.</p><span class="cc-arrow">→</span></a>
   <a href="/calculators/ground-mount/" class="cc" data-t="comm"><span class="cc-badge b-c">Commercial</span><h3>Ground Mount Solar Calculator</h3><p>Size ground-mounted arrays including racking and land requirements.</p><span class="cc-arrow">→</span></a>
   <a href="/calculators/carport/" class="cc" data-t="comm"><span class="cc-badge b-c">Commercial</span><h3>Solar Carport Calculator</h3><p>Design solar carport systems with EV charging and parking coverage.</p><span class="cc-arrow">→</span></a>
 </div>
 
-<div class="calc-cat-head"><div class="calc-cat-icon">🔋</div><div class="calc-cat-title">Storage & Backup</div></div>
+<div class="calc-cat-head"><div class="calc-cat-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="6" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M15 9h2v2h-2" fill="currentColor" opacity=".5"/><path d="M6 9h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 7v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="calc-cat-title">Storage & Backup</div></div>
 <div class="cg">
   <a href="/calculators/battery-sizing/" class="cc" data-t="res storage"><span class="cc-badge b-r">Residential</span><h3>Battery Backup Sizing</h3><p>Determine the right battery capacity for your critical loads.</p><span class="cc-arrow">→</span></a>
   <a href="/calculators/battery-runtime/" class="cc" data-t="res storage"><span class="cc-badge b-r">Residential</span><h3>Battery Runtime Calculator</h3><p>Calculate how long your battery will power your home.</p><span class="cc-arrow">→</span></a>
@@ -4035,7 +4039,7 @@ html { scroll-behavior: smooth; }
   <a href="/calculators/solar-storage/" class="cc" data-t="res comm storage"><span class="cc-badge b-b">Res + Comm</span><h3>Solar + Storage Optimization</h3><p>Optimize solar and battery sizing together.</p><span class="cc-arrow">→</span></a>
 </div>
 
-<div class="calc-cat-head"><div class="calc-cat-icon">💰</div><div class="calc-cat-title">Financial & Incentives</div></div>
+<div class="calc-cat-head"><div class="calc-cat-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="11" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M10 8v6M8 10h4M8 12h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></div><div class="calc-cat-title">Financial & Incentives</div></div>
 <div class="cg">
   <a href="/calculators/financial-projection/" class="cc" data-t="res comm fin"><span class="cc-badge b-b">Res + Comm</span><h3>Solar Financial Projection</h3><p>Full 25-year financial model with ROI, payback, and NPV.</p><span class="cc-arrow">→</span></a>
   <a href="/calculators/lcoe/" class="cc" data-t="comm fin"><span class="cc-badge b-c">Commercial</span><h3>LCOE Calculator</h3><p>Levelized Cost of Energy vs. grid electricity.</p><span class="cc-arrow">→</span></a>
@@ -4047,7 +4051,7 @@ html { scroll-behavior: smooth; }
   <a href="/calculators/incentive-timeline/" class="cc" data-t="comm fin"><span class="cc-badge b-c">Commercial</span><h3>Commercial Incentive Timeline</h3><p>Map ITC, MACRS, SREC, and REAP deadlines.</p><span class="cc-arrow">→</span></a>
 </div>
 
-<div class="calc-cat-head"><div class="calc-cat-icon">⚡</div><div class="calc-cat-title">Electrical & Engineering</div></div>
+<div class="calc-cat-head"><div class="calc-cat-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M11 2L5 11h4l-2 7 8-9h-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div><div class="calc-cat-title">Electrical & Engineering</div></div>
 <div class="cg">
   <a href="/calculators/string-sizing/" class="cc" data-t="eng"><span class="cc-badge b-e">Engineering</span><h3>String Sizing Calculator</h3><p>Optimal string length based on module specs and temperature.</p><span class="cc-arrow">→</span></a>
   <a href="/calculators/dc-ac-ratio/" class="cc" data-t="eng"><span class="cc-badge b-e">Engineering</span><h3>DC/AC Ratio Calculator</h3><p>Optimize DC-to-AC ratio for energy harvest vs. clipping.</p><span class="cc-arrow">→</span></a>
@@ -4057,13 +4061,13 @@ html { scroll-behavior: smooth; }
   <a href="/calculators/panel-layout/" class="cc" data-t="eng res comm"><span class="cc-badge b-e">Engineering</span><h3>Panel Layout Calculator</h3><p>Estimate panel count with setbacks and spacing.</p><span class="cc-arrow">→</span></a>
 </div>
 
-<div class="calc-cat-head"><div class="calc-cat-icon">🔧</div><div class="calc-cat-title">Manufacturer-Specific Planners</div></div>
+<div class="calc-cat-head"><div class="calc-cat-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M12 2a5 5 0 00-4.5 7.1L3 13.5 6.5 17l4.4-4.5A5 5 0 0012 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div><div class="calc-cat-title">Manufacturer-Specific Planners</div></div>
 <div class="cg">
   <a href="/calculators/enphase-planner/" class="cc" data-t="res"><span class="cc-badge b-r">Residential</span><h3>Enphase System Planner</h3><p>Microinverters, IQ Battery, EV charging, and backup loads.</p><span class="cc-arrow">→</span></a>
   <a href="/calculators/solaredge-planner/" class="cc" data-t="res comm"><span class="cc-badge b-b">Res + Comm</span><h3>SolarEdge System Planner</h3><p>Optimizer + string design with battery and EV charging.</p><span class="cc-arrow">→</span></a>
 </div>
 
-<div class="calc-cat-head"><div class="calc-cat-icon">🏢</div><div class="calc-cat-title">Commercial Advanced Tools</div></div>
+<div class="calc-cat-head"><div class="calc-cat-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="4" y="3" width="12" height="15" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M7 6h2M11 6h2M7 9h2M11 9h2M7 12h2M11 12h2M8 15h4v3H8z" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg></div><div class="calc-cat-title">Commercial Advanced Tools</div></div>
 <div class="cg">
   <a href="/calculators/demand-charge/" class="cc" data-t="comm"><span class="cc-badge b-c">Commercial</span><h3>Demand Charge Reduction</h3><p>Model demand charge savings with solar + battery peak shaving.</p><span class="cc-arrow">→</span></a>
   <a href="/calculators/c-pace-calc/" class="cc" data-t="comm fin"><span class="cc-badge b-c">Commercial</span><h3>C-PACE Calculator</h3><p>Model C-PACE financing with energy savings and cash flow.</p><span class="cc-arrow">→</span></a>

@@ -3361,6 +3361,10 @@ html { scroll-behavior: smooth; }
 .photo-section-content{position:relative;z-index:1;padding:3rem;max-width:600px}
 .photo-section-content h2{color:#fff;font-size:1.6rem;margin-bottom:1rem}
 .photo-section-content p{color:rgba(255,255,255,.9);line-height:1.7}
+
+/* Inline SVG icons replacing emojis */
+.gc-ico{width:1.1em;height:1.1em;vertical-align:-.15em;display:inline-block;margin-right:.25em;flex-shrink:0}
+.ic-icon .gc-ico,.hc-row-icon .gc-ico,.calc-cat-icon .gc-ico,.sm-trust-icon .gc-ico,.tc-icon .gc-ico{width:1.4em;height:1.4em;margin:0;vertical-align:-.2em}
 </style>
 </head>
 <body>
@@ -3602,8 +3606,8 @@ html { scroll-behavior: smooth; }
     </div>
     <div class="mega-footer">
       <span class="mega-footer-label">Also:</span>
-      <a href="/carports/" class="mf-chip">🅿️ Solar Carports</a>
-      <a href="/ev-charging/" class="mf-chip">⚡ EV Charging</a>
+      <a href="/carports/" class="mf-chip"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.4"/><path d="M7 15V5h4a3 3 0 010 6H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Solar Carports</a>
+      <a href="/ev-charging/" class="mf-chip"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M11 2L5 11h4l-2 7 8-9h-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg> EV Charging</a>
     </div>
   </div>
 </div>
@@ -3977,7 +3981,7 @@ html { scroll-behavior: smooth; }
   </div>
 
   <div class="glass-card" style="border-left:4px solid var(--brand,#2D82BE)">
-    <h2 style="color:var(--brand)">📅 Federal Tax Credit Deadline: July 4, 2026</h2>
+    <h2 style="color:var(--brand)"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Federal Tax Credit Deadline: July 4, 2026</h2>
     <p>The 30% commercial ITC (Section 48E) is still available — but your project must <strong>begin construction before July 4, 2026</strong> to qualify. This means actual physical work on-site, not just deposits or equipment orders. If you're considering commercial solar, now is the time to start the engineering and permitting process so construction can begin before the deadline.</p>
     <p style="margin-bottom:0"><a href="/hr-5376-ira-inestment-tax-credit/" style="color:var(--brand);font-weight:600">Read the full ITC deadline guide →</a></p>
   </div>
@@ -3985,19 +3989,19 @@ html { scroll-behavior: smooth; }
 
   <div class="glass-grid">
     <div class="glass-grid-card">
-      <h3>⚡ Rooftop Systems</h3>
+      <h3><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M11 2L5 11h4l-2 7 8-9h-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg> Rooftop Systems</h3>
       <p>Maximize unused roof space with high-efficiency solar arrays. Ideal for warehouses, retail, office buildings, and manufacturing facilities.</p>
     </div>
     <div class="glass-grid-card">
-      <h3>🏗️ Ground-Mount Arrays</h3>
+      <h3><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M4 18V6l3-4h2l3 4v12" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M4 10h8M4 14h8M12 18V9l4-2v11" stroke="currentColor" stroke-width="1.3"/></svg> Ground-Mount Arrays</h3>
       <p>Large-scale ground-mounted systems for properties with available land. Optimized tilt and orientation for maximum energy harvest.</p>
     </div>
     <div class="glass-grid-card">
-      <h3>🅿️ Solar Carports</h3>
+      <h3><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.4"/><path d="M7 15V5h4a3 3 0 010 6H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Solar Carports</h3>
       <p>Dual-purpose structures that generate clean energy while providing covered parking for employees and customers.</p>
     </div>
     <div class="glass-grid-card">
-      <h3>🔋 Battery Storage</h3>
+      <h3><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="6" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M15 9h2v2h-2" fill="currentColor" opacity=".5"/><path d="M6 9h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 7v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Battery Storage</h3>
       <p>Pair your solar array with battery storage for demand charge reduction, backup power, and peak shaving capabilities.</p>
     </div>
   </div>

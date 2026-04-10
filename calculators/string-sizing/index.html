@@ -3361,6 +3361,10 @@ html { scroll-behavior: smooth; }
 .photo-section-content{position:relative;z-index:1;padding:3rem;max-width:600px}
 .photo-section-content h2{color:#fff;font-size:1.6rem;margin-bottom:1rem}
 .photo-section-content p{color:rgba(255,255,255,.9);line-height:1.7}
+
+/* Inline SVG icons replacing emojis */
+.gc-ico{width:1.1em;height:1.1em;vertical-align:-.15em;display:inline-block;margin-right:.25em;flex-shrink:0}
+.ic-icon .gc-ico,.hc-row-icon .gc-ico,.calc-cat-icon .gc-ico,.sm-trust-icon .gc-ico,.tc-icon .gc-ico{width:1.4em;height:1.4em;margin:0;vertical-align:-.2em}
 </style>
 </head>
 <body>
@@ -3597,8 +3601,8 @@ html { scroll-behavior: smooth; }
     </div>
     <div class="mega-footer">
       <span class="mega-footer-label">Also:</span>
-      <a href="/carports/" class="mf-chip">🅿️ Solar Carports</a>
-      <a href="/ev-charging/" class="mf-chip">⚡ EV Charging</a>
+      <a href="/carports/" class="mf-chip"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.4"/><path d="M7 15V5h4a3 3 0 010 6H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Solar Carports</a>
+      <a href="/ev-charging/" class="mf-chip"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M11 2L5 11h4l-2 7 8-9h-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg> EV Charging</a>
     </div>
   </div>
 </div>
@@ -3981,7 +3985,7 @@ html { scroll-behavior: smooth; }
 function calc(){var voc=parseFloat(document.getElementById('voc').value),vmp=parseFloat(document.getElementById('vmp').value),tc=parseFloat(document.getElementById('tcVoc').value)/100,tl=parseFloat(document.getElementById('tLow').value),th=parseFloat(document.getElementById('tHigh').value),vMax=parseFloat(document.getElementById('vMax').value),vLow=parseFloat(document.getElementById('vLow').value),vHigh=parseFloat(document.getElementById('vHigh').value);
 var vocCold=voc*(1+tc*(tl-25)),vmpHot=vmp*(1+tc*(th-25)),maxMod=Math.floor(vMax/vocCold),minMod=Math.ceil(vLow/vmpHot),opt=Math.min(maxMod,Math.floor(vHigh/vocCold));
 document.getElementById('rMin').textContent=minMod;document.getElementById('rMax').textContent=maxMod;document.getElementById('rOpt').textContent=opt;
-document.getElementById('rT').innerHTML='<tr><td>Voc at coldest ('+tl+'°C)</td><td>'+vocCold.toFixed(1)+'V × '+opt+' = '+(vocCold*opt).toFixed(0)+'V</td><td>'+((vocCold*opt<=vMax)?'✅ Under max':'⚠️ Over max!')+'</td></tr><tr><td>Vmp at hottest ('+th+'°C)</td><td>'+vmpHot.toFixed(1)+'V × '+opt+' = '+(vmpHot*opt).toFixed(0)+'V</td><td>'+((vmpHot*opt>=vLow)?'✅ Above MPPT low':'⚠️ Below MPPT!')+'</td></tr><tr class="tot"><td>Recommended string</td><td>'+opt+' modules</td><td>'+((vocCold*opt<=vMax&&vmpHot*opt>=vLow)?'✅ NEC compliant':'⚠️ Check design')+'</td></tr>';
+document.getElementById('rT').innerHTML='<tr><td>Voc at coldest ('+tl+'°C)</td><td>'+vocCold.toFixed(1)+'V × '+opt+' = '+(vocCold*opt).toFixed(0)+'V</td><td>'+((vocCold*opt<=vMax)?'<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Under max':'<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>️ Over max!')+'</td></tr><tr><td>Vmp at hottest ('+th+'°C)</td><td>'+vmpHot.toFixed(1)+'V × '+opt+' = '+(vmpHot*opt).toFixed(0)+'V</td><td>'+((vmpHot*opt>=vLow)?'<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Above MPPT low':'<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>️ Below MPPT!')+'</td></tr><tr class="tot"><td>Recommended string</td><td>'+opt+' modules</td><td>'+((vocCold*opt<=vMax&&vmpHot*opt>=vLow)?'<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> NEC compliant':'<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>️ Check design')+'</td></tr>';
 document.getElementById('results').style.display='block';document.getElementById('results').scrollIntoView({behavior:'smooth'});}
 </script>
 <div class="calc-cta"><h3>Ready to Go Solar?</h3><p>Get a custom analysis from our engineering team.</p><a href="https://app.solarmason.com/account">Get Your Free Estimate</a><a href="mailto:engineering@solarmason.com" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)">Talk to an Engineer</a><div class="calc-cta-info">570-MY-SOLAR (570-697-6527) · solarmason.com · engineering@solarmason.com</div></div>

@@ -3361,6 +3361,10 @@ html { scroll-behavior: smooth; }
 .photo-section-content{position:relative;z-index:1;padding:3rem;max-width:600px}
 .photo-section-content h2{color:#fff;font-size:1.6rem;margin-bottom:1rem}
 .photo-section-content p{color:rgba(255,255,255,.9);line-height:1.7}
+
+/* Inline SVG icons replacing emojis */
+.gc-ico{width:1.1em;height:1.1em;vertical-align:-.15em;display:inline-block;margin-right:.25em;flex-shrink:0}
+.ic-icon .gc-ico,.hc-row-icon .gc-ico,.calc-cat-icon .gc-ico,.sm-trust-icon .gc-ico,.tc-icon .gc-ico{width:1.4em;height:1.4em;margin:0;vertical-align:-.2em}
 </style>
 
 <style>
@@ -3607,8 +3611,8 @@ html { scroll-behavior: smooth; }
     </div>
     <div class="mega-footer">
       <span class="mega-footer-label">Also:</span>
-      <a href="/carports/" class="mf-chip">🅿️ Solar Carports</a>
-      <a href="/ev-charging/" class="mf-chip">⚡ EV Charging</a>
+      <a href="/carports/" class="mf-chip"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.4"/><path d="M7 15V5h4a3 3 0 010 6H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Solar Carports</a>
+      <a href="/ev-charging/" class="mf-chip"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M11 2L5 11h4l-2 7 8-9h-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg> EV Charging</a>
     </div>
   </div>
 </div>
@@ -4032,7 +4036,7 @@ html { scroll-behavior: smooth; }
 
 <!-- UPLOAD AREA -->
 <div class="az-upload" id="dropZone" onclick="document.getElementById('fileInput').click()">
-  <div class="az-upload-icon">📄</div>
+  <div class="az-upload-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M5 2h7l4 4v12H5V2z" stroke="currentColor" stroke-width="1.4"/><path d="M12 2v4h4" stroke="currentColor" stroke-width="1.4"/><path d="M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></div>
   <h3>Upload Your Utility Bill</h3>
   <p>Drag & drop a PDF here or click to browse. Your bill is processed entirely in your browser — nothing is sent to a server.</p>
   <input type="file" id="fileInput" accept="application/pdf">
@@ -4437,7 +4441,7 @@ function renderReport(){
   // ═══ FLAGS ═══
   if(d.flags.length>0){
     h+='<div class="az-section"><h3>Review Flags</h3>';
-    d.flags.forEach(f=>{h+='<div class="az-flag">⚠️ '+f+'</div>';});
+    d.flags.forEach(f=>{h+='<div class="az-flag"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>️ '+f+'</div>';});
     h+='</div>';
   }
 
@@ -4456,7 +4460,7 @@ function renderReport(){
   h+='<div class="az-section" style="opacity:.6"><h3>Incentives Available in Your Region</h3><p style="font-size:.88rem;color:#64748B">Future version will automatically scan incentive databases and program sources for '+(d.location.cityStateZip||'your area')+'. Check our <a href="/solar-pv-incentive-search/" style="color:var(--brand)">Solar PV Incentive Directory</a> for current programs.</p></div>';
 
   // ═══ ACTIONS ═══
-  h+='<div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;margin:1.5rem 0"><button onclick="generateProposal()" style="padding:.85rem 2.5rem;border-radius:100px;border:none;background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(45,130,190,.3)">📄 View Proposal</button></div>';
+  h+='<div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;margin:1.5rem 0"><button onclick="generateProposal()" style="padding:.85rem 2.5rem;border-radius:100px;border:none;background:linear-gradient(135deg,var(--brand,#2D82BE),#1B5E8A);color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(45,130,190,.3)"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M5 2h7l4 4v12H5V2z" stroke="currentColor" stroke-width="1.4"/><path d="M12 2v4h4" stroke="currentColor" stroke-width="1.4"/><path d="M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> View Proposal</button></div>';
 
   // ═══ CTA ═══
   h+='<div class="calc-cta"><h3>Ready for a Detailed Proposal?</h3><p>This is a preliminary estimate. Solar Mason\'s engineering team will provide a site-specific design with accurate production modeling, incentive analysis, and project pricing.</p><a href="https://app.solarmason.com/account">Request a Proposal</a><a href="mailto:engineering@solarmason.com" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)">Talk to an Engineer</a><div class="calc-cta-info">570-MY-SOLAR (570-697-6527) · solarmason.com · engineering@solarmason.com</div></div>';h+='<div style="font-size:.75rem;color:#94a3b8;padding:1rem;border-top:1px solid rgba(0,0,0,.05)"><strong>Disclaimer:</strong> This analysis provides preliminary estimates for informational purposes only. Actual solar production, costs, and savings depend on site-specific conditions including roof orientation, shading, structural capacity, and local permitting requirements. This tool does not constitute engineering advice, financial advice, or a binding proposal. Contact Solar Mason for a professional site assessment and detailed proposal.</div>';document.getElementById('report').innerHTML=h;document.getElementById('report').style.display='block';document.getElementById('report').scrollIntoView({behavior:'smooth',block:'start'});}</script>
@@ -4779,20 +4783,20 @@ function generateProposal(){
   // Sections
   function sect(title,emoji,rows){var o='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff">'+emoji+' '+title+'</div><table style="width:100%;border-collapse:collapse">';rows.forEach(function(r){var hl=r[2]?'class="prop-hl" style="background:#f0f7ff;-webkit-print-color-adjust:exact;print-color-adjust:exact"':'';o+='<tr '+hl+'><td style="padding:.5rem .75rem;font-size:.85rem;font-weight:600;color:#475569;width:40%;border-bottom:1px solid #f1f5f9;vertical-align:top">'+r[0]+'</td><td style="padding:.5rem .75rem;font-size:.85rem;color:#1e293b;border-bottom:1px solid #f1f5f9;vertical-align:top'+(r[2]?';font-weight:700;color:#0B2545':'')+'">'+r[1]+'</td></tr>';});o+='</table></div>';return o;}
   h+=sect('Customer Information','👤',[ ['Customer',d.customer.name||'—'], ['Service Address',(d.location.address||'—')+(d.location.cityStateZip?'<br>'+d.location.cityStateZip:'')], ['Account',d.account.number||'—'], ['Utility',d.utility.name||'—'], ['Account Type',d.classification.type], ['Rate Class',r.rateClass||'—'] ]);
-  h+=sect('Usage Analysis','⚡',[ ['Billing Period',(d.billing_period.start||'?')+' – '+(d.billing_period.end||'?')+' ('+(u.daysBilled||'?')+' days)'], ['Period Usage',(u.billingKwh||'?')+' kWh'], ['Annual Usage',(u.annualKwh||'?').toLocaleString()+' kWh/year',true], ['Basis',u.annualSource] ]);
-  h+=sect('Current Bill','💵',[ c.supply?['Supply','$'+c.supply.toFixed(2)]:null, c.delivery?['Delivery','$'+c.delivery.toFixed(2)]:null, ['Total Bill','$'+(c.totalBill||0).toFixed(2),true], r.blendedRate?['Blended Rate','$'+r.blendedRate+'/kWh',true]:null ].filter(Boolean));
-  h+=sect('Solar Recommendation','☀️',[ ['System Size',s.systemKw.toFixed(1)+' kW ('+s.panels+' × '+s.panelWattage+'W panels)',true], ['Target Offset',Math.round(s.targetOffset*100)+'%'], ['Est. Annual Production',s.estAnnualProd.toLocaleString()+' kWh'], ['Est. Cost','$'+s.estCost.toLocaleString()+' ($'+s.costPerWatt.toFixed(2)+'/W)'], ['Solar LCOE','$'+s.solarLCOE.toFixed(4)+'/kWh',true], ['Utility Rate','$'+s.utilityRate.toFixed(4)+'/kWh',true], ['Solar Savings',Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper per kWh'], ['Simple Payback',s.simplePayback+' years'], ['25-Year Savings','$'+s.savings25yr.toLocaleString()+' (with 5% rate escalation)',true], ['25-Year ROI',s.roi25+'%',true] ]);
+  h+=sect('Usage Analysis','<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M11 2L5 11h4l-2 7 8-9h-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',[ ['Billing Period',(d.billing_period.start||'?')+' – '+(d.billing_period.end||'?')+' ('+(u.daysBilled||'?')+' days)'], ['Period Usage',(u.billingKwh||'?')+' kWh'], ['Annual Usage',(u.annualKwh||'?').toLocaleString()+' kWh/year',true], ['Basis',u.annualSource] ]);
+  h+=sect('Current Bill','<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="2" y="5" width="16" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M10 8.5v3M9 9.5h2" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>',[ c.supply?['Supply','$'+c.supply.toFixed(2)]:null, c.delivery?['Delivery','$'+c.delivery.toFixed(2)]:null, ['Total Bill','$'+(c.totalBill||0).toFixed(2),true], r.blendedRate?['Blended Rate','$'+r.blendedRate+'/kWh',true]:null ].filter(Boolean));
+  h+=sect('Solar Recommendation','<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="4" stroke="currentColor" stroke-width="1.4"/><path d="M10 2v3M10 15v3M2 10h3M15 10h3M4.9 4.9l2.1 2.1M12.9 12.9l2.1 2.1M4.9 15.1l2.1-2.1M12.9 7l2.1-2.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',[ ['System Size',s.systemKw.toFixed(1)+' kW ('+s.panels+' × '+s.panelWattage+'W panels)',true], ['Target Offset',Math.round(s.targetOffset*100)+'%'], ['Est. Annual Production',s.estAnnualProd.toLocaleString()+' kWh'], ['Est. Cost','$'+s.estCost.toLocaleString()+' ($'+s.costPerWatt.toFixed(2)+'/W)'], ['Solar LCOE','$'+s.solarLCOE.toFixed(4)+'/kWh',true], ['Utility Rate','$'+s.utilityRate.toFixed(4)+'/kWh',true], ['Solar Savings',Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper per kWh'], ['Simple Payback',s.simplePayback+' years'], ['25-Year Savings','$'+s.savings25yr.toLocaleString()+' (with 5% rate escalation)',true], ['25-Year ROI',s.roi25+'%',true] ]);
   // Insight
   h+='<div style="padding:1.25rem 2rem"><div style="background:#f0f7ff;border-left:4px solid #2D82BE;border-radius:0 10px 10px 0;padding:1.25rem 1.5rem"><p style="font-size:.88rem;color:#334155;line-height:1.7;margin:0">Based on annual usage of <strong>'+(u.annualKwh||0).toLocaleString()+' kWh</strong>, a <strong>'+s.systemKw.toFixed(1)+' kW system</strong> produces electricity at <strong>$'+s.solarLCOE.toFixed(4)+'/kWh</strong> — <strong>'+Math.round((1-s.solarLCOE/s.utilityRate)*100)+'% cheaper</strong> than your current utility rate of $'+s.utilityRate.toFixed(4)+'/kWh. With rates rising 5% annually, 25-year savings total <strong>$'+s.savings25yr.toLocaleString()+'</strong>.</p></div></div>';
 
   // ═══ ITC SECTION (commercial) ═══
   if(s.isCommercial&&s.itcValue>0){
-    h+=sect('Federal Tax Credit (Section 48E)','🏛️',[['ITC Rate','30% (with prevailing wage)',true],['ITC Value','-$'+s.itcValue.toLocaleString(),true],['Gross Cost','$'+s.estCost.toLocaleString()],['Net Cost After ITC','$'+s.netCostAfterITC.toLocaleString(),true],['LCOE After ITC','$'+s.solarLCOEafterITC.toFixed(4)+'/kWh',true],['Deadline','Begin construction before July 4, 2026']]);
+    h+=sect('Federal Tax Credit (Section 48E)','<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 8l7-5 7 5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M4 17h12M5 8v7M8 8v7M12 8v7M15 8v7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',[['ITC Rate','30% (with prevailing wage)',true],['ITC Value','-$'+s.itcValue.toLocaleString(),true],['Gross Cost','$'+s.estCost.toLocaleString()],['Net Cost After ITC','$'+s.netCostAfterITC.toLocaleString(),true],['LCOE After ITC','$'+s.solarLCOEafterITC.toFixed(4)+'/kWh',true],['Deadline','Begin construction before July 4, 2026']]);
   }
   // ═══ 25-YEAR CHART ═══
   if(s.yearData){
     var yd=s.yearData,maxV=yd[24].cumUtil,lcD=s.isCommercial?s.solarLCOEafterITC:s.solarLCOE;
-    h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff">📈 25-Year Cost Projection</div>';
+    h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 15l4-5 4 3 6-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 5h3v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> 25-Year Cost Projection</div>';
     var W=640,H=240,L=50,T=20,gw=W-L-10,gh=H-T-30;
     h+='<div style="overflow-x:auto"><svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:640px;font-family:-apple-system,sans-serif">';
     for(var g=0;g<=4;g++){var gy=T+(gh*(1-g/4));h+='<line x1="'+L+'" y1="'+gy+'" x2="'+(W-10)+'" y2="'+gy+'" stroke="#e2e8f0"/><text x="'+(L-3)+'" y="'+(gy+3)+'" text-anchor="end" font-size="8" fill="#94a3b8">$'+Math.round(maxV*g/4/1000)+'k</text>';}
@@ -4807,7 +4811,7 @@ function generateProposal(){
     h+='<rect x="'+(L+130)+'" y="7" width="8" height="6" fill="rgba(34,197,94,.3)" rx="1"/><text x="'+(L+141)+'" y="13" font-size="8.5" fill="#22c55e" font-weight="600">Savings</text>';
     h+='</svg></div></div>';
     // ═══ YEAR-BY-YEAR TABLE ═══
-    h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff">📊 Year-by-Year Breakdown</div>';
+    h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 17h14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="5" y="9" width="2.5" height="7" rx=".5" fill="currentColor" opacity=".5"/><rect x="9" y="5" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".65"/><rect x="13" y="7" width="2.5" height="9" rx=".5" fill="currentColor" opacity=".8"/></svg> Year-by-Year Breakdown</div>';
     h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.72rem;min-width:460px"><thead><tr style="background:#0B2545;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact"><th style="padding:.4rem .3rem;text-align:left">Year</th><th style="padding:.4rem .3rem;text-align:right">U.Rate</th><th style="padding:.4rem .3rem;text-align:right">S.Rate</th><th style="padding:.4rem .3rem;text-align:right">Annual</th><th style="padding:.4rem .3rem;text-align:right">U.A.C.</th><th style="padding:.4rem .3rem;text-align:right">S.A.C.</th><th style="padding:.4rem .3rem;text-align:right">Net</th></tr></thead><tbody>';
     for(var i=0;i<25;i++){var bg=i%2?"#f8fafc":"#fff";var bp=(yd[i].cumSavings>0&&(i===0||yd[i>0?i-1:0].cumSavings<=0));if(bp)bg="#f0fff4";h+='<tr style="background:'+bg+';-webkit-print-color-adjust:exact"><td style="padding:.3rem;border-bottom:1px solid #f1f5f9;font-weight:'+(bp?700:400)+'">'+yd[i].year+(bp?" ✓":"")+'</td><td style="padding:.3rem;border-bottom:1px solid #f1f5f9;text-align:right;color:#ef4444">$'+yd[i].utilRate.toFixed(3)+'</td><td style="padding:.3rem;border-bottom:1px solid #f1f5f9;text-align:right;color:#2D82BE">$'+lcD.toFixed(3)+'</td><td style="padding:.3rem;border-bottom:1px solid #f1f5f9;text-align:right">$'+yd[i].utilityCost.toLocaleString()+'</td><td style="padding:.3rem;border-bottom:1px solid #f1f5f9;text-align:right;color:#ef4444">$'+yd[i].cumUtil.toLocaleString()+'</td><td style="padding:.3rem;border-bottom:1px solid #f1f5f9;text-align:right;color:#2D82BE">$'+yd[i].cumSolar.toLocaleString()+'</td><td style="padding:.3rem;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:600;color:'+(yd[i].cumSavings>=0?"#22c55e":"#ef4444")+'">$'+yd[i].cumSavings.toLocaleString()+'</td></tr>';}
     h+='</tbody></table>';
@@ -4826,7 +4830,7 @@ function generateProposal(){
   ]);
 
   // ═══ PA SREC INCOME ═══
-  h+=sect('PA Solar Renewable Energy Credits (SRECs)','💰',[
+  h+=sect('PA Solar Renewable Energy Credits (SRECs)','<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="11" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M10 8v6M8 10h4M8 12h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',[
     ['Annual SRECs Generated',s.annualSRECs+' SRECs (1 per 1,000 kWh)'],
     ['Est. SREC Price','$'+s.srecPrice+'/SREC (conservative PA market)'],
     ['Annual SREC Income','$'+s.annualSRECincome.toLocaleString()+'/year',true],
@@ -4835,14 +4839,14 @@ function generateProposal(){
   ]);
 
   // ═══ PROPERTY VALUE ═══
-  h+=sect('Property Value Impact','🏠',[
+  h+=sect('Property Value Impact','<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 10l7-7 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v7h10V9" stroke="currentColor" stroke-width="1.4"/><path d="M8 16v-4h4v4" stroke="currentColor" stroke-width="1.3"/></svg>',[
     ['Est. Value Increase','$'+s.propertyValueIncrease.toLocaleString(),true],
     ['Basis','~$20/watt installed (Lawrence Berkeley National Lab study)'],
     ['Note','Solar homes sell for approximately 4.1% more than comparable non-solar homes (Zillow Research).']
   ]);
 
   // ═══ EQUIPMENT SPECIFICATIONS ═══
-  h+=sect('Equipment Specifications','🔧',[
+  h+=sect('Equipment Specifications','<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M12 2a5 5 0 00-4.5 7.1L3 13.5 6.5 17l4.4-4.5A5 5 0 0012 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',[
     ['Solar Panels','Q CELLS Q.Peak Duo BLK ML-G10+ '+s.panelWattage+'W'],
     ['Panel Count',s.panels+' panels'],
     ['Inverter System','Enphase IQ8A Microinverters (one per panel)'],
@@ -4854,7 +4858,7 @@ function generateProposal(){
   ]);
 
   // ═══ NET METERING ═══
-  h+=sect('Net Metering','⚡',[
+  h+=sect('Net Metering','<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M11 2L5 11h4l-2 7 8-9h-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',[
     ['How It Works','Excess solar production is exported to the grid and credited to your account at the full retail rate.'],
     ['Utility','Your utility ('+(d.utility.name||'PPL Electric')+') provides net metering under PA Act 129.'],
     ['Monthly Credits','When you produce more than you use, credits roll forward month-to-month.'],
@@ -4872,14 +4876,14 @@ function generateProposal(){
   h+='<div style="font-size:.8rem;color:#64748B">Solar Mason can help you evaluate the best financing option for your project. <a href="https://app.solarmason.com/account" style="color:#2D82BE">Request a financing consultation</a>.</div></div>';
 
   // ═══ ABOUT SOLAR MASON ═══
-  h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff">🏢 About Solar Mason</div>';
+  h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="4" y="3" width="12" height="15" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M7 6h2M11 6h2M7 9h2M11 9h2M7 12h2M11 12h2M8 15h4v3H8z" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg> About Solar Mason</div>';
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.25rem;font-size:.85rem;color:#475569;line-height:1.7">';
   h+='<div><strong style="color:#0B2545">Solar Mason LLC</strong> is a full-service solar engineering, procurement, and construction (EPC) company headquartered in Scranton, PA. Since 2006, we have designed and installed solar systems across Northeast Pennsylvania for residential, commercial, and agricultural customers.<br><br><strong>Licenses:</strong> HIC-181628 · CON-9505</div>';
   h+='<div><strong style="color:#0B2545">Our Commitment</strong><br>Every Solar Mason project is backed by professional PE-stamped engineering, tier-1 equipment (Q CELLS + Enphase), and a dedicated project team. We handle everything from initial design through permitting, installation, inspection, and utility interconnection.<br><br><strong>Contact:</strong> 570-MY-SOLAR · engineering@solarmason.com</div>';
   h+='</div></div>';
 
   // ═══ NEXT STEPS ═══
-  h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1.25rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff">🚀 Next Steps</div>';
+  h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1.25rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 2c-2 3-3 6-3 9l3 4 3-4c0-3-1-6-3-9z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 11l-3 2 2 3M13 11l3 2-2 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Next Steps</div>';
   h+='<div style="display:flex;flex-direction:column;gap:0">';
   h+='<div style="display:flex;align-items:flex-start;gap:1rem;padding:1rem 0;border-bottom:1px solid #f1f5f9"><div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#2D82BE,#1B5E8A);color:#fff;font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-print-color-adjust:exact;print-color-adjust:exact">1</div><div><div style="font-weight:700;color:#0B2545;font-size:.92rem;margin-bottom:.15rem">Site Survey</div><div style="font-size:.82rem;color:#64748B;line-height:1.5">We assess your roof or ground area, evaluate shading and structural capacity, and review your electrical panel.</div></div></div>';
   h+='<div style="display:flex;align-items:flex-start;gap:1rem;padding:1rem 0;border-bottom:1px solid #f1f5f9"><div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#2D82BE,#1B5E8A);color:#fff;font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-print-color-adjust:exact;print-color-adjust:exact">2</div><div><div style="font-weight:700;color:#0B2545;font-size:.92rem;margin-bottom:.15rem">Custom Design & Proposal</div><div style="font-size:.82rem;color:#64748B;line-height:1.5">Our engineers create a detailed system design with location-specific production modeling, financial analysis, and a formal proposal.</div></div></div>';
@@ -4890,7 +4894,7 @@ function generateProposal(){
 
 
   // ═══ IMPORTANT NOTICES & DISCLAIMERS ═══
-  h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff">⚠️ Important Notices</div>';
+  h+='<div style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9"><div style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>️ Important Notices</div>';
   h+='<div style="font-size:.82rem;color:#475569;line-height:1.7">';
 
   h+='<div style="padding:.75rem 0;border-bottom:1px solid #f1f5f9"><strong style="color:#0B2545">Net Metering & Third-Party Suppliers</strong><br>Net metering credits are administered by your local electric distribution company (e.g., PPL, PECO). If you have switched your electricity supply to a third-party supplier, that supplier may not honor net metering credits at the same rate — or at all. Before going solar, confirm your net metering eligibility with your distribution utility. Returning to default utility supply for both generation and delivery is strongly recommended to maximize net metering benefits.</div>';
