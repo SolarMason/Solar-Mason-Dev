@@ -6096,6 +6096,8 @@ async function runDesignStudio() {
 
     // Group active panels MATCHING THE CURRENT MOUNT MODE by (tilt, azimuth)
     const groups = new Map();
+    let tilt = parseFloat(document.getElementById('ds-tilt').value) || 25;
+    let azimuth = parseFloat(document.getElementById('ds-azimuth').value) || 180;
     if (count > 0) {
       for (const p of DS_STATE.allPanels) {
         if (!DS_STATE.activePanels.has(p.idx)) continue;
@@ -6107,10 +6109,13 @@ async function runDesignStudio() {
         }
         groups.get(key).count++;
       }
+      // Use the dominant group's angles as representative for DS_STATE.results
+      let maxCount = 0;
+      for (const g of groups.values()) {
+        if (g.count > maxCount) { maxCount = g.count; tilt = g.tilt; azimuth = g.azimuth; }
+      }
     } else {
-      const tilt = parseFloat(document.getElementById('ds-tilt').value);
-      const az = parseFloat(document.getElementById('ds-azimuth').value);
-      groups.set(`${tilt}_${az}`, { tilt, azimuth: az, count });
+      groups.set(`${tilt}_${azimuth}`, { tilt, azimuth, count });
     }
 
     // Call PVWatts for each unique (tilt,az) group in parallel and sum results
