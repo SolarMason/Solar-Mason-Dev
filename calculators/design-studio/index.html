@@ -4416,25 +4416,85 @@ async function loadProjectAddress(formattedAddress, lat, lng) {
   }
 }
 
-// Geocode a free-text address via Google Geocoding API — used after bill parsing
+// Geocode a free-text address with three fallback paths so this never silently fails:
+//   1. Google Geocoding API (most accurate, but requires the Geocoding API to be enabled)
+//   2. Google Places Text Search (uses Places API which is already enabled)
+//   3. NREL utility_rates endpoint (always works since the NREL key is hard-coded)
 async function geocodeAddressString(addr) {
   if (!addr) return null;
+  console.log('[DS] Geocoding:', addr);
+
+  // ── Path 1: Google Geocoding API ─────────────────────────────
   try {
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(addr)}&key=${DS_CONFIG.GOOGLE_MAPS_KEY}`;
     const res = await fetch(url);
     const data = await res.json();
     if (data.status === 'OK' && data.results && data.results[0]) {
       const r = data.results[0];
+      console.log('[DS] Geocoded via Google Geocoding API');
       return {
         formatted: r.formatted_address,
         lat: r.geometry.location.lat,
-        lng: r.geometry.location.lng
+        lng: r.geometry.location.lng,
+        source: 'google_geocoding'
       };
     }
-    console.warn('[DS] Geocoding API returned', data.status, data.error_message);
+    console.warn('[DS] Google Geocoding API returned', data.status, data.error_message || '');
+    // If REQUEST_DENIED → API not enabled. If ZERO_RESULTS → bad address.
+    // Either way, fall through to Places.
   } catch (e) {
-    console.error('[DS] Geocoding fetch failed', e);
+    console.warn('[DS] Google Geocoding fetch failed', e);
   }
+
+  // ── Path 2: Google Places Text Search (uses already-enabled Places API) ──
+  try {
+    if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+      const placesResult = await new Promise((resolve) => {
+        const dummy = document.createElement('div');
+        const service = new google.maps.places.PlacesService(dummy);
+        service.textSearch({ query: addr }, (results, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && results && results[0]) {
+            const r = results[0];
+            resolve({
+              formatted: r.formatted_address,
+              lat: r.geometry.location.lat(),
+              lng: r.geometry.location.lng(),
+              source: 'google_places'
+            });
+          } else {
+            console.warn('[DS] Places text search status', status);
+            resolve(null);
+          }
+        });
+      });
+      if (placesResult) {
+        console.log('[DS] Geocoded via Google Places text search');
+        return placesResult;
+      }
+    }
+  } catch (e) {
+    console.warn('[DS] Places text search failed', e);
+  }
+
+  // ── Path 3: NREL utility_rates endpoint (always works as long as NREL key is valid) ──
+  try {
+    const params = new URLSearchParams({ api_key: DS_CONFIG.NREL_API_KEY, address: addr });
+    const r = await fetch(`https://developer.nrel.gov/api/utility_rates/v3.json?${params}`);
+    const d = await r.json();
+    if (d.outputs && d.outputs.lat && d.outputs.lon) {
+      console.log('[DS] Geocoded via NREL fallback');
+      return {
+        formatted: addr,
+        lat: d.outputs.lat,
+        lng: d.outputs.lon,
+        source: 'nrel'
+      };
+    }
+  } catch (e) {
+    console.warn('[DS] NREL geocode fallback failed', e);
+  }
+
+  console.error('[DS] All three geocoding paths failed for:', addr);
   return null;
 }
 
@@ -6248,17 +6308,22 @@ async function processBillFile(file) {
     let addressLoaded = false;
     let addressNote = '';
     if (billData.address) {
-      result.innerHTML = '⏳ Geocoding address from bill…';
+      result.innerHTML = `⏳ Geocoding "${billData.address}"…`;
       const geo = await geocodeAddressString(billData.address);
       if (geo) {
         addressLoaded = true;
-        addressNote = `<div class="row"><span>Service address</span><span><strong>${geo.formatted}</strong></span></div>`;
+        const sourceLabel = geo.source === 'google_geocoding' ? 'Google Geocoding'
+                          : geo.source === 'google_places'   ? 'Google Places'
+                          : 'NREL fallback';
+        addressNote = `<div class="row"><span>Service address</span><span><strong>${geo.formatted}</strong></span></div>`
+                    + `<div class="row" style="font-size:.68rem;opacity:.75"><span>Geocoded via</span><span>${sourceLabel}</span></div>`;
         // Fire the same flow as Places autocomplete in the background
         loadProjectAddress(geo.formatted, geo.lat, geo.lng).catch(e =>
           console.warn('[DS] Background address load failed', e)
         );
       } else {
-        addressNote = `<div class="row" style="color:#92400e"><span>⚠ Address found</span><span>${billData.address} <em>(could not geocode)</em></span></div>`;
+        addressNote = `<div class="row" style="color:#92400e"><span>⚠ Address extracted</span><span><strong>${billData.address}</strong></span></div>`
+                    + `<div class="row" style="color:#92400e;font-size:.7rem"><span colspan="2">All three geocoders failed. Open DevTools console for details. Type the address manually in Step 2 to continue.</span></div>`;
       }
     }
 
