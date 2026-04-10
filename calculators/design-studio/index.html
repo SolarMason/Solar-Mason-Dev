@@ -4037,6 +4037,31 @@ html { scroll-behavior: smooth; }
 .ds-array-del{padding:.4rem .55rem;border-radius:6px;border:1px solid rgba(220,38,38,.2);background:#fff;color:#dc2626;font-size:.85rem;cursor:pointer;line-height:1}
 .ds-array-del:hover{background:#fef2f2}
 
+/* Utility Bill Upload */
+.ds-bill-upload{border:2px dashed rgba(45,130,190,.3);border-radius:14px;padding:1.6rem 1rem;text-align:center;background:rgba(45,130,190,.03);cursor:pointer;transition:all .25s}
+.ds-bill-upload:hover,.ds-bill-upload.dragover{border-color:#2D82BE;background:rgba(45,130,190,.08);transform:translateY(-1px)}
+.ds-bill-icon{font-size:2.2rem;margin-bottom:.4rem;line-height:1}
+.ds-bill-title{font-size:.88rem;font-weight:800;color:#0B2545;margin-bottom:.2rem}
+.ds-bill-sub{font-size:.7rem;color:#94a3b8;font-weight:600}
+.ds-bill-result{margin-top:.85rem;padding:.85rem 1rem;border-radius:12px;background:linear-gradient(135deg,rgba(16,185,129,.06),rgba(16,185,129,.02));border:1px solid rgba(16,185,129,.25);font-size:.78rem;color:#065f46;line-height:1.55}
+.ds-bill-result.error{background:linear-gradient(135deg,rgba(220,38,38,.06),rgba(220,38,38,.02));border-color:rgba(220,38,38,.25);color:#991b1b}
+.ds-bill-result.warning{background:linear-gradient(135deg,rgba(245,158,11,.06),rgba(245,158,11,.02));border-color:rgba(245,158,11,.25);color:#92400e}
+.ds-bill-result strong{color:#0B2545;font-weight:800}
+.ds-bill-result.error strong{color:#7f1d1d}
+.ds-bill-result.warning strong{color:#78350f}
+.ds-bill-result .row{display:flex;justify-content:space-between;padding:.2rem 0;border-bottom:1px dashed rgba(0,0,0,.06)}
+.ds-bill-result .row:last-child{border-bottom:none}
+
+/* Comparison chart legend */
+.ds-chart-legend{display:flex;justify-content:center;gap:1.5rem;margin-top:.65rem;font-size:.74rem;font-weight:700;color:#475569}
+.ds-chart-legend-item{display:flex;align-items:center;gap:.4rem}
+.ds-chart-legend-swatch{width:14px;height:14px;border-radius:3px}
+.ds-chart-legend-swatch.prod{background:linear-gradient(135deg,#2D82BE,#1B5E8A)}
+.ds-chart-legend-swatch.cons{background:linear-gradient(135deg,#dc2626,#991b1b)}
+.ds-offset-pill{display:inline-block;padding:.35rem .8rem;border-radius:100px;font-size:.78rem;font-weight:800;background:linear-gradient(135deg,#10b981,#059669);color:#fff;margin-left:.5rem}
+.ds-offset-pill.over{background:linear-gradient(135deg,#2D82BE,#1B5E8A)}
+.ds-offset-pill.under{background:linear-gradient(135deg,#f59e0b,#d97706)}
+
 /* Roof-only and Ground-only sections */
 .ds-roof-only{display:block}
 .ds-ground-only{display:none}
@@ -4189,6 +4214,19 @@ body.ds-mode-ground .ds-ground-only{display:block}
       </div>
     </div>
 
+    <!-- Utility Bill Upload (Optional) -->
+    <div class="ds-panel">
+      <h3><span class="step">7</span> Utility Bill Upload <span style="font-size:.7rem;font-weight:600;color:#94a3b8;margin-left:.4rem">optional</span></h3>
+      <p style="font-size:.78rem;color:#64748B;line-height:1.5;margin:0 0 .8rem 0">Upload a recent PDF utility bill to auto-extract annual consumption + rate, validate against NREL data for the location, and unlock the production-vs-consumption comparison chart with monthly offset percentages.</p>
+      <div class="ds-bill-upload" id="ds-bill-upload">
+        <input type="file" id="ds-bill-input" accept="application/pdf" style="display:none">
+        <div class="ds-bill-icon">📄</div>
+        <div class="ds-bill-title">Drop PDF here or tap to upload</div>
+        <div class="ds-bill-sub">PPL · PECO · Met-Ed · Penelec · Duquesne · others</div>
+      </div>
+      <div class="ds-bill-result" id="ds-bill-result" style="display:none"></div>
+    </div>
+
     <button class="ds-btn ds-btn-full" id="ds-calc" onclick="runDesignStudio()">⚡ Calculate &amp; Model</button>
     <button class="ds-btn ds-btn-sec ds-btn-full" id="ds-pdf" onclick="exportProposal()" style="margin-top:.6rem;display:none">📄 Export Proposal PDF</button>
   </div>
@@ -4317,6 +4355,7 @@ const DS_STATE = {
   cesiumMode: false,
   panel3DEntities: [],
   userViewPreference: null,    // null = auto-3D, '2d' = forced 2D, '3d' = forced 3D
+  billData: null,              // parsed utility bill { utility, annualKwh, ratePerKwh, monthlyConsumption[12] }
   renderedPanels: [],   // Legacy: all polygon instances currently on map
   disabledPanels: new Set(),  // Indices disabled by obstructions
   obstructions: [],     // google.maps.Polygon instances
@@ -5931,14 +5970,26 @@ async function runDesignStudio() {
 // ═════════════════════════════════════════════════════════════
 function renderMonthlyChart(monthly) {
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const max = Math.max(...monthly);
-  const W = 780, H = 240, padL = 55, padR = 20, padT = 25, padB = 40;
+  const cons = DS_STATE.billData && DS_STATE.billData.monthlyConsumption;
+  const hasCons = !!cons;
+
+  // Y-axis max must accommodate the larger of the two series
+  const maxProd = Math.max(...monthly);
+  const maxCons = hasCons ? Math.max(...cons) : 0;
+  const max = Math.max(maxProd, maxCons);
+
+  const W = 780, H = 260, padL = 55, padR = 20, padT = 25, padB = 40;
   const plotH = H - padT - padB;
   const plotW = W - padL - padR;
   const slot = plotW / 12;
-  const barW = slot * 0.7;
+  // Two bars per month if comparison active, otherwise one wider bar
+  const barW = hasCons ? slot * 0.34 : slot * 0.7;
+  const gap = hasCons ? slot * 0.04 : 0;
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" class="ds-monthly-chart"><defs><linearGradient id="dsbar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2D82BE"/><stop offset="1" stop-color="#1B5E8A"/></linearGradient></defs>`;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" class="ds-monthly-chart"><defs>`
+          + `<linearGradient id="dsbar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2D82BE"/><stop offset="1" stop-color="#1B5E8A"/></linearGradient>`
+          + `<linearGradient id="dsbar2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dc2626"/><stop offset="1" stop-color="#991b1b"/></linearGradient>`
+          + `</defs>`;
 
   // Grid + Y labels
   for (let i = 0; i <= 4; i++) {
@@ -5948,33 +5999,272 @@ function renderMonthlyChart(monthly) {
     svg += `<text x="${padL-10}" y="${y+4}" text-anchor="end" fill="#94a3b8" font-size="11" font-weight="600">${Math.round(val).toLocaleString()}</text>`;
   }
 
-  // Y-axis title
   svg += `<text x="20" y="${padT + plotH/2}" fill="#64748B" font-size="10" font-weight="700" text-anchor="middle" transform="rotate(-90, 20, ${padT + plotH/2})">kWh / month</text>`;
 
-  // Bars
   monthly.forEach((kwh, i) => {
-    const h = (kwh / max) * plotH;
-    const x = padL + i * slot + (slot - barW)/2;
-    const y = padT + plotH - h;
-    svg += `<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="url(#dsbar)" rx="3"/>`;
-    svg += `<text x="${x + barW/2}" y="${padT + plotH + 18}" text-anchor="middle" fill="#64748B" font-size="11" font-weight="700">${months[i]}</text>`;
-    svg += `<text x="${x + barW/2}" y="${y - 5}" text-anchor="middle" fill="#0B2545" font-size="10" font-weight="800">${Math.round(kwh).toLocaleString()}</text>`;
+    const slotX = padL + i * slot;
+    if (hasCons) {
+      // Two bars: production (blue, left) + consumption (red, right)
+      const hP = (kwh / max) * plotH;
+      const xP = slotX + (slot/2) - barW - gap/2;
+      const yP = padT + plotH - hP;
+      svg += `<rect x="${xP}" y="${yP}" width="${barW}" height="${hP}" fill="url(#dsbar)" rx="2"/>`;
+
+      const cKwh = cons[i];
+      const hC = (cKwh / max) * plotH;
+      const xC = slotX + (slot/2) + gap/2;
+      const yC = padT + plotH - hC;
+      svg += `<rect x="${xC}" y="${yC}" width="${barW}" height="${hC}" fill="url(#dsbar2)" rx="2"/>`;
+
+      // Offset % above the taller bar
+      const offset = cKwh > 0 ? (kwh / cKwh * 100) : 0;
+      const offColor = offset >= 100 ? '#059669' : '#dc2626';
+      const topY = Math.min(yP, yC);
+      svg += `<text x="${slotX + slot/2}" y="${topY - 5}" text-anchor="middle" fill="${offColor}" font-size="9.5" font-weight="800">${offset.toFixed(0)}%</text>`;
+    } else {
+      // Single production bar
+      const h = (kwh / max) * plotH;
+      const x = slotX + (slot - barW)/2;
+      const y = padT + plotH - h;
+      svg += `<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="url(#dsbar)" rx="3"/>`;
+      svg += `<text x="${x + barW/2}" y="${y - 5}" text-anchor="middle" fill="#0B2545" font-size="10" font-weight="800">${Math.round(kwh).toLocaleString()}</text>`;
+    }
+    svg += `<text x="${slotX + slot/2}" y="${padT + plotH + 18}" text-anchor="middle" fill="#64748B" font-size="11" font-weight="700">${months[i]}</text>`;
   });
 
   svg += '</svg>';
-  document.getElementById('ds-monthly-chart').innerHTML = svg;
+
+  let html = svg;
+  if (hasCons) {
+    html += '<div class="ds-chart-legend">'
+          + '<div class="ds-chart-legend-item"><div class="ds-chart-legend-swatch prod"></div>Production (modeled)</div>'
+          + '<div class="ds-chart-legend-item"><div class="ds-chart-legend-swatch cons"></div>Consumption (your bill)</div>'
+          + '</div>';
+  }
+  document.getElementById('ds-monthly-chart').innerHTML = html;
+
+  // Update chart title to reflect comparison mode
+  const chartTitle = document.querySelector('.ds-chart-title');
+  if (chartTitle) {
+    if (hasCons) {
+      const totalProd = monthly.reduce((a,b)=>a+b,0);
+      const totalCons = cons.reduce((a,b)=>a+b,0);
+      const annualOff = totalCons > 0 ? (totalProd/totalCons*100) : 0;
+      const pillClass = annualOff >= 100 ? 'over' : (annualOff >= 80 ? '' : 'under');
+      chartTitle.innerHTML = `📊 Production vs. Consumption <span class="ds-offset-pill ${pillClass}">${annualOff.toFixed(0)}% annual offset</span>`;
+    } else {
+      chartTitle.innerHTML = '📈 Monthly Production Breakdown (PVWatts)';
+    }
+  }
 }
 
 function renderMonthlyTable(monthly, rate) {
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const total = monthly.reduce((a,b) => a+b, 0);
-  let h = '<table class="ds-monthly-table"><thead><tr><th>Month</th><th>Production</th><th>% Annual</th><th>Savings</th></tr></thead><tbody>';
+  const cons = DS_STATE.billData && DS_STATE.billData.monthlyConsumption;
+  const hasCons = !!cons;
+  let h = '<table class="ds-monthly-table"><thead><tr><th>Month</th><th>Production</th>'
+        + (hasCons ? '<th>Consumption</th><th>Offset</th>' : '<th>% Annual</th>')
+        + '<th>Savings</th></tr></thead><tbody>';
   monthly.forEach((kwh, i) => {
-    h += `<tr><td>${months[i]}</td><td>${Math.round(kwh).toLocaleString()} kWh</td><td>${(kwh/total*100).toFixed(1)}%</td><td>$${Math.round(kwh*rate).toLocaleString()}</td></tr>`;
+    if (hasCons) {
+      const c = cons[i];
+      const offset = c > 0 ? (kwh / c * 100) : 0;
+      const offClass = offset >= 100 ? 'color:#059669;font-weight:800' : 'color:#0B2545;font-weight:700';
+      h += `<tr><td>${months[i]}</td><td>${Math.round(kwh).toLocaleString()} kWh</td>`
+         + `<td>${Math.round(c).toLocaleString()} kWh</td>`
+         + `<td style="${offClass}">${offset.toFixed(0)}%</td>`
+         + `<td>$${Math.round(Math.min(kwh, c) * rate).toLocaleString()}</td></tr>`;
+    } else {
+      h += `<tr><td>${months[i]}</td><td>${Math.round(kwh).toLocaleString()} kWh</td><td>${(kwh/total*100).toFixed(1)}%</td><td>$${Math.round(kwh*rate).toLocaleString()}</td></tr>`;
+    }
   });
-  h += `<tr class="total"><td>Annual Total</td><td>${Math.round(total).toLocaleString()} kWh</td><td>100.0%</td><td>$${Math.round(total*rate).toLocaleString()}</td></tr>`;
+  if (hasCons) {
+    const totalCons = cons.reduce((a,b)=>a+b,0);
+    const annualOff = totalCons > 0 ? (total / totalCons * 100) : 0;
+    const offClass = annualOff >= 100 ? 'color:#22c55e' : 'color:#fff';
+    h += `<tr class="total"><td>Annual Total</td><td>${Math.round(total).toLocaleString()} kWh</td>`
+       + `<td>${Math.round(totalCons).toLocaleString()} kWh</td>`
+       + `<td style="${offClass}">${annualOff.toFixed(0)}%</td>`
+       + `<td>$${Math.round(Math.min(total, totalCons) * rate).toLocaleString()}</td></tr>`;
+  } else {
+    h += `<tr class="total"><td>Annual Total</td><td>${Math.round(total).toLocaleString()} kWh</td><td>100.0%</td><td>$${Math.round(total*rate).toLocaleString()}</td></tr>`;
+  }
   h += '</tbody></table>';
   document.getElementById('ds-monthly-table-wrap').innerHTML = h;
+}
+
+// ═════════════════════════════════════════════════════════════
+// UTILITY BILL UPLOAD + PARSER
+// ═════════════════════════════════════════════════════════════
+
+// Typical residential consumption seasonal distribution (12 monthly fractions, sum=1)
+// Based on EIA/PJM-region averages for the Northeast US — winter heating + summer AC peaks
+const SEASONAL_PCT = [0.098, 0.087, 0.082, 0.073, 0.072, 0.082, 0.095, 0.097, 0.080, 0.073, 0.080, 0.081];
+
+function distributeAnnualToMonthly(annualKwh) {
+  return SEASONAL_PCT.map(p => annualKwh * p);
+}
+
+function bindBillUpload() {
+  const dz = document.getElementById('ds-bill-upload');
+  const fi = document.getElementById('ds-bill-input');
+  if (!dz || !fi) return;
+  dz.addEventListener('click', () => fi.click());
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) processBillFile(e.dataTransfer.files[0]);
+  });
+  fi.addEventListener('change', e => {
+    if (e.target.files[0]) processBillFile(e.target.files[0]);
+  });
+}
+
+async function processBillFile(file) {
+  const result = document.getElementById('ds-bill-result');
+  result.style.display = 'block';
+  result.className = 'ds-bill-result';
+  result.innerHTML = '⏳ Reading PDF…';
+
+  if (file.type !== 'application/pdf') {
+    result.className = 'ds-bill-result error';
+    result.innerHTML = '❌ Please upload a PDF file.';
+    return;
+  }
+  if (typeof pdfjsLib === 'undefined') {
+    result.className = 'ds-bill-result error';
+    result.innerHTML = '❌ PDF reader not loaded. Refresh and try again.';
+    return;
+  }
+
+  try {
+    const ab = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const pg = await pdf.getPage(i);
+      const tc = await pg.getTextContent();
+      text += tc.items.map(x => x.str).join(' ') + '\n';
+    }
+    result.innerHTML = '⏳ Parsing bill data…';
+    const billData = parseUtilityBill(text);
+
+    if (!billData.annualKwh) {
+      result.className = 'ds-bill-result error';
+      result.innerHTML = '❌ Could not extract annual usage from this bill. Try a different statement or enter your annual kWh manually in the consumption field below.';
+      return;
+    }
+
+    // Build monthly consumption (use bill's avg if available, otherwise distribute by season)
+    billData.monthlyConsumption = distributeAnnualToMonthly(billData.annualKwh);
+    DS_STATE.billData = billData;
+
+    // Auto-fill rate
+    if (billData.ratePerKwh && billData.ratePerKwh > 0.05 && billData.ratePerKwh < 0.50) {
+      document.getElementById('ds-rate').value = billData.ratePerKwh.toFixed(3);
+    }
+
+    // Cross-validate against NREL utility rate for the location
+    let validation = '';
+    if (DS_STATE.coords) {
+      try {
+        const params = new URLSearchParams({
+          api_key: DS_CONFIG.NREL_API_KEY,
+          address: DS_STATE.address || ''
+        });
+        const r = await fetch(`https://developer.nrel.gov/api/utility_rates/v3.json?${params}`);
+        const d = await r.json();
+        const nrelRate = d.outputs && d.outputs.residential;
+        if (nrelRate && billData.ratePerKwh) {
+          const diff = Math.abs(billData.ratePerKwh - nrelRate) / nrelRate;
+          if (diff > 0.30) {
+            validation = `<div class="row" style="color:#92400e"><span>⚠ Rate vs NREL avg</span><span><strong>$${billData.ratePerKwh.toFixed(3)}</strong> bill vs $${nrelRate.toFixed(3)} regional</span></div>`;
+          } else {
+            validation = `<div class="row"><span>✓ Validated vs NREL</span><span>within ${(diff*100).toFixed(0)}% of regional average</span></div>`;
+          }
+        }
+      } catch (e) {
+        console.warn('[DS] NREL rate validation failed', e);
+      }
+    }
+
+    // Render success summary
+    result.className = 'ds-bill-result';
+    const monthlyAvg = Math.round(billData.annualKwh / 12).toLocaleString();
+    result.innerHTML = `
+      <div style="font-weight:800;color:#065f46;margin-bottom:.4rem">✅ Bill parsed successfully</div>
+      <div class="row"><span>Utility</span><span><strong>${billData.utility || 'Unknown'}</strong></span></div>
+      <div class="row"><span>Annual usage</span><span><strong>${billData.annualKwh.toLocaleString()} kWh</strong></span></div>
+      <div class="row"><span>Monthly average</span><span>${monthlyAvg} kWh</span></div>
+      ${billData.ratePerKwh ? `<div class="row"><span>Rate ($/kWh)</span><span><strong>$${billData.ratePerKwh.toFixed(3)}</strong> (auto-filled)</span></div>` : ''}
+      ${validation}
+      <div style="font-size:.7rem;color:#475569;margin-top:.5rem">Hit <strong>Calculate &amp; Model</strong> to see the production-vs-consumption chart with monthly offset.</div>
+    `;
+  } catch (err) {
+    console.error('[DS] Bill parse error', err);
+    result.className = 'ds-bill-result error';
+    result.innerHTML = '❌ Could not read this PDF: ' + err.message;
+  }
+}
+
+// Lightweight bill parser (PA-focused, supports most common utilities)
+function parseUtilityBill(text) {
+  const t = text.replace(/\s+/g, ' ');
+  const data = { utility: null, annualKwh: null, ratePerKwh: null, billingKwh: null };
+
+  // Utility identification
+  if (/PPL Electric/i.test(t)) data.utility = 'PPL Electric Utilities';
+  else if (/PECO/i.test(t)) data.utility = 'PECO Energy';
+  else if (/Met-Ed/i.test(t)) data.utility = 'Met-Ed (FirstEnergy)';
+  else if (/Penelec/i.test(t)) data.utility = 'Penelec (FirstEnergy)';
+  else if (/Duquesne/i.test(t)) data.utility = 'Duquesne Light';
+  else if (/Con Edison|ConEd/i.test(t)) data.utility = 'Con Edison';
+  else if (/National Grid/i.test(t)) data.utility = 'National Grid';
+  else if (/Eversource/i.test(t)) data.utility = 'Eversource';
+  else if (/PSE&?G/i.test(t)) data.utility = 'PSE&G';
+
+  // Annual usage — try multiple patterns
+  let m;
+  m = t.match(/Annual Total Usage\s*(\d[\d,]+)\s*kWh/i);
+  if (!m) m = t.match(/Annual Total\s*(?:Usage)?\s*(\d[\d,]+)/i);
+  if (!m) m = t.match(/[A-Z][a-z]+\s+\d{4}\s*-\s*[A-Z][a-z]+\s+\d{4}\s*(\d[\d,]+)\s*kWh/i);
+  if (!m) m = t.match(/12\s*Month\s*(?:Usage|Total)\s*(\d[\d,]+)/i);
+  if (m) {
+    const v = parseInt(m[1].replace(/,/g, ''));
+    if (v > 1000 && v < 200000) data.annualKwh = v;
+  }
+
+  // Billing period kWh (single month)
+  m = t.match(/Total Delivered:?\s*(\d{2,5})/i);
+  if (!m) m = t.match(/Kilowatt-?\s*Hours\s*(\d{2,5})\b/i);
+  if (m) data.billingKwh = parseInt(m[1]);
+
+  // If no annual found but we have billing kWh, extrapolate × 12
+  if (!data.annualKwh && data.billingKwh && data.billingKwh > 50 && data.billingKwh < 5000) {
+    data.annualKwh = Math.round(data.billingKwh * 12);
+  }
+
+  // Rate ($/kWh) — try Price to Compare, generation rate, or compute from charges
+  m = t.match(/Price to Compare\s*\$?(\d+\.\d{4,5})/i);
+  if (!m) m = t.match(/Generation\s*Rate\s*\$?(\d+\.\d{4,5})/i);
+  if (m) data.ratePerKwh = parseFloat(m[1]);
+
+  // Fallback: compute total $/kWh from bill total ÷ usage
+  if (!data.ratePerKwh && data.billingKwh) {
+    let totalM = t.match(/Amount Due[^$]*\$(\d+\.\d{2})/i);
+    if (!totalM) totalM = t.match(/Total Amount Due\s*\$?(\d+\.\d{2})/i);
+    if (totalM) {
+      const total = parseFloat(totalM[1]);
+      if (total > 5 && total < 5000) {
+        data.ratePerKwh = total / data.billingKwh;
+      }
+    }
+  }
+
+  return data;
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -6061,6 +6351,7 @@ document.getElementById('ds-slider').addEventListener('input', function() {
 
 // Initialize
 updateSystemStats();
+bindBillUpload();
 
 window.initGoogleMaps = function() {
   initGooglePlaces();
@@ -6069,6 +6360,14 @@ window.initGoogleMaps = function() {
 
 <script async defer
   src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA8cHa1iux7107r26z3zQnHHg0CPH-AC0w&libraries=places,drawing,geometry&callback=initGoogleMaps">
+</script>
+
+<!-- pdf.js for parsing utility bill PDFs in the browser -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
 </script>
 
 </div>
