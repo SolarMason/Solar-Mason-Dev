@@ -5535,72 +5535,103 @@ async function render3DPanels() {
   );
   if (!renderable.length) return;
 
-  // Sample roof/ground height for each panel center
-  const positions = renderable.map(p =>
+  // ── Step 1: Get one clamped height per SEGMENT (not per panel) ──
+  // This ensures all panels on the same segment share a consistent base plane
+  const segmentIds = [...new Set(renderable.map(p => p.isGround ? -1 : p.segmentIndex))];
+  const segCenters = segmentIds.map(sid => {
+    if (sid === -1) return null; // ground panels handled separately
+    const seg = DS_STATE.roofSegments[sid];
+    if (!seg || !seg.center) return null;
+    return Cesium.Cartographic.toCartesian(
+      Cesium.Cartographic.fromDegrees(seg.center.longitude, seg.center.latitude, 0)
+    );
+  });
+
+  // Also clamp ground panel positions individually
+  const groundPanels = renderable.filter(p => p.isGround);
+  const groundPositions = groundPanels.map(p =>
     Cesium.Cartographic.toCartesian(
       Cesium.Cartographic.fromDegrees(p.center.longitude, p.center.latitude, 0)
     )
   );
 
-  let clamped;
-  try {
-    clamped = await scene.clampToHeightMostDetailed(positions);
-  } catch (e) {
-    console.warn('[DS] clampToHeightMostDetailed failed', e);
-    clamped = positions;
+  const allClampPositions = [...segCenters.filter(Boolean), ...groundPositions];
+  let clampedAll = allClampPositions;
+  if (allClampPositions.length) {
+    try {
+      clampedAll = await scene.clampToHeightMostDetailed(allClampPositions);
+    } catch (e) {
+      console.warn('[DS] clampToHeightMostDetailed failed', e);
+    }
   }
 
-  const heights = clamped.map(pos => {
-    if (!pos) return null;
-    return Cesium.Cartographic.fromCartesian(pos).height;
+  // Map segment ID → clamped center height
+  const segHeightMap = {};
+  let ci = 0;
+  segmentIds.forEach((sid, i) => {
+    if (sid === -1 || !segCenters[i]) return;
+    const pos = clampedAll[ci++];
+    segHeightMap[sid] = pos ? Cesium.Cartographic.fromCartesian(pos).height : 0;
   });
 
-  renderable.forEach((p, i) => {
-    const h = heights[i];
-    if (h === null || !Number.isFinite(h)) return;
+  // Map ground panel idx → clamped height
+  const groundHeightMap = {};
+  groundPanels.forEach((p, i) => {
+    const pos = clampedAll[ci++];
+    groundHeightMap[p.idx] = pos ? Cesium.Cartographic.fromCartesian(pos).height : 0;
+  });
 
+  // ── Step 2: For each panel, compute height from segment plane ──
+  const mPerDegLat = 111320;
+
+  renderable.forEach((p) => {
     const isActive = DS_STATE.activePanels.has(p.idx);
     const angles = getPanelAngles(p);
     const tiltRad = Cesium.Math.toRadians(angles.tilt);
     const azRad = Cesium.Math.toRadians(angles.azimuth);
 
-    const zOffset = p.isGround ? (p.groundOffsetM || 1.83) : 0.45;
-    const baseHeight = h + zOffset;
+    let baseHeight;
+    if (p.isGround) {
+      baseHeight = (groundHeightMap[p.idx] || 0) + (p.groundOffsetM || 1.83);
+    } else {
+      // Compute height analytically from segment's plane
+      const seg = DS_STATE.roofSegments[p.segmentIndex];
+      const segCenterH = segHeightMap[p.segmentIndex] || 0;
+      if (seg && seg.center) {
+        const mPerDegLng = 111320 * Math.cos(Cesium.Math.toRadians(seg.center.latitude));
+        const dEast = (p.center.longitude - seg.center.longitude) * mPerDegLng;
+        const dNorth = (p.center.latitude - seg.center.latitude) * mPerDegLat;
+        // Downslope distance from segment center (positive = downhill)
+        const downslopeDist = dEast * Math.sin(azRad) + dNorth * Math.cos(azRad);
+        baseHeight = segCenterH - downslopeDist * Math.tan(tiltRad) + 0.45;
+      } else {
+        baseHeight = segCenterH + 0.45;
+      }
+    }
 
     // Panel dimensions
     const isLandscape = p.orientation === 'LANDSCAPE';
-    const panelW = isLandscape ? DS_STATE.panelHeightM : DS_STATE.panelWidthM;  // across-slope
-    const panelH = isLandscape ? DS_STATE.panelWidthM : DS_STATE.panelHeightM;  // along-slope
+    const panelW = isLandscape ? DS_STATE.panelHeightM : DS_STATE.panelWidthM;
+    const panelH = isLandscape ? DS_STATE.panelWidthM : DS_STATE.panelHeightM;
 
-    // Compute 4 corners in local ENU offsets from panel center:
-    // across-slope direction = perpendicular to azimuth (90° counterclockwise)
-    // along-slope direction = opposite to azimuth (uphill), tilted by roof pitch
-    const acrossAz = azRad - Math.PI / 2;  // perpendicular to downslope
+    // Compute 4 corners from center using azimuth + tilt geometry
+    const acrossAz = azRad - Math.PI / 2;
+    const uphillAz = azRad + Math.PI;
     const halfW = panelW / 2;
     const halfH = panelH / 2;
 
-    // Across-slope offsets (horizontal, no height change)
-    const dxAcross = Math.sin(acrossAz);  // east component per meter
-    const dyAcross = Math.cos(acrossAz);  // north component per meter
+    const dxA = Math.sin(acrossAz), dyA = Math.cos(acrossAz);
+    const dxU = Math.sin(uphillAz) * Math.cos(tiltRad), dyU = Math.cos(uphillAz) * Math.cos(tiltRad);
+    const dzU = Math.sin(tiltRad);
 
-    // Along-slope offsets: uphill direction with height change from tilt
-    // Uphill azimuth = azimuth + 180° (opposite of downslope)
-    const uphillAz = azRad + Math.PI;
-    const dxAlong = Math.sin(uphillAz) * Math.cos(tiltRad);  // horizontal east per meter
-    const dyAlong = Math.cos(uphillAz) * Math.cos(tiltRad);  // horizontal north per meter
-    const dzAlong = Math.sin(tiltRad);                         // height gain per meter uphill
-
-    // Convert meter offsets to approximate degree offsets
     const lat = p.center.latitude;
-    const mPerDegLat = 111320;
     const mPerDegLng = 111320 * Math.cos(Cesium.Math.toRadians(lat));
 
-    // 4 corners: TL, TR, BR, BL (relative to panel center)
     const corners = [
-      { dx: -halfW * dxAcross + halfH * dxAlong, dy: -halfW * dyAcross + halfH * dyAlong, dz: halfH * dzAlong },
-      { dx:  halfW * dxAcross + halfH * dxAlong, dy:  halfW * dyAcross + halfH * dyAlong, dz: halfH * dzAlong },
-      { dx:  halfW * dxAcross - halfH * dxAlong, dy:  halfW * dyAcross - halfH * dyAlong, dz: -halfH * dzAlong },
-      { dx: -halfW * dxAcross - halfH * dxAlong, dy: -halfW * dyAcross - halfH * dyAlong, dz: -halfH * dzAlong }
+      { dx: -halfW*dxA + halfH*dxU, dy: -halfW*dyA + halfH*dyU, dz:  halfH*dzU },
+      { dx:  halfW*dxA + halfH*dxU, dy:  halfW*dyA + halfH*dyU, dz:  halfH*dzU },
+      { dx:  halfW*dxA - halfH*dxU, dy:  halfW*dyA - halfH*dyU, dz: -halfH*dzU },
+      { dx: -halfW*dxA - halfH*dxU, dy: -halfW*dyA - halfH*dyU, dz: -halfH*dzU }
     ];
 
     const cornerPositions = corners.map(c => Cesium.Cartesian3.fromDegrees(
@@ -5611,8 +5642,7 @@ async function render3DPanels() {
 
     let material, outlineColor;
     if (isActive) {
-      const color = p.isGround
-        ? '#2D82BE'
+      const color = p.isGround ? '#2D82BE'
         : energyToColor(p.yearlyEnergyDcKwh, DS_STATE.energyMin, DS_STATE.energyMax);
       material = Cesium.Color.fromCssColorString(color).withAlpha(0.88);
       outlineColor = Cesium.Color.fromCssColorString('#0B2545');
