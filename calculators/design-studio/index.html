@@ -4665,11 +4665,12 @@ async function render3DPanels() {
     // Google Solar + Cesium both use this convention.
     const headingRad = Cesium.Math.toRadians(angles.azimuth);
 
-    // Position: center of the panel, snug on the roof (tiny offset to avoid z-fighting)
+    // Position: center of the panel, ~1 ft above the roof so panels don't
+    // bury into noisy mesh reconstruction (Google's 3D tiles are not perfectly flat)
     const position = Cesium.Cartesian3.fromDegrees(
       p.center.longitude,
       p.center.latitude,
-      h + 0.04
+      h + 0.30
     );
 
     // Orientation math:
