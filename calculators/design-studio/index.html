@@ -4823,6 +4823,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
         <div class="ds-result"><div class="ds-result-label">Payback</div><div class="ds-result-value" id="r-pb">—</div><div class="ds-result-sub">years</div></div>
         <div class="ds-result"><div class="ds-result-label">25-Year Savings</div><div class="ds-result-value" id="r-25">—</div><div class="ds-result-sub">with escalation</div></div>
         <div class="ds-result" id="r-offset-card" style="display:none"><div class="ds-result-label">Annual Offset</div><div class="ds-result-value" id="r-offset">—</div><div class="ds-result-sub">vs. your bill</div></div>
+        <div class="ds-result" id="r-srec-card" style="display:none"><div class="ds-result-label">SREC Income</div><div class="ds-result-value" id="r-srec">—</div><div class="ds-result-sub" id="r-srec-sub">year 1</div></div>
       </div>
 
       <div class="ds-chart-wrap">
@@ -6812,6 +6813,19 @@ async function runDesignStudio() {
       offsetCard.style.display = '';
     } else {
       offsetCard.style.display = 'none';
+    }
+
+    // SREC Income card — only shown when ongoing incentives are active
+    const srecCard = document.getElementById('r-srec-card');
+    if (incentiveOngoingAnnual > 0) {
+      document.getElementById('r-srec').textContent = '$' + Math.round(incentiveOngoingAnnual).toLocaleString();
+      const srec25 = DS_STATE.incentive25yr || 0;
+      document.getElementById('r-srec-sub').textContent = srec25 > 0
+        ? `$${Math.round(srec25).toLocaleString()} over 25 yrs`
+        : 'year 1';
+      srecCard.style.display = '';
+    } else {
+      srecCard.style.display = 'none';
     }
 
     // Render monthly chart + table
