@@ -4293,6 +4293,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
           <span id="ds-slider-pct">—</span>
           <span id="ds-slider-maxlabel">0</span>
         </div>
+        <button class="ds-ground-btn" style="margin-top:.5rem" onclick="clearRoofPanels()">🗑 Clear All</button>
       </div>
 
       <!-- Ground Mode Controls -->
@@ -7026,6 +7027,18 @@ function applyTopNPanels(target) {
   for (const idx of DS_STATE.panelPolygons.keys()) {
     applyPanelStyle(idx);
   }
+}
+
+// Deactivate every roof panel (mirror of clearGroundPanels for roof mode). Ground panels are untouched.
+function clearRoofPanels() {
+  applyTopNPanels(0);
+  const slider = document.getElementById('ds-slider');
+  if (slider) slider.value = 0;
+  updateSliderDisplay(activeCountForMode());
+  updateSystemStats();
+  refresh3DIfActive();
+  document.querySelectorAll('.ds-preset-btn').forEach(b => b.classList.remove('active'));
+  setStatus('ready', 'All roof panels cleared — use the slider, presets, or tap individual panels to add them back');
 }
 
 document.getElementById('ds-slider').addEventListener('input', function() {
