@@ -3909,9 +3909,21 @@ html { scroll-behavior: smooth; }
 .ds-tools-overlay.collapsed .ds-tools-toggle{transform:rotate(180deg)}
 
 /* Inside the overlay, panels are tight for density */
-.ds-tools-body .ds-panel{margin-bottom:.55rem;padding:.7rem .85rem;border-radius:12px;box-shadow:none;border:1px solid rgba(0,0,0,.06)}
+.ds-tools-body .ds-panel{margin-bottom:.45rem;padding:.7rem .85rem;border-radius:12px;box-shadow:none;border:1px solid rgba(0,0,0,.06)}
 .ds-tools-body .ds-panel h3{font-size:.8rem;margin:0 0 .55rem 0;padding-bottom:.4rem;font-weight:800}
 .ds-tools-body .ds-panel h3 .step{width:20px;height:20px;font-size:.68rem}
+
+/* Collapsible step panels */
+.ds-tools-body details.ds-panel{padding:0;overflow:hidden;transition:background .15s}
+.ds-tools-body details.ds-panel summary{list-style:none;cursor:pointer;padding:.6rem .8rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;user-select:none;-webkit-user-select:none}
+.ds-tools-body details.ds-panel summary::-webkit-details-marker{display:none}
+.ds-tools-body details.ds-panel summary h3{margin:0;padding:0;border-bottom:none;flex:1}
+.ds-tools-body details.ds-panel summary::after{content:'▾';color:#94a3b8;font-size:.85rem;transition:transform .2s;flex-shrink:0;font-weight:700}
+.ds-tools-body details.ds-panel[open] summary::after{transform:rotate(180deg);color:#2D82BE}
+.ds-tools-body details.ds-panel[open] summary{border-bottom:1px solid rgba(0,0,0,.06)}
+.ds-tools-body details.ds-panel summary:hover{background:rgba(45,130,190,.03)}
+.ds-tools-body details.ds-panel .ds-panel-body{padding:.65rem .8rem .75rem}
+.ds-tools-body details.ds-panel[open]{background:#fff}
 .ds-tools-body .ds-field label{font-size:.66rem;margin-bottom:.15rem}
 .ds-tools-body .ds-field input,.ds-tools-body .ds-field select{padding:.5rem .65rem;font-size:.82rem}
 .ds-tools-body .ds-row{gap:.55rem;margin-bottom:.5rem}
@@ -4214,8 +4226,9 @@ body.ds-mode-ground .ds-ground-only{display:block}
     </div>
     <div class="ds-tools-body" id="ds-tools-body">
     <!-- Step 1: Utility Bill Upload (parses address, usage, rate) -->
-    <div class="ds-panel">
-      <h3><span class="step">1</span> Upload Utility Bill</h3>
+    <details class="ds-panel" open>
+      <summary><h3><span class="step">1</span> Upload Utility Bill</h3></summary>
+      <div class="ds-panel-body">
       <div class="ds-bill-upload" id="ds-bill-upload">
         <input type="file" id="ds-bill-input" accept="application/pdf" style="display:none">
         <div class="ds-bill-icon">📄</div>
@@ -4229,38 +4242,46 @@ body.ds-mode-ground .ds-ground-only{display:block}
         </div>
       </div>
       <div class="ds-bill-result" id="ds-bill-result" style="display:none"></div>
-    </div>
+      </div>
+    </details>
 
     <!-- Address -->
-    <div class="ds-panel">
-      <h3><span class="step">2</span> Project Address</h3>
+    <details class="ds-panel">
+      <summary><h3><span class="step">2</span> Project Address</h3></summary>
+      <div class="ds-panel-body">
       <div class="ds-addr">
         <input type="text" id="ds-addr-input" placeholder="Type an address or upload a bill" autocomplete="off">
       </div>
-    </div>
+      </div>
+    </details>
 
     <!-- Mount Mode Toggle -->
-    <div class="ds-panel">
-      <h3><span class="step">3</span> Mount Type</h3>
+    <details class="ds-panel">
+      <summary><h3><span class="step">3</span> Mount Type</h3></summary>
+      <div class="ds-panel-body">
       <div class="ds-mode-toggle">
         <button class="ds-mode-btn active" id="ds-mode-roof" onclick="setMountMode('roof')">🏠 Roof</button>
         <button class="ds-mode-btn" id="ds-mode-ground" onclick="setMountMode('ground')">🌱 Ground</button>
       </div>
-    </div>
+      </div>
+    </details>
 
     <!-- Obstructions & Keep-Out Zones -->
-    <div class="ds-panel">
-      <h3><span class="step">4</span> Obstructions</h3>
+    <details class="ds-panel">
+      <summary><h3><span class="step">4</span> Obstructions</h3></summary>
+      <div class="ds-panel-body">
       <div class="ds-obst-buttons">
         <button class="ds-mini-btn" id="ds-draw-obst" onclick="toggleDrawObstruction()">✏️ Draw</button>
         <button class="ds-mini-btn ds-mini-btn-danger" onclick="clearObstructions()">🗑 Clear</button>
       </div>
       <div class="ds-obst-list" id="ds-obst-list"><em>None drawn</em></div>
-    </div>
+      </div>
+    </details>
 
     <!-- Panel Layout -->
-    <div class="ds-panel">
-      <h3><span class="step">5</span> Panel Layout</h3>
+    <details class="ds-panel" open>
+      <summary><h3><span class="step">5</span> Panel Layout</h3></summary>
+      <div class="ds-panel-body">
       <div class="ds-status waiting" id="ds-seg-status">Awaiting roof analysis</div>
 
       <!-- Offset presets (only visible when a utility bill has been uploaded) -->
@@ -4317,11 +4338,13 @@ body.ds-mode-ground .ds-ground-only{display:block}
       <div class="ds-segments ds-roof-only" id="ds-segments">
         <div style="text-align:center;padding:1rem;color:#94a3b8;font-size:.82rem">Select an address to analyze roof segments.</div>
       </div>
-    </div>
+      </div>
+    </details>
 
     <!-- System Config -->
-    <div class="ds-panel">
-      <h3><span class="step">6</span> System Configuration</h3>
+    <details class="ds-panel">
+      <summary><h3><span class="step">6</span> System Configuration</h3></summary>
+      <div class="ds-panel-body">
       <div class="ds-row">
         <div class="ds-field">
           <label>Panel Wattage</label>
@@ -4358,11 +4381,13 @@ body.ds-mode-ground .ds-ground-only{display:block}
         <div class="ds-stat"><div class="ds-stat-label">System Size</div><div class="ds-stat-value" id="ds-kw">0.00<span class="ds-stat-unit">kW DC</span></div></div>
         <div class="ds-stat"><div class="ds-stat-label">Active Panels</div><div class="ds-stat-value" id="ds-active-count">0<span class="ds-stat-unit">panels</span></div></div>
       </div>
-    </div>
+      </div>
+    </details>
 
     <!-- Financials -->
-    <div class="ds-panel">
-      <h3><span class="step">7</span> Financial Inputs</h3>
+    <details class="ds-panel">
+      <summary><h3><span class="step">7</span> Financial Inputs</h3></summary>
+      <div class="ds-panel-body">
 
       <!-- Residential vs Commercial toggle -->
       <div class="ds-class-toggle">
@@ -4433,7 +4458,8 @@ body.ds-mode-ground .ds-ground-only{display:block}
           <div class="ds-adder-name">5-Yr MACRS Depreciation <span class="ds-adder-amt">~22% NPV</span></div>
         </label>
       </div>
-    </div>
+      </div>
+    </details>
     <button class="ds-btn ds-btn-full" id="ds-calc" onclick="runDesignStudio()">⚡ Calculate &amp; Model</button>
     <button class="ds-btn ds-btn-sec ds-btn-full" id="ds-pdf" onclick="exportProposal()" style="margin-top:.6rem;display:none">📄 Export Proposal PDF</button>
 
