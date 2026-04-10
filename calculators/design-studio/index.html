@@ -4301,6 +4301,9 @@ body.ds-mode-ground .ds-ground-only{display:block}
         <div class="ds-field" id="ds-esc-placeholder" style="visibility:hidden"><label>—</label><input type="number" disabled></div>
       </div>
 
+      <!-- Single source of truth for ITC% — updated by updateItcDisplay() based on active mode -->
+      <input type="hidden" id="ds-itc" value="30">
+
       <!-- RESIDENTIAL: ITC is locked at 30% -->
       <div class="ds-itc-block" id="ds-itc-residential">
         <div class="ds-itc-title">🏠 Residential Clean Energy Credit</div>
@@ -4308,7 +4311,6 @@ body.ds-mode-ground .ds-ground-only{display:block}
           <div class="ds-itc-pct">30%</div>
           <div class="ds-itc-desc"><strong>Locked by IRC §25D.</strong> Residential installations receive a flat 30% federal tax credit through 2032. No stackable bonuses apply — MACRS depreciation and bonus adders (energy community, domestic content, low-income) are available only to commercial, industrial, and non-profit projects.</div>
         </div>
-        <input type="hidden" id="ds-itc" value="30">
       </div>
 
       <!-- COMMERCIAL: full ITC + adders + MACRS -->
@@ -4357,7 +4359,6 @@ body.ds-mode-ground .ds-ground-only{display:block}
           <span>Total Federal ITC</span>
           <strong id="ds-itc-total">30%</strong>
         </div>
-        <input type="hidden" id="ds-itc" value="30">
 
         <div class="ds-macrs-block">
           <label class="ds-adder">
