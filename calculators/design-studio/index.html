@@ -5370,7 +5370,7 @@ async function enterCesium3D(opts = {}) {
       ? 'Loading Google 3D tiles…'
       : 'Re-positioning…';
 
-    const delay = firstLoad ? 2000 : 100;
+    const delay = firstLoad ? 3000 : 500;
     setTimeout(async () => {
       try {
         document.getElementById('ds-cesium-status').textContent = 'Positioning camera…';
@@ -5401,7 +5401,7 @@ function loadCesium() {
   if (DS_STATE.cesiumLoadPromise) return DS_STATE.cesiumLoadPromise;
 
   DS_STATE.cesiumLoadPromise = new Promise((resolve, reject) => {
-    const version = '1.123';
+    const version = '1.126';
     const base = `https://cesium.com/downloads/cesiumjs/releases/${version}/Build/Cesium/`;
     window.CESIUM_BASE_URL = base;
 
@@ -5440,7 +5440,6 @@ async function initCesium() {
     fullscreenButton: true,
     infoBox: false,
     selectionIndicator: false,
-    requestRenderMode: true,
     creditContainer: document.createElement('div')
   });
 
@@ -5448,6 +5447,8 @@ async function initCesium() {
   viewer.scene.globe.show = false;
   viewer.scene.skyAtmosphere.show = false;
   viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#e2e8f0');
+  // Ensure continuous rendering while tiles stream in
+  viewer.scene.requestRenderMode = false;
 
   // Load Google Photorealistic 3D Tiles directly from Google (no Cesium Ion)
   console.log('[DS-3D] Requesting Google 3D Tiles root with key', DS_CONFIG.GOOGLE_MAPS_KEY.slice(0, 8) + '…');
@@ -5476,11 +5477,14 @@ async function initCesium() {
 
   try {
     const tileset = await Cesium.Cesium3DTileset.fromUrl(tilesUrl, {
-      showCreditsOnScreen: true
+      showCreditsOnScreen: true,
+      maximumScreenSpaceError: 8  // lower = higher quality tiles
     });
     viewer.scene.primitives.add(tileset);
     DS_STATE.cesiumTileset = tileset;
-    console.log('[DS-3D] Tileset added to scene');
+    console.log('[DS-3D] Tileset added to scene, ready:', tileset.ready);
+    // Force a render cycle after tiles start loading
+    viewer.scene.requestRender();
   } catch (e) {
     console.error('[DS-3D] Cesium tileset creation failed', e);
     throw new Error('Cesium could not load the 3D tileset: ' + (e.message || e));
