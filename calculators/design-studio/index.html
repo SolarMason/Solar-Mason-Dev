@@ -4589,12 +4589,14 @@ body.ds-mode-ground .ds-ground-only{display:block}
     </details>
 
     <!-- Address -->
-    <details class="ds-panel">
+    <details class="ds-panel" open>
       <summary><h3><span class="step">2</span> Project Address</h3></summary>
       <div class="ds-panel-body">
-      <div class="ds-addr">
-        <input type="text" id="ds-addr-input" placeholder="Type an address or upload a bill" autocomplete="off">
+      <div class="ds-addr" style="display:flex;gap:.5rem">
+        <input type="text" id="ds-addr-input" placeholder="Type an address and press Enter" autocomplete="off" style="flex:1">
+        <button class="ds-btn" id="ds-addr-go" onclick="manualGeocode()" style="white-space:nowrap;padding:.55rem 1rem;font-size:.82rem">Go</button>
       </div>
+      <div id="ds-addr-status" style="font-size:.78rem;color:#94a3b8;margin-top:.35rem;display:none"></div>
       </div>
     </details>
 
@@ -5042,13 +5044,45 @@ function initGooglePlaces() {
   });
   ac.addListener('place_changed', async () => {
     const place = ac.getPlace();
-    if (!place.geometry) return;
+    if (!place.geometry) {
+      // User pressed Enter without selecting — fall back to manual geocode
+      manualGeocode();
+      return;
+    }
     await loadProjectAddress(
       place.formatted_address,
       place.geometry.location.lat(),
       place.geometry.location.lng()
     );
   });
+
+  // Enter key also triggers manual geocode
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // Small delay to let autocomplete place_changed fire first if a suggestion was selected
+      setTimeout(() => {
+        if (!DS_STATE.coords) manualGeocode();
+      }, 300);
+    }
+  });
+}
+
+async function manualGeocode() {
+  const input = document.getElementById('ds-addr-input');
+  const addr = (input && input.value || '').trim();
+  if (!addr) return;
+
+  const statusEl = document.getElementById('ds-addr-status');
+  if (statusEl) { statusEl.style.display = ''; statusEl.textContent = 'Geocoding address...'; statusEl.style.color = '#94a3b8'; }
+
+  const geo = await geocodeAddressString(addr);
+  if (geo) {
+    if (statusEl) { statusEl.textContent = 'Found: ' + geo.formatted; statusEl.style.color = '#059669'; }
+    await loadProjectAddress(geo.formatted, geo.lat, geo.lng);
+  } else {
+    if (statusEl) { statusEl.textContent = 'Could not find that address. Try including city and state.'; statusEl.style.color = '#dc2626'; }
+  }
 }
 
 // Reusable: load a project address — used by Places autocomplete AND by bill upload
