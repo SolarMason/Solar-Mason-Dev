@@ -4065,9 +4065,20 @@ body.ds-mode-ground .ds-ground-only{display:block}
       <div class="ds-mode-hint" id="ds-mode-hint">Roof mode: auto-detects segments from Google Solar API and places panels on detected roof faces.</div>
     </div>
 
+    <!-- Obstructions & Keep-Out Zones -->
+    <div class="ds-panel">
+      <h3><span class="step">3</span> Obstructions &amp; Keep-Out Zones</h3>
+      <p style="font-size:.8rem;color:#64748B;line-height:1.5;margin:0 0 .75rem 0">Click "Draw Obstruction" then click points on the map to outline chimneys, vents, skylights, or any area to exclude. Any panels inside will be removed automatically.</p>
+      <div class="ds-obst-buttons">
+        <button class="ds-mini-btn" id="ds-draw-obst" onclick="toggleDrawObstruction()">✏️ Draw Obstruction</button>
+        <button class="ds-mini-btn ds-mini-btn-danger" onclick="clearObstructions()">🗑 Clear All</button>
+      </div>
+      <div class="ds-obst-list" id="ds-obst-list"><em>No obstructions drawn</em></div>
+    </div>
+
     <!-- Panel Layout -->
     <div class="ds-panel">
-      <h3><span class="step">3</span> Panel Layout</h3>
+      <h3><span class="step">4</span> Panel Layout</h3>
       <div class="ds-status waiting" id="ds-seg-status">Awaiting roof analysis</div>
 
       <div class="ds-slider-wrap ds-roof-only">
@@ -4113,20 +4124,9 @@ body.ds-mode-ground .ds-ground-only{display:block}
       </div>
     </div>
 
-    <!-- Obstructions (NEW) -->
-    <div class="ds-panel">
-      <h3><span class="step">3</span> Obstructions &amp; Keep-Out Zones</h3>
-      <p style="font-size:.8rem;color:#64748B;line-height:1.5;margin:0 0 .75rem 0">Click "Draw Obstruction" then click points on the map to outline chimneys, vents, skylights, or any area to exclude. Any panels inside will be removed automatically.</p>
-      <div class="ds-obst-buttons">
-        <button class="ds-mini-btn" id="ds-draw-obst" onclick="toggleDrawObstruction()">✏️ Draw Obstruction</button>
-        <button class="ds-mini-btn ds-mini-btn-danger" onclick="clearObstructions()">🗑 Clear All</button>
-      </div>
-      <div class="ds-obst-list" id="ds-obst-list"><em>No obstructions drawn</em></div>
-    </div>
-
     <!-- System Config -->
     <div class="ds-panel">
-      <h3><span class="step">4</span> System Configuration</h3>
+      <h3><span class="step">5</span> System Configuration</h3>
       <div class="ds-row">
         <div class="ds-field">
           <label>Panel Wattage</label>
@@ -4168,7 +4168,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Financials -->
     <div class="ds-panel">
-      <h3><span class="step">5</span> Financial Inputs</h3>
+      <h3><span class="step">6</span> Financial Inputs</h3>
       <div class="ds-row">
         <div class="ds-field"><label>Cost per Watt</label><input type="number" id="ds-cpw" value="3.00" min="1" max="6" step="0.05"></div>
         <div class="ds-field"><label>Rate ($/kWh)</label><input type="number" id="ds-rate" value="0.17" min="0.05" max="0.50" step="0.01"></div>
