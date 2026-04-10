@@ -4885,6 +4885,14 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
 </div><!-- /.ds-studio-fullscreen -->
 
+<!-- pdf.js — MUST load before main script so pdfjsLib is available at runtime -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+</script>
+
 <script>
 // ═════════════════════════════════════════════════════════════
 // DESIGN STUDIO V2 - Full Modeling Engine
@@ -7015,8 +7023,7 @@ function distributeAnnualToMonthly(annualKwh) {
 function bindBillUpload() {
   const dz = document.getElementById('ds-bill-upload');
   const fi = document.getElementById('ds-bill-input');
-  if (!dz || !fi) return;
-  // No click handler needed — the <label for="ds-bill-input"> handles file picker natively
+  if (!dz || !fi) { console.error('[DS] Bill upload elements not found'); return; }
   // Drag & drop (desktop)
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
   dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
@@ -7025,11 +7032,19 @@ function bindBillUpload() {
     dz.classList.remove('dragover');
     if (e.dataTransfer.files[0]) processBillFile(e.dataTransfer.files[0]);
   });
-  // File picker selection
-  fi.addEventListener('change', e => {
-    if (e.target.files[0]) processBillFile(e.target.files[0]);
-    fi.value = '';  // reset so re-uploading the same file triggers change again
+  // File picker selection — MUST await before resetting value
+  fi.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      await processBillFile(file);
+    } catch (err) {
+      console.error('[DS] processBillFile threw:', err);
+    }
+    // Reset AFTER async processing so File object stays valid
+    fi.value = '';
   });
+  console.log('[DS] Bill upload bound OK');
 }
 
 // Manual fallback: user enters annual kWh directly
@@ -7069,15 +7084,19 @@ async function processBillFile(file) {
   result.style.display = 'block';
   result.className = 'ds-bill-result';
   result.innerHTML = '⏳ Reading PDF…';
+  console.log('[DS] processBillFile called:', file.name, file.type, file.size, 'bytes');
 
-  if (file.type !== 'application/pdf') {
+  // iOS sometimes reports empty or wrong MIME type — check extension too
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  if (!isPdf) {
     result.className = 'ds-bill-result error';
-    result.innerHTML = '❌ Please upload a PDF file.';
+    result.innerHTML = '❌ Please upload a PDF file. (Got: ' + (file.type || 'unknown type') + ')';
     return;
   }
   if (typeof pdfjsLib === 'undefined') {
     result.className = 'ds-bill-result error';
-    result.innerHTML = '❌ PDF reader not loaded. Refresh and try again.';
+    result.innerHTML = '❌ PDF.js library not loaded. Check your internet connection and refresh the page.';
+    console.error('[DS] pdfjsLib is undefined — CDN script may have failed to load');
     return;
   }
 
@@ -9204,13 +9223,7 @@ window.initGoogleMaps = function() {
   src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA8cHa1iux7107r26z3zQnHHg0CPH-AC0w&libraries=places,drawing,geometry&callback=initGoogleMaps">
 </script>
 
-<!-- pdf.js for parsing utility bill PDFs in the browser -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script>
-  if (typeof pdfjsLib !== 'undefined') {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
-</script>
+<!-- pdf.js loaded above the main script block -->
 
 </div>
 
