@@ -5607,7 +5607,54 @@ function setAvansType(type) {
   document.querySelectorAll('.ds-avans-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.type === type);
   });
+
+  // If at least one array already exists, SNAP the new array next to the last
+  // placed one with a 2 ft gap — user doesn't have to click the map again.
+  if (DS_STATE.groundArrays.length > 0 && DS_STATE.map) {
+    const last = DS_STATE.groundArrays[DS_STATE.groundArrays.length - 1];
+    const snapCenter = computeSnapCenter(last, type);
+    placeAvansArray(snapCenter, type);
+    // Pan the map so the new array is visible if it ends up off-screen
+    if (DS_STATE.map && snapCenter) {
+      DS_STATE.map.panTo(new google.maps.LatLng(snapCenter.latitude, snapCenter.longitude));
+    }
+    return;
+  }
+
+  // First array — arm placement mode so the user picks a location on the map
   if (!DS_STATE.groundPlacementActive) toggleGroundPlacement();
+}
+
+// Compute the center point for a new AVANS array snapped 2 ft to the right (local +X axis)
+// of an existing one, accounting for both arrays' widths and the shared azimuth.
+function computeSnapCenter(lastArray, newType) {
+  const panelW = DS_STATE.panelWidthM || 1.045;
+  const colGap = panelW * 0.02;
+  const lastCols = lastArray.type === 'AVANS_10' ? 5 : 4;
+  const newCols  = newType === 'AVANS_10' ? 5 : 4;
+
+  // Distance from last center to new center = half of last array width + 2ft gap + half of new array width
+  const lastHalfW = ((lastCols - 1) * (panelW + colGap)) / 2 + panelW / 2;
+  const newHalfW  = ((newCols  - 1) * (panelW + colGap)) / 2 + panelW / 2;
+  const gapM = 0.6096; // 2 ft
+  const dx = lastHalfW + gapM + newHalfW;
+
+  // Translate along the last array's local +X axis (across columns)
+  // Local +X maps to world (−sin(az), cos(az)) in (north, east)
+  const az = lastArray.azimuth ?? (parseFloat(document.getElementById('ds-ground-az')?.value) || 180);
+  const azRad = az * Math.PI / 180;
+  const sinA = Math.sin(azRad), cosA = Math.cos(azRad);
+  const worldNorth = dx * (-sinA);
+  const worldEast  = dx * cosA;
+
+  const lat = lastArray.center.latitude;
+  const latScale = 1 / 111320;
+  const lngScale = 1 / (111320 * Math.cos(lat * Math.PI / 180));
+
+  return {
+    latitude:  lastArray.center.latitude  + worldNorth * latScale,
+    longitude: lastArray.center.longitude + worldEast  * lngScale
+  };
 }
 
 function toggleGroundPlacement() {
@@ -5779,7 +5826,7 @@ function placeAvansArray(center, type) {
   }
 
   // Track this array
-  DS_STATE.groundArrays.push({ id: arrayId, type, panelIds, center: { ...center } });
+  DS_STATE.groundArrays.push({ id: arrayId, type, panelIds, center: { ...center }, azimuth: az, tilt });
 
   syncSliderToActive();
   updateSliderDisplay(activeCountForMode());
