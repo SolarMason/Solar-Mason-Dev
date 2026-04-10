@@ -5495,7 +5495,7 @@ async function initCesium() {
   DS_STATE.cesiumViewer = viewer;
   DS_STATE.panel3DEntities = [];
   DS_STATE.currentCompassDir = null;
-  console.log('[DS-3D] Cesium viewer created, globe visible:', viewer.scene.globe.show, 
+  console.log('[DS-3D] Cesium viewer created, globe:', viewer.scene.globe ? 'present' : 'disabled', 
     'primitives:', viewer.scene.primitives.length, 
     'tileset ready:', DS_STATE.cesiumTileset ? DS_STATE.cesiumTileset.ready : 'N/A');
 
