@@ -3990,7 +3990,8 @@ html { scroll-behavior: smooth; }
   .ds-tools-body .ds-panel h3 .step{width:22px;height:22px;font-size:.72rem}
 
   /* ═══ BILL UPLOAD — BIGGER TAP ═══ */
-  .ds-bill-label{padding:1.8rem 1rem;min-height:90px}
+  .ds-bill-upload{padding:1.8rem 1rem;min-height:90px}
+  .ds-bill-file-overlay{min-height:90px}
   .ds-bill-icon{font-size:2.5rem}
   .ds-bill-title{font-size:.95rem}
   .ds-bill-sub{font-size:.75rem}
@@ -4111,6 +4112,8 @@ html { scroll-behavior: smooth; }
 .ds-addr input{width:100%;padding:.9rem 1rem .9rem 2.5rem;border:1px solid rgba(0,0,0,.1);border-radius:12px;font-size:.95rem;color:#0B2545;background:#f8fafc}
 .ds-addr input:focus{outline:none;border-color:#2D82BE;background:#fff;box-shadow:0 0 0 3px rgba(45,130,190,.08)}
 .ds-addr::before{content:"📍";position:absolute;left:.85rem;top:50%;transform:translateY(-50%);font-size:1rem}
+/* Google Places autocomplete dropdown must sit above the mobile bottom sheet (z-index:200) */
+.pac-container{z-index:9999!important}
 .ds-addr-hint{font-size:.72rem;color:#94a3b8;margin-top:.4rem}
 .ds-map-wrap{position:relative;border-radius:0;overflow:hidden;background:#e5e7eb;width:100%;height:100%}
 .ds-map-background .ds-map-wrap{border-radius:0}
@@ -4361,10 +4364,9 @@ html { scroll-behavior: smooth; }
 /* Inverter brand + model picker in Step 6 — end */
 
 /* Utility Bill Upload */
-.ds-bill-upload{border-radius:14px;overflow:hidden}
-.ds-bill-label{display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px dashed rgba(45,130,190,.3);border-radius:14px;padding:1.6rem 1rem;text-align:center;background:rgba(45,130,190,.03);cursor:pointer;transition:all .25s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;min-height:80px}
-.ds-bill-label:hover,.ds-bill-label:active,.ds-bill-upload.dragover .ds-bill-label{border-color:#2D82BE;background:rgba(45,130,190,.08);transform:translateY(-1px)}
-.ds-bill-label input[type="file"]{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);border:0;padding:0;margin:-1px;white-space:nowrap}
+.ds-bill-upload{position:relative;border:2px dashed rgba(45,130,190,.3);border-radius:14px;padding:1.6rem 1rem;text-align:center;background:rgba(45,130,190,.03);cursor:pointer;transition:all .25s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;overflow:visible}
+.ds-bill-upload:hover,.ds-bill-upload:active,.ds-bill-upload.dragover{border-color:#2D82BE;background:rgba(45,130,190,.08);transform:translateY(-1px)}
+.ds-bill-file-overlay{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:5;-webkit-tap-highlight-color:transparent;font-size:0}
 .ds-bill-icon{font-size:2.2rem;margin-bottom:.4rem;line-height:1}
 .ds-bill-title{font-size:.88rem;font-weight:800;color:#0B2545;margin-bottom:.2rem}
 .ds-bill-sub{font-size:.7rem;color:#94a3b8;font-weight:600}
@@ -4488,12 +4490,10 @@ body.ds-mode-ground .ds-ground-only{display:block}
       <summary><h3><span class="step">1</span> Upload Utility Bill</h3></summary>
       <div class="ds-panel-body">
       <div class="ds-bill-upload" id="ds-bill-upload">
-        <label for="ds-bill-input" class="ds-bill-label">
-          <input type="file" id="ds-bill-input" accept=".pdf,application/pdf">
-          <div class="ds-bill-icon">📄</div>
-          <div class="ds-bill-title">Drop PDF or tap to upload</div>
-          <div class="ds-bill-sub">Parses address · usage · rate</div>
-        </label>
+        <input type="file" id="ds-bill-input" accept=".pdf,application/pdf" class="ds-bill-file-overlay">
+        <div class="ds-bill-icon">📄</div>
+        <div class="ds-bill-title">Drop PDF or tap to upload</div>
+        <div class="ds-bill-sub">Parses address · usage · rate</div>
       </div>
       <div style="margin-top:.45rem;padding-top:.45rem;border-top:1px dashed rgba(0,0,0,.08)">
         <div class="ds-row" style="margin-bottom:0">
