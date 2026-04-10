@@ -3898,7 +3898,7 @@ html { scroll-behavior: smooth; }
 .ds-tools-header-title .logo{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#2D82BE,#1B5E8A);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.8rem}
 .ds-tools-toggle{background:transparent;border:1px solid rgba(0,0,0,.1);color:#64748B;width:32px;height:32px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:700;transition:all .2s}
 .ds-tools-toggle:hover{background:rgba(45,130,190,.08);color:#2D82BE}
-.ds-tools-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:.9rem;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(45,130,190,.3) transparent}
+.ds-tools-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:.7rem;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(45,130,190,.3) transparent}
 .ds-tools-body::-webkit-scrollbar{width:8px}
 .ds-tools-body::-webkit-scrollbar-track{background:transparent}
 .ds-tools-body::-webkit-scrollbar-thumb{background:rgba(45,130,190,.25);border-radius:4px}
@@ -3908,9 +3908,15 @@ html { scroll-behavior: smooth; }
 .ds-tools-overlay.collapsed .ds-tools-header-title{opacity:0}
 .ds-tools-overlay.collapsed .ds-tools-toggle{transform:rotate(180deg)}
 
-/* Inside the overlay, panels are tighter */
-.ds-tools-body .ds-panel{margin-bottom:.8rem;padding:1rem 1.1rem;border-radius:14px;box-shadow:none;border:1px solid rgba(0,0,0,.06)}
-.ds-tools-body .ds-panel h3{font-size:.88rem;margin-bottom:.8rem;padding-bottom:.55rem}
+/* Inside the overlay, panels are tight for density */
+.ds-tools-body .ds-panel{margin-bottom:.55rem;padding:.7rem .85rem;border-radius:12px;box-shadow:none;border:1px solid rgba(0,0,0,.06)}
+.ds-tools-body .ds-panel h3{font-size:.8rem;margin:0 0 .55rem 0;padding-bottom:.4rem;font-weight:800}
+.ds-tools-body .ds-panel h3 .step{width:20px;height:20px;font-size:.68rem}
+.ds-tools-body .ds-field label{font-size:.66rem;margin-bottom:.15rem}
+.ds-tools-body .ds-field input,.ds-tools-body .ds-field select{padding:.5rem .65rem;font-size:.82rem}
+.ds-tools-body .ds-row{gap:.55rem;margin-bottom:.5rem}
+.ds-tools-body .ds-btn{padding:.75rem 1rem;font-size:.85rem}
+.ds-tools-body .ds-btn-sec{padding:.55rem .8rem;font-size:.78rem}
 
 /* Floating map controls */
 .ds-map-fab{position:absolute;top:1rem;right:1rem;z-index:50;display:flex;flex-direction:column;gap:.5rem}
@@ -4002,42 +4008,36 @@ html { scroll-behavior: smooth; }
 .ds-class-btn:hover:not(.active){color:#334155}
 .ds-class-hint{font-size:.7rem;color:#94a3b8;margin-top:.45rem;line-height:1.4}
 
-/* ITC blocks */
-.ds-itc-block{margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(0,0,0,.08)}
-.ds-itc-title{font-size:.78rem;font-weight:800;color:#0B2545;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.7rem}
-.ds-itc-locked{background:linear-gradient(135deg,rgba(16,185,129,.06),rgba(16,185,129,.02));border:1px solid rgba(16,185,129,.22);border-radius:12px;padding:1rem 1.1rem;display:flex;align-items:center;gap:1rem}
-.ds-itc-pct{font-size:2.2rem;font-weight:900;color:#059669;line-height:1;flex-shrink:0}
+/* ITC blocks — compact */
+.ds-itc-block{margin-top:.55rem;padding-top:.55rem;border-top:1px solid rgba(0,0,0,.08)}
 
-/* Residential §25D terminated (OBBB Jan 1, 2026) */
-.ds-itc-terminated{background:linear-gradient(135deg,rgba(220,38,38,.05),rgba(220,38,38,.01));border:1px solid rgba(220,38,38,.22);border-radius:12px;padding:1rem 1.1rem;display:flex;align-items:center;gap:1rem;margin-bottom:.7rem}
-.ds-itc-pct-gone{font-size:2.2rem;font-weight:900;color:#dc2626;line-height:1;flex-shrink:0;text-decoration:line-through;text-decoration-thickness:3px}
+/* Residential terminated — one-line */
+.ds-itc-terminated-compact{display:flex;align-items:center;gap:.6rem;padding:.55rem .7rem;background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.22);border-radius:9px;font-size:.7rem;color:#7f1d1d;line-height:1.4}
+.ds-itc-pct-gone-sm{font-size:1.1rem;font-weight:900;color:#dc2626;text-decoration:line-through;text-decoration-thickness:2px;flex-shrink:0}
 
-/* TPO (lease/PPA) callout */
-.ds-tpo-callout{background:linear-gradient(135deg,rgba(45,130,190,.06),rgba(45,130,190,.02));border:1px solid rgba(45,130,190,.22);border-radius:12px;padding:.85rem 1rem}
-.ds-tpo-title{font-size:.82rem;font-weight:800;color:#0B2545;margin-bottom:.35rem}
-.ds-tpo-desc{font-size:.72rem;color:#475569;line-height:1.55}
-.ds-tpo-desc strong{color:#0B2545;font-weight:800}
+/* TPO — collapsed details */
+.ds-tpo-details{margin-top:.4rem}
+.ds-tpo-details summary{cursor:pointer;padding:.5rem .7rem;background:rgba(45,130,190,.06);border:1px solid rgba(45,130,190,.2);border-radius:9px;font-size:.72rem;font-weight:700;color:#0B2545;list-style:none}
+.ds-tpo-details summary::-webkit-details-marker{display:none}
+.ds-tpo-details[open] summary{border-bottom-left-radius:0;border-bottom-right-radius:0}
+.ds-tpo-body{padding:.55rem .7rem;background:rgba(45,130,190,.03);border:1px solid rgba(45,130,190,.2);border-top:none;border-radius:0 0 9px 9px;font-size:.68rem;color:#475569;line-height:1.5}
 
-/* Commercial deadline warning banner */
-.ds-deadline-warning{background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(245,158,11,.02));border:1px solid rgba(245,158,11,.35);border-radius:10px;padding:.7rem .9rem;font-size:.7rem;color:#78350f;line-height:1.5;margin-bottom:.8rem}
-.ds-deadline-warning strong{color:#78350f;font-weight:800}
-.ds-itc-desc{font-size:.72rem;color:#475569;line-height:1.5}
-.ds-itc-desc strong{color:#0B2545;font-weight:800}
-.ds-itc-base,.ds-itc-adders,.ds-macrs-block{margin-bottom:.55rem}
-.ds-adder{display:flex;align-items:flex-start;gap:.65rem;padding:.7rem .8rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;margin-bottom:.5rem;transition:all .2s}
+/* Commercial deadline — one-line */
+.ds-deadline-warning-compact{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:.45rem .6rem;font-size:.66rem;color:#78350f;line-height:1.4;margin-bottom:.55rem}
+.ds-deadline-warning-compact strong{color:#78350f;font-weight:800}
+
+/* Compact adder rows */
+.ds-adder{display:flex;align-items:center;gap:.55rem;padding:.45rem .65rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;margin-bottom:.35rem;transition:all .15s}
 .ds-adder:hover{background:#f1f5f9;border-color:rgba(45,130,190,.3)}
-.ds-adder input[type=checkbox]{margin-top:.1rem;flex-shrink:0;width:16px;height:16px;accent-color:#2D82BE;cursor:pointer}
+.ds-adder input[type=checkbox]{margin:0;width:14px;height:14px;accent-color:#2D82BE;cursor:pointer;flex-shrink:0}
 .ds-adder input[type=checkbox]:disabled{cursor:default;accent-color:#10b981}
-.ds-adder-name{font-size:.8rem;font-weight:800;color:#0B2545;line-height:1.3;margin-bottom:.2rem;display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
-.ds-adder-amt{color:#2D82BE;font-weight:900;font-size:.82rem;background:rgba(45,130,190,.08);padding:.12rem .5rem;border-radius:100px;white-space:nowrap}
-.ds-adder-desc{font-size:.68rem;color:#64748B;line-height:1.5}
+.ds-adder-name{flex:1;font-size:.72rem;font-weight:700;color:#0B2545;line-height:1.3;display:flex;align-items:center;justify-content:space-between;gap:.4rem}
+.ds-adder-amt{color:#2D82BE;font-weight:900;font-size:.68rem;background:rgba(45,130,190,.1);padding:.08rem .45rem;border-radius:100px;white-space:nowrap}
 .ds-adder:has(input:checked){background:rgba(45,130,190,.05);border-color:#2D82BE}
-.ds-itc-adders label:first-child .ds-adder-amt{background:rgba(16,185,129,.1);color:#059669}
-.ds-itc-total{display:flex;justify-content:space-between;align-items:center;padding:.85rem 1rem;background:linear-gradient(135deg,#0B2545,#1B5E8A);border-radius:10px;color:#fff;font-size:.85rem;font-weight:800;margin-top:.25rem;margin-bottom:.75rem}
-.ds-itc-total strong{font-size:1.35rem;font-weight:900;color:#fff}
-.ds-li-row{padding-top:.25rem}
-.ds-li-row select{font-size:.75rem}
-.ds-macrs-block{padding-top:.8rem;border-top:1px dashed rgba(0,0,0,.1);margin-top:.75rem}
+.ds-adder-locked .ds-adder-amt{background:rgba(16,185,129,.12)!important;color:#059669!important}
+.ds-itc-total{display:flex;justify-content:space-between;align-items:center;padding:.55rem .75rem;background:linear-gradient(135deg,#0B2545,#1B5E8A);border-radius:8px;color:#fff;font-size:.75rem;font-weight:800;margin:.35rem 0}
+.ds-itc-total strong{font-size:1.1rem;font-weight:900;color:#fff}
+.ds-li-row select{font-size:.7rem;padding:.35rem .5rem}
 .ds-slider-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.5rem}
 .ds-slider-head label{font-size:.72rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em}
 .ds-slider-val{font-size:1.5rem;font-weight:900;color:#0B2545;line-height:1}
@@ -4215,19 +4215,17 @@ body.ds-mode-ground .ds-ground-only{display:block}
     <div class="ds-tools-body" id="ds-tools-body">
     <!-- Step 1: Utility Bill Upload (parses address, usage, rate) -->
     <div class="ds-panel">
-      <h3><span class="step">1</span> Upload Utility Bill <span style="font-size:.7rem;font-weight:600;color:#94a3b8;margin-left:.4rem">recommended</span></h3>
-      <p style="font-size:.78rem;color:#64748B;line-height:1.5;margin:0 0 .8rem 0">Drop a recent PDF utility bill — we'll auto-extract the service address, geocode it, fetch satellite imagery + roof analysis, pull annual consumption + rate, and validate against NREL data for the location. The whole project is set up in one click.</p>
+      <h3><span class="step">1</span> Upload Utility Bill</h3>
       <div class="ds-bill-upload" id="ds-bill-upload">
         <input type="file" id="ds-bill-input" accept="application/pdf" style="display:none">
         <div class="ds-bill-icon">📄</div>
-        <div class="ds-bill-title">Drop PDF here or tap to upload</div>
-        <div class="ds-bill-sub">PPL · PECO · Met-Ed · Penelec · Duquesne · ConEd · National Grid · Eversource · PSE&amp;G</div>
+        <div class="ds-bill-title">Drop PDF or tap to upload</div>
+        <div class="ds-bill-sub">Parses address · usage · rate</div>
       </div>
-      <div style="margin-top:.6rem;padding-top:.6rem;border-top:1px dashed rgba(0,0,0,.08)">
-        <div style="font-size:.7rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem">Or enter usage manually</div>
-        <div class="ds-row">
-          <div class="ds-field"><label>Annual kWh</label><input type="number" id="ds-manual-kwh" placeholder="12000" min="0" max="500000" step="100"></div>
-          <div class="ds-field" style="display:flex;align-items:flex-end"><button class="ds-btn ds-btn-sec" style="padding:.55rem .8rem;font-size:.78rem;width:100%" onclick="applyManualBill()">Apply</button></div>
+      <div style="margin-top:.45rem;padding-top:.45rem;border-top:1px dashed rgba(0,0,0,.08)">
+        <div class="ds-row" style="margin-bottom:0">
+          <div class="ds-field"><label>Or enter annual kWh</label><input type="number" id="ds-manual-kwh" placeholder="12000" min="0" max="500000" step="100"></div>
+          <div class="ds-field" style="display:flex;align-items:flex-end"><button class="ds-btn ds-btn-sec" style="width:100%" onclick="applyManualBill()">Apply</button></div>
         </div>
       </div>
       <div class="ds-bill-result" id="ds-bill-result" style="display:none"></div>
@@ -4237,30 +4235,27 @@ body.ds-mode-ground .ds-ground-only{display:block}
     <div class="ds-panel">
       <h3><span class="step">2</span> Project Address</h3>
       <div class="ds-addr">
-        <input type="text" id="ds-addr-input" placeholder="Type an address or upload a bill above" autocomplete="off">
+        <input type="text" id="ds-addr-input" placeholder="Type an address or upload a bill" autocomplete="off">
       </div>
-      <div class="ds-addr-hint">✅ Auto-filled when you upload a bill in Step 1 — or type manually for Google Places autocomplete.</div>
     </div>
 
     <!-- Mount Mode Toggle -->
     <div class="ds-panel">
       <h3><span class="step">3</span> Mount Type</h3>
       <div class="ds-mode-toggle">
-        <button class="ds-mode-btn active" id="ds-mode-roof" onclick="setMountMode('roof')">🏠 Roof Mount</button>
-        <button class="ds-mode-btn" id="ds-mode-ground" onclick="setMountMode('ground')">🌱 Ground Mount</button>
+        <button class="ds-mode-btn active" id="ds-mode-roof" onclick="setMountMode('roof')">🏠 Roof</button>
+        <button class="ds-mode-btn" id="ds-mode-ground" onclick="setMountMode('ground')">🌱 Ground</button>
       </div>
-      <div class="ds-mode-hint" id="ds-mode-hint">Roof mode: auto-detects segments from Google Solar API and places panels on detected roof faces.</div>
     </div>
 
     <!-- Obstructions & Keep-Out Zones -->
     <div class="ds-panel">
-      <h3><span class="step">4</span> Obstructions &amp; Keep-Out Zones</h3>
-      <p style="font-size:.8rem;color:#64748B;line-height:1.5;margin:0 0 .75rem 0">Click "Draw Obstruction" then click points on the map to outline chimneys, vents, skylights, or any area to exclude. Any panels inside will be removed automatically.</p>
+      <h3><span class="step">4</span> Obstructions</h3>
       <div class="ds-obst-buttons">
-        <button class="ds-mini-btn" id="ds-draw-obst" onclick="toggleDrawObstruction()">✏️ Draw Obstruction</button>
-        <button class="ds-mini-btn ds-mini-btn-danger" onclick="clearObstructions()">🗑 Clear All</button>
+        <button class="ds-mini-btn" id="ds-draw-obst" onclick="toggleDrawObstruction()">✏️ Draw</button>
+        <button class="ds-mini-btn ds-mini-btn-danger" onclick="clearObstructions()">🗑 Clear</button>
       </div>
-      <div class="ds-obst-list" id="ds-obst-list"><em>No obstructions drawn</em></div>
+      <div class="ds-obst-list" id="ds-obst-list"><em>None drawn</em></div>
     </div>
 
     <!-- Panel Layout -->
@@ -4270,7 +4265,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
       <!-- Offset presets (only visible when a utility bill has been uploaded) -->
       <div class="ds-preset-wrap ds-roof-only" id="ds-preset-wrap" style="display:none">
-        <div class="ds-preset-label">Quick offset presets <span id="ds-preset-sub" style="font-weight:600;color:#94a3b8;font-size:.66rem"></span></div>
+        <div class="ds-preset-label">Offset <span id="ds-preset-sub" style="font-weight:600;color:#94a3b8;font-size:.62rem"></span></div>
         <div class="ds-preset-row">
           <button class="ds-preset-btn" data-pct="80" onclick="selectOffsetPreset(80)">
             <div class="ds-preset-pct">80%</div>
@@ -4285,45 +4280,36 @@ body.ds-mode-ground .ds-ground-only{display:block}
             <div class="ds-preset-meta" id="ds-preset-120">—</div>
           </button>
         </div>
-        <div style="font-size:.68rem;color:#94a3b8;margin-top:.5rem;text-align:center">Tap to snap to a target offset, then fine-tune with the slider or panel taps below.</div>
       </div>
 
       <div class="ds-slider-wrap ds-roof-only">
         <div class="ds-slider-head">
-          <label>Panels Placed</label>
-          <div class="ds-slider-val"><span id="ds-slider-val">0</span><span class="unit">of <span id="ds-slider-max">0</span> max</span></div>
+          <label>Panels</label>
+          <div class="ds-slider-val"><span id="ds-slider-val">0</span><span class="unit">of <span id="ds-slider-max">0</span></span></div>
         </div>
         <input type="range" class="ds-slider" id="ds-slider" min="0" max="0" value="0">
         <div class="ds-slider-meta">
           <span>0</span>
-          <span id="ds-slider-pct">Fill % will show here</span>
+          <span id="ds-slider-pct">—</span>
           <span id="ds-slider-maxlabel">0</span>
-        </div>
-        <div style="font-size:.72rem;color:#64748B;margin-top:.65rem;padding-top:.65rem;border-top:1px solid rgba(45,130,190,.1);line-height:1.45">
-          💡 <strong>Tap any panel on the map</strong> to add or remove it individually. Grey outlines are inactive panels you can click to activate.
         </div>
       </div>
 
       <!-- Ground Mode Controls -->
       <div class="ds-ground-only">
-        <div class="ds-ground-info">
-          <strong>Ground mount mode.</strong> Drop AVANS 8.0 or 10.0 arrays directly on the map. All panels portrait, 30° tilt, 6 ft above ground. Drag any panel to move the entire array as a rigid body.
-        </div>
-        <div class="ds-row" style="margin-top:.6rem">
+        <div class="ds-row" style="margin-top:0">
           <div class="ds-field"><label>Tilt (°)</label><input type="number" id="ds-ground-tilt" value="30" min="0" max="60"></div>
           <div class="ds-field"><label>Azimuth (°)</label><input type="number" id="ds-ground-az" value="180" min="0" max="360"></div>
         </div>
-        <div style="font-size:.7rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin:.85rem 0 .35rem 0">Array Type</div>
         <div class="ds-ground-btn-row">
-          <button class="ds-ground-btn ds-avans-btn active" data-type="AVANS_8" onclick="setAvansType('AVANS_8')">📦 AVANS 8.0 <span style="opacity:.7;font-size:.66rem;margin-left:.25rem">(2×4)</span></button>
-          <button class="ds-ground-btn ds-avans-btn" data-type="AVANS_10" onclick="setAvansType('AVANS_10')">📦 AVANS 10.0 <span style="opacity:.7;font-size:.66rem;margin-left:.25rem">(2×5)</span></button>
+          <button class="ds-ground-btn ds-avans-btn active" data-type="AVANS_8" onclick="setAvansType('AVANS_8')">AVANS 8.0 <span style="opacity:.6;font-size:.62rem">2×4</span></button>
+          <button class="ds-ground-btn ds-avans-btn" data-type="AVANS_10" onclick="setAvansType('AVANS_10')">AVANS 10.0 <span style="opacity:.6;font-size:.62rem">2×5</span></button>
         </div>
-        <div class="ds-ground-btn-row" style="margin-top:.4rem">
-          <button class="ds-ground-btn" onclick="clearGroundPanels()">🗑 Clear All Arrays</button>
+        <div class="ds-ground-btn-row" style="margin-top:.35rem">
+          <button class="ds-ground-btn" onclick="clearGroundPanels()">🗑 Clear All</button>
         </div>
-        <div style="font-size:.7rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin:.85rem 0 .35rem 0">Placed Arrays</div>
-        <div class="ds-array-list" id="ds-array-list">
-          <em style="font-size:.74rem;color:#94a3b8">No arrays placed yet</em>
+        <div class="ds-array-list" id="ds-array-list" style="margin-top:.55rem">
+          <em style="font-size:.7rem;color:#94a3b8">No arrays placed</em>
         </div>
       </div>
 
@@ -4377,97 +4363,74 @@ body.ds-mode-ground .ds-ground-only{display:block}
     <div class="ds-panel">
       <h3><span class="step">7</span> Financial Inputs</h3>
 
-      <!-- Residential vs Commercial toggle (auto-detected from bill, user can override) -->
+      <!-- Residential vs Commercial toggle -->
       <div class="ds-class-toggle">
         <button type="button" class="ds-class-btn active" id="ds-class-res" onclick="setCustomerClass('residential')">🏠 Residential</button>
         <button type="button" class="ds-class-btn" id="ds-class-com" onclick="setCustomerClass('commercial')">🏢 Commercial</button>
       </div>
-      <div class="ds-class-hint" id="ds-class-hint">Defaults to residential. Upload a utility bill to auto-detect from rate class or demand charges.</div>
+      <div class="ds-class-hint" id="ds-class-hint">Auto-detects from bill, or tap to override.</div>
 
-      <div class="ds-row" style="margin-top:.75rem">
-        <div class="ds-field"><label>Cost per Watt</label><input type="number" id="ds-cpw" value="3.00" min="1" max="6" step="0.05"></div>
-        <div class="ds-field"><label>Rate ($/kWh)</label><input type="number" id="ds-rate" value="0.17" min="0.05" max="0.60" step="0.0001"></div>
+      <div class="ds-row" style="margin-top:.5rem">
+        <div class="ds-field"><label>$/W</label><input type="number" id="ds-cpw" value="3.00" min="1" max="6" step="0.05"></div>
+        <div class="ds-field"><label>$/kWh</label><input type="number" id="ds-rate" value="0.17" min="0.05" max="0.60" step="0.0001"></div>
       </div>
       <div class="ds-row">
-        <div class="ds-field"><label>Rate Escalation (%)</label><input type="number" id="ds-esc" value="5" min="0" max="15" step="0.5"></div>
-        <div class="ds-field" id="ds-esc-placeholder" style="visibility:hidden"><label>—</label><input type="number" disabled></div>
+        <div class="ds-field"><label>Escalation %</label><input type="number" id="ds-esc" value="5" min="0" max="15" step="0.5"></div>
+        <div class="ds-field" style="visibility:hidden"><label>—</label><input type="number" disabled></div>
       </div>
 
-      <!-- Single source of truth for ITC% — updated by updateItcDisplay() based on active mode -->
+      <!-- Single canonical ITC hidden input (updateItcDisplay() writes here) -->
       <input type="hidden" id="ds-itc" value="30">
 
-      <!-- RESIDENTIAL: no federal ITC after OBBB termination -->
+      <!-- RESIDENTIAL: §25D terminated (OBBB, Jan 1, 2026) -->
       <div class="ds-itc-block" id="ds-itc-residential">
-        <div class="ds-itc-title">🏠 Residential Federal Tax Credit</div>
-        <div class="ds-itc-terminated">
-          <div class="ds-itc-pct-gone">0%</div>
-          <div class="ds-itc-desc"><strong>§25D terminated by the One Big Beautiful Bill Act (Public Law 119-21, signed July 4 2025).</strong> The 30% Residential Clean Energy Credit ended for systems placed in service after December 31, 2025 — with no phase-down or transition period. Homeowners purchasing with cash or a loan in 2026 or later are <strong>not eligible</strong> for any federal tax credit on owned solar. State incentives, SRECs, and net metering where applicable still apply.</div>
+        <div class="ds-itc-terminated-compact">
+          <span class="ds-itc-pct-gone-sm">0%</span>
+          <span>Residential §25D ended Dec 31, 2025 (OBBB). No federal credit for cash/loan purchases.</span>
         </div>
-        <div class="ds-tpo-callout">
-          <div class="ds-tpo-title">💡 Access the 30% credit via lease or PPA</div>
-          <div class="ds-tpo-desc">Third-party-owned (TPO) residential systems — leases, PPAs, prepaid solar — remain eligible under the commercial <strong>§48E</strong> credit through 2027. The leasing company claims the credit and reflects the benefit in a lower monthly rate. If the customer is interested, switch to the Commercial class above to model a TPO arrangement.</div>
-        </div>
+        <details class="ds-tpo-details">
+          <summary>💡 30% still available via lease / PPA</summary>
+          <div class="ds-tpo-body">TPO systems (lease, PPA, prepaid) qualify under §48E through 2027. The lessor claims the credit and lowers the monthly rate. Switch to Commercial to model a TPO arrangement.</div>
+        </details>
       </div>
 
       <!-- COMMERCIAL: full ITC + adders + MACRS -->
       <div class="ds-itc-block" id="ds-itc-commercial" style="display:none">
-        <div class="ds-itc-title">🏢 Commercial ITC + Adders</div>
-        <div class="ds-deadline-warning">
-          ⏳ <strong>Commercial §48E deadline:</strong> projects must <strong>begin construction by July 4, 2026</strong> OR be <strong>placed in service by December 31, 2027</strong> to qualify for the full 30% base ITC under OBBB. Safe-harbor a 5% equipment deposit before the deadline to lock in the current credit structure.
-        </div>
-        <div class="ds-itc-base">
-          <label class="ds-adder">
-            <input type="checkbox" checked disabled>
-            <div>
-              <div class="ds-adder-name">Base Investment Tax Credit <span class="ds-adder-amt">+30%</span></div>
-              <div class="ds-adder-desc">IRC §48E base credit — applies to every qualifying commercial project.</div>
-            </div>
-          </label>
+        <div class="ds-deadline-warning-compact">
+          ⏳ §48E: begin construction by <strong>Jul 4 2026</strong> or place in service by <strong>Dec 31 2027</strong>.
         </div>
         <div class="ds-itc-adders">
+          <label class="ds-adder ds-adder-locked">
+            <input type="checkbox" checked disabled>
+            <div class="ds-adder-name">Base §48E ITC <span class="ds-adder-amt">+30%</span></div>
+          </label>
           <label class="ds-adder">
             <input type="checkbox" id="ds-adder-ec" onchange="updateItcDisplay()">
-            <div>
-              <div class="ds-adder-name">Energy Community Bonus <span class="ds-adder-amt">+10%</span></div>
-              <div class="ds-adder-desc">Brownfield sites, coal-closure communities, or statistical areas meeting fossil-fuel employment thresholds.</div>
-            </div>
+            <div class="ds-adder-name">Energy Community <span class="ds-adder-amt">+10%</span></div>
           </label>
           <label class="ds-adder">
             <input type="checkbox" id="ds-adder-dc" onchange="updateItcDisplay()">
-            <div>
-              <div class="ds-adder-name">Domestic Content Bonus <span class="ds-adder-amt">+10%</span></div>
-              <div class="ds-adder-desc">≥40% of manufactured components (US-made steel/iron) are produced domestically.</div>
-            </div>
+            <div class="ds-adder-name">Domestic Content <span class="ds-adder-amt">+10%</span></div>
           </label>
           <label class="ds-adder">
             <input type="checkbox" id="ds-adder-li" onchange="toggleLowIncomeRow(); updateItcDisplay()">
-            <div>
-              <div class="ds-adder-name">Low-Income Community Bonus <span class="ds-adder-amt ds-adder-amt-li">+10–20%</span></div>
-              <div class="ds-adder-desc">Projects ≤5 MW in qualifying low-income census tracts, tribal lands, affordable housing, or benefitting low-income households.</div>
-            </div>
+            <div class="ds-adder-name">Low-Income <span class="ds-adder-amt">+10–20%</span></div>
           </label>
           <div class="ds-field ds-li-row" id="ds-li-row" style="display:none;margin-left:1.85rem">
-            <label>Low-Income Category</label>
             <select id="ds-adder-li-pct" onchange="updateItcDisplay()">
-              <option value="10">Category 1 / 2: +10% (low-income tract or tribal land)</option>
-              <option value="20">Category 3 / 4: +20% (qualified LIHTC / low-income economic benefit)</option>
+              <option value="10">Cat 1/2: +10%</option>
+              <option value="20">Cat 3/4: +20%</option>
             </select>
           </div>
         </div>
         <div class="ds-itc-total" id="ds-itc-total-row">
-          <span>Total Federal ITC</span>
+          <span>Total ITC</span>
           <strong id="ds-itc-total">30%</strong>
         </div>
-
-        <div class="ds-macrs-block">
-          <label class="ds-adder">
-            <input type="checkbox" id="ds-macrs" checked onchange="updateItcDisplay()">
-            <div>
-              <div class="ds-adder-name">5-Year MACRS Depreciation <span class="ds-adder-amt">~22% NPV</span></div>
-              <div class="ds-adder-desc">Accelerated depreciation of 85% of system cost (basis reduced by ½ of ITC). Estimated net present value assumes a 21% effective corporate tax rate — your tax advisor can refine based on your bracket and state treatment.</div>
-            </div>
-          </label>
-        </div>
+        <label class="ds-adder">
+          <input type="checkbox" id="ds-macrs" checked onchange="updateItcDisplay()">
+          <div class="ds-adder-name">5-Yr MACRS Depreciation <span class="ds-adder-amt">~22% NPV</span></div>
+        </label>
       </div>
     </div>
     <button class="ds-btn ds-btn-full" id="ds-calc" onclick="runDesignStudio()">⚡ Calculate &amp; Model</button>
