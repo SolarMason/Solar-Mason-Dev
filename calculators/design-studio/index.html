@@ -4070,7 +4070,9 @@ html { scroll-behavior: smooth; }
 .ds-status::before{content:"●"}
 .ds-results{display:none;margin-top:1.25rem}
 .ds-results.show{display:block}
-.ds-results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem;margin-bottom:1rem}
+.ds-results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:.5rem;margin-bottom:1rem}
+.ds-chart-wrap{overflow-x:auto}
+.ds-chart-wrap .ds-monthly-table{min-width:480px}
 .ds-result{padding:1rem;background:#fff;border:1px solid rgba(45,130,190,.15);border-radius:12px;text-align:center}
 .ds-result-label{font-size:.7rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem}
 .ds-result-value{font-size:1.5rem;font-weight:900;color:#0B2545;line-height:1.1}
@@ -4737,6 +4739,17 @@ function initMap() {
       strokeWeight: 2
     }
   });
+
+  // Trigger a resize after the container has settled into its full-viewport size.
+  // This fixes the case where the map was created before CSS/layout finished applying,
+  // which would otherwise leave gray tiles outside the initial bounds.
+  const forceResize = () => {
+    if (!DS_STATE.map) return;
+    google.maps.event.trigger(DS_STATE.map, 'resize');
+    DS_STATE.map.setCenter(DS_STATE.coords);
+  };
+  setTimeout(forceResize, 100);
+  setTimeout(forceResize, 400);
 
   // Initialize drawing manager for obstructions
   DS_STATE.drawingManager = new google.maps.drawing.DrawingManager({
@@ -6991,7 +7004,15 @@ setCustomerClass('residential');
 // Tools overlay collapse/expand
 function toggleToolsOverlay() {
   const el = document.getElementById('ds-tools-overlay');
-  if (el) el.classList.toggle('collapsed');
+  if (!el) return;
+  el.classList.toggle('collapsed');
+  // Give the CSS transition time to settle, then tell Google Maps the visible area changed
+  setTimeout(() => {
+    if (DS_STATE.map) {
+      google.maps.event.trigger(DS_STATE.map, 'resize');
+      if (DS_STATE.coords) DS_STATE.map.setCenter(DS_STATE.coords);
+    }
+  }, 350);
 }
 
 window.initGoogleMaps = function() {
