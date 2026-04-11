@@ -5132,6 +5132,12 @@ body.ds-mode-ground .ds-ground-only{display:block}
             <span style="font-size:.6rem;color:#64748B;font-weight:600">Total dispensers / cabinets to install</span>
           </div>
           <div class="ds-ev-charger-meta" id="ds-ev-charger-meta"></div>
+          <div style="margin-top:.45rem;padding:.45rem .55rem;background:rgba(45,130,190,.04);border:1px dashed rgba(45,130,190,.28);border-radius:7px;font-size:.6rem;color:#64748B;line-height:1.4">
+            Don't see your charger? <a href="#" onclick="document.getElementById('ds-evcharger-datasheet-input').click();return false;" style="color:#2D82BE;font-weight:800;text-decoration:none">Upload Charger Datasheet (PDF)</a> — auto-extract kW, amps, plug type.
+            <input type="file" id="ds-evcharger-datasheet-input" accept="application/pdf" style="display:none" onchange="if(this.files[0])processEvChargerDatasheetFile(this.files[0]).catch(function(e){console.error('[DS] EV charger datasheet error:',e)})">
+            <div style="margin-top:.2rem;font-size:.55rem;font-style:italic">To permanently add a charger, email the datasheet to <a href="mailto:engineering@solarmason.com" style="color:#2D82BE;font-weight:700">engineering@solarmason.com</a>.</div>
+            <div id="ds-evcharger-datasheet-status" style="margin-top:.25rem;font-weight:700;display:none"></div>
+          </div>
         </div>
       </div>
     </details>
@@ -5148,6 +5154,12 @@ body.ds-mode-ground .ds-ground-only{display:block}
             <option value="">— No Battery —</option>
           </select>
           <div class="ds-ev-meta" id="ds-bat-meta">Choose a battery to size your backup. Auto-defaults to match your inverter brand.</div>
+          <div style="margin-top:.45rem;padding:.45rem .55rem;background:rgba(45,130,190,.04);border:1px dashed rgba(45,130,190,.28);border-radius:7px;font-size:.6rem;color:#64748B;line-height:1.4">
+            Don't see your battery? <a href="#" onclick="document.getElementById('ds-battery-datasheet-input').click();return false;" style="color:#2D82BE;font-weight:800;text-decoration:none">Upload Battery Datasheet (PDF)</a> — auto-extract usable kWh, continuous kW, peak kW.
+            <input type="file" id="ds-battery-datasheet-input" accept="application/pdf" style="display:none" onchange="if(this.files[0])processBatteryDatasheetFile(this.files[0]).catch(function(e){console.error('[DS] Battery datasheet error:',e)})">
+            <div style="margin-top:.2rem;font-size:.55rem;font-style:italic">To permanently add a battery, email the datasheet to <a href="mailto:engineering@solarmason.com" style="color:#2D82BE;font-weight:700">engineering@solarmason.com</a>.</div>
+            <div id="ds-battery-datasheet-status" style="margin-top:.25rem;font-weight:700;display:none"></div>
+          </div>
         </div>
 
         <!-- Backup strategy: whole home / partial / critical -->
@@ -11818,6 +11830,209 @@ function extractInverterSpecsFromText(rawText, filename) {
       }
     };
   }
+}
+
+// ============================================================
+// CUSTOM BATTERY DATASHEET UPLOAD (session-only)
+// ============================================================
+async function processBatteryDatasheetFile(file) {
+  const status = document.getElementById('ds-battery-datasheet-status');
+  const show = (msg, color) => {
+    if (!status) return;
+    status.style.display = 'block';
+    status.style.color = color || '#2D82BE';
+    status.innerHTML = msg;
+  };
+  show('Parsing battery datasheet…');
+  try {
+    const ab = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+    let text = '';
+    for (let i = 1; i <= Math.min(pdf.numPages, 4); i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += ' ' + content.items.map(it => it.str).join(' ');
+    }
+    const spec = extractBatterySpecsFromText(text, file.name);
+    if (!spec) {
+      show('❌ Could not extract battery specs. Email the datasheet to <a href="mailto:engineering@solarmason.com" style="color:#2D82BE">engineering@solarmason.com</a> for manual addition.', '#dc2626');
+      return;
+    }
+    BATTERY_DB.push(spec);
+    // Use the same controller as whichever family we're closest to — default
+    // third-party batteries to a generic ATS. If the user needs a specific
+    // system controller, they'll have to email us for full integration.
+    BATTERY_CONTROLLERS[spec.key] = {
+      name: 'Generic Automatic Transfer Switch',
+      meta: 'Whole-home automatic transfer switch · sized to battery output · Custom upload — verify compatibility with selected battery',
+      warranty: '5 years'
+    };
+    populateBatteryDropdown();
+    const sel = document.getElementById('ds-bat-model');
+    if (sel) { sel.value = spec.key; onBatteryChange(); }
+    show(`✓ <strong>${spec.brand} ${spec.model}</strong> loaded (${spec.usableKwh} kWh · ${spec.continuousKw} kW continuous · ${spec.peakKw} kW peak). Session only — email engineering@solarmason.com to add permanently.`, '#059669');
+  } catch (err) {
+    console.error('[DS] Battery datasheet parse error:', err);
+    show('❌ Parse error: ' + (err.message || 'unknown'), '#dc2626');
+  }
+}
+
+function extractBatterySpecsFromText(rawText, filename) {
+  const t = rawText.replace(/\s+/g, ' ');
+  const grab = (patterns) => {
+    for (const re of patterns) {
+      const m = t.match(re);
+      if (m) return parseFloat(m[1]);
+    }
+    return null;
+  };
+  // Usable energy capacity — the customer-facing kWh number
+  const usableKwh = grab([
+    /(?:Usable Energy|Usable Capacity|Energy Capacity \(Usable\))[^0-9]{0,20}(\d{1,3}(?:\.\d{1,2})?)\s*kWh/i,
+    /(?:Nominal Energy|Total Energy|Rated Energy)[^0-9]{0,20}(\d{1,3}(?:\.\d{1,2})?)\s*kWh/i,
+    /(\d{1,3}(?:\.\d{1,2})?)\s*kWh\s*usable/i,
+    /Energy[^0-9]{0,10}(\d{1,3}(?:\.\d{1,2})?)\s*kWh/i
+  ]);
+  // Continuous power output (kW) — the sustained discharge rating
+  const continuousKw = grab([
+    /(?:Continuous Power|Continuous Output Power|Continuous Discharge|Nominal Power)[^0-9]{0,20}(\d{1,2}(?:\.\d{1,2})?)\s*kW/i,
+    /(\d{1,2}(?:\.\d{1,2})?)\s*kW\s*continuous/i,
+    /(?:Power Output|Rated Power)[^0-9]{0,20}(\d{1,2}(?:\.\d{1,2})?)\s*kW/i
+  ]);
+  // Peak / surge power (kW) — motor start capability
+  const peakKw = grab([
+    /(?:Peak Power|Peak Output|Surge Power|Motor Start|10[- ]sec Peak|Peak Discharge)[^0-9]{0,20}(\d{1,2}(?:\.\d{1,2})?)\s*kW/i,
+    /(\d{1,2}(?:\.\d{1,2})?)\s*kW\s*peak/i
+  ]);
+  // Chemistry
+  let chemistry = 'LFP';
+  if (/LiFePO4|LFP|Lithium Iron Phosphate/i.test(t)) chemistry = 'LFP';
+  else if (/NMC|Nickel Manganese/i.test(t)) chemistry = 'NMC';
+  // Warranty (years)
+  const warrantyYrs = grab([/(\d{1,2})\s*[- ]?year\s*(?:limited\s*)?warranty/i]) || 10;
+
+  if (!usableKwh || !continuousKw) return null;
+
+  // Parse brand + model from filename ('Tesla_Powerwall3.pdf' → brand=Tesla, model=Powerwall3)
+  const base = filename.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ').trim();
+  const parts = base.split(/\s+/);
+  const brand = parts[0] || 'Custom';
+  const model = parts.slice(1).join(' ') || base || 'Battery';
+
+  return {
+    key: `custom-${Date.now()}`,
+    brand,
+    model,
+    family: 'thirdparty',
+    usableKwh: Math.round(usableKwh * 10) / 10,
+    continuousKw: Math.round(continuousKw * 100) / 100,
+    peakKw: peakKw ? Math.round(peakKw * 10) / 10 : Math.round(continuousKw * 2 * 10) / 10,
+    chemistry,
+    voltage: '240V split-phase',
+    warranty: `${Math.round(warrantyYrs)} years`,
+    maxStack: 4,
+    notes: 'Custom upload (session only)'
+  };
+}
+
+// ============================================================
+// CUSTOM EV CHARGER DATASHEET UPLOAD (session-only)
+// ============================================================
+async function processEvChargerDatasheetFile(file) {
+  const status = document.getElementById('ds-evcharger-datasheet-status');
+  const show = (msg, color) => {
+    if (!status) return;
+    status.style.display = 'block';
+    status.style.color = color || '#2D82BE';
+    status.innerHTML = msg;
+  };
+  show('Parsing charger datasheet…');
+  try {
+    const ab = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+    let text = '';
+    for (let i = 1; i <= Math.min(pdf.numPages, 4); i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += ' ' + content.items.map(it => it.str).join(' ');
+    }
+    const spec = extractEvChargerSpecsFromText(text, file.name);
+    if (!spec) {
+      show('❌ Could not extract charger specs. Email the datasheet to <a href="mailto:engineering@solarmason.com" style="color:#2D82BE">engineering@solarmason.com</a> for manual addition.', '#dc2626');
+      return;
+    }
+    EV_CHARGER_DB.push(spec);
+    populateEvChargerDropdown();
+    const newIdx = EV_CHARGER_DB.length - 1;
+    const sel = document.getElementById('ds-ev-charger');
+    if (sel) { sel.value = String(newIdx); onEvChargerChange(); }
+    show(`✓ <strong>${spec.brand} ${spec.model}</strong> loaded as ${spec.level} · ${spec.kw} kW${spec.amps ? ' @ ' + spec.amps + 'A' : ''}. Session only — email engineering@solarmason.com to add permanently.`, '#059669');
+  } catch (err) {
+    console.error('[DS] EV charger datasheet parse error:', err);
+    show('❌ Parse error: ' + (err.message || 'unknown'), '#dc2626');
+  }
+}
+
+function extractEvChargerSpecsFromText(rawText, filename) {
+  const t = rawText.replace(/\s+/g, ' ');
+  const grab = (patterns) => {
+    for (const re of patterns) {
+      const m = t.match(re);
+      if (m) return parseFloat(m[1]);
+    }
+    return null;
+  };
+  // Max output power (kW) — primary sizing parameter
+  const kw = grab([
+    /(?:Max(?:imum)?\s*(?:Output\s*)?Power|Rated Power|Output Power|Continuous Output)[^0-9]{0,25}(\d{1,4}(?:\.\d{1,2})?)\s*kW/i,
+    /(\d{1,4}(?:\.\d{1,2})?)\s*kW\s*(?:max|output|continuous)/i,
+    /Power\s*Rating[^0-9]{0,15}(\d{1,4}(?:\.\d{1,2})?)\s*kW/i
+  ]);
+  // Rated amps (L2 only — DCFC is rated in kW)
+  const amps = grab([
+    /(?:Max(?:imum)?\s*(?:Input|Output)?\s*Current|Rated Current)[^0-9]{0,20}(\d{1,3})\s*A/i,
+    /(\d{1,3})\s*A\s*(?:continuous|max|output)/i
+  ]);
+  // Plug / connector type
+  let plug = 'J1772';
+  if (/NACS|Tesla connector/i.test(t)) plug = 'NACS';
+  else if (/CCS\s*(?:1|Combo)/i.test(t) && /CHAdeMO/i.test(t)) plug = 'CCS+CHAdeMO';
+  else if (/CCS/i.test(t)) plug = 'CCS';
+  else if (/CHAdeMO/i.test(t)) plug = 'CHAdeMO';
+  else if (/Type\s*2/i.test(t)) plug = 'Type 2';
+  // Cord length (ft)
+  const cord = grab([/(\d{1,2})\s*(?:ft|foot|feet)\s*cable/i, /(\d{1,2})[- ]?ft\s*cord/i]) || 20;
+
+  if (!kw) return null;
+
+  // Level detection: anything > 20 kW is DCFC, else L2
+  const level = kw > 20 ? 'DCFC' : 'L2';
+  // For L2, derive the breaker from 125% of amps per NEC 625.42
+  const breaker = level === 'L2' && amps ? Math.ceil((amps * 1.25) / 5) * 5 : null;
+  const wireAwg = level === 'L2'
+    ? (breaker >= 100 ? '3 AWG Cu THHN' : breaker >= 60 ? '6 AWG Cu THHN' : '8 AWG Cu THHN')
+    : 'per utility service';
+
+  const base = filename.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ').trim();
+  const parts = base.split(/\s+/);
+  const brand = parts[0] || 'Custom';
+  const model = parts.slice(1).join(' ') || base || 'Charger';
+
+  return {
+    brand,
+    model,
+    level,
+    amps: amps || null,
+    kw: Math.round(kw * 10) / 10,
+    plug,
+    cord,
+    breaker,
+    wireAwg,
+    class: level === 'DCFC' ? 'commercial' : 'residential',
+    ports: 1,
+    transformerKva: level === 'DCFC' ? Math.ceil(kw * 1.4 / 25) * 25 : null,
+    notes: 'Custom upload (session only)'
+  };
 }
 
 function setIronRidgeSeries(series) {
