@@ -9053,19 +9053,23 @@ const INVERTER_DB = {
     ],
     stringInverter: [
       // ─── RESIDENTIAL HD-WAVE SINGLE-PHASE (US) ───
-      { model: 'SE3000H-US', ratedAC: 3.0,  maxDCkW: 4.65,  voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
-      { model: 'SE3800H-US', ratedAC: 3.8,  maxDCkW: 5.90,  voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
-      { model: 'SE5000H-US', ratedAC: 5.0,  maxDCkW: 7.75,  voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
-      { model: 'SE5700H-US', ratedAC: 5.76, ratedAC208: 5.0, maxDCkW: 8.93, voltage: '208/240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
-      { model: 'SE6000H-US', ratedAC: 6.0,  ratedAC208: 5.0, maxDCkW: 9.30, voltage: '208/240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
-      { model: 'SE7600H-US', ratedAC: 7.6,  maxDCkW: 11.78, voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
-      { model: 'SE10000H-US', ratedAC: 10.0, maxDCkW: 15.50, voltage: '240V 1Φ', notes: 'Large residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
-      { model: 'SE11400H-US', ratedAC: 11.4, ratedAC208: 10.0, maxDCkW: 17.67, voltage: '208/240V 1Φ', notes: 'Max single-phase residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      // HD-Wave: 1 DC input per inverter, 1 string, operating range 200-480Vdc nominal 380Vdc.
+      // maxPerString is the absolute optimizer limit; the real cap is usually maxDCkW.
+      { model: 'SE3000H-US', ratedAC: 3.0,  maxDCkW: 4.65,  dcInputs: 1, maxPerString: 25, maxStringKw: 4.65,  voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE3800H-US', ratedAC: 3.8,  maxDCkW: 5.90,  dcInputs: 1, maxPerString: 25, maxStringKw: 5.90,  voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE5000H-US', ratedAC: 5.0,  maxDCkW: 7.75,  dcInputs: 1, maxPerString: 25, maxStringKw: 7.75,  voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE5700H-US', ratedAC: 5.76, ratedAC208: 5.0, maxDCkW: 8.93, dcInputs: 1, maxPerString: 25, maxStringKw: 8.93, voltage: '208/240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE6000H-US', ratedAC: 6.0,  ratedAC208: 5.0, maxDCkW: 9.30, dcInputs: 1, maxPerString: 25, maxStringKw: 9.30, voltage: '208/240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE7600H-US', ratedAC: 7.6,  maxDCkW: 11.78, dcInputs: 1, maxPerString: 25, maxStringKw: 11.78, voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE10000H-US', ratedAC: 10.0, maxDCkW: 15.50, dcInputs: 1, maxPerString: 25, maxStringKw: 15.50, voltage: '240V 1Φ', notes: 'Large residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE11400H-US', ratedAC: 11.4, ratedAC208: 10.0, maxDCkW: 17.67, dcInputs: 1, maxPerString: 25, maxStringKw: 17.67, voltage: '208/240V 1Φ', notes: 'Max single-phase residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
       // ─── COMMERCIAL 3-PHASE SYNERGY (verified from DS-000019-2.2-ENG) ───
-      { model: 'SE66.6K',  ratedAC: 66.6,  maxDCkW: 100.0, voltage: '380/400V 3Φ', notes: 'Commercial · 2 Synergy Units, pre-commissioning, built-in arc fault', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
-      { model: 'SE90K',    ratedAC: 90.0,  maxDCkW: 135.0, voltage: '380/400V 3Φ', notes: 'Commercial · 3 Synergy Units, 98.1% peak efficiency', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
-      { model: 'SE100K',   ratedAC: 100.0, maxDCkW: 150.0, voltage: '380/400V 3Φ', notes: 'Commercial · 3 Synergy Units, 145 Aac continuous', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
-      { model: 'SE120K',   ratedAC: 120.0, maxDCkW: 180.0, voltage: '480V 3Φ',     notes: 'Commercial · 3 Synergy Units, 480V grid', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
+      // SE66.6K = 2 Synergy Units × 2 MPPT each = 4 DC inputs; SE90K+ = 3 Synergy Units × 2 MPPT = 6 DC inputs.
+      // Per-string max power 13.5 kW, max 50 power optimizers per string.
+      { model: 'SE66.6K',  ratedAC: 66.6,  maxDCkW: 100.0, dcInputs: 4, maxPerString: 50, maxStringKw: 13.5, voltage: '380/400V 3Φ', notes: 'Commercial · 2 Synergy Units, pre-commissioning, built-in arc fault', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
+      { model: 'SE90K',    ratedAC: 90.0,  maxDCkW: 135.0, dcInputs: 6, maxPerString: 50, maxStringKw: 13.5, voltage: '380/400V 3Φ', notes: 'Commercial · 3 Synergy Units, 98.1% peak efficiency', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
+      { model: 'SE100K',   ratedAC: 100.0, maxDCkW: 150.0, dcInputs: 6, maxPerString: 50, maxStringKw: 13.5, voltage: '380/400V 3Φ', notes: 'Commercial · 3 Synergy Units, 145 Aac continuous', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
+      { model: 'SE120K',   ratedAC: 120.0, maxDCkW: 180.0, dcInputs: 6, maxPerString: 50, maxStringKw: 13.5, voltage: '480V 3Φ',     notes: 'Commercial · 3 Synergy Units, 480V grid', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
     ]
   }
 };
@@ -9099,14 +9103,127 @@ function recommendSolarEdgeOptimizer(panelW) {
   return anyCompat[0] || opts[0];
 }
 
-// Return the smallest SolarEdge string inverter that fits a given DC size,
-// honoring the maxDCkW oversizing cap on each inverter. Prefers inverters
-// matching the customer class.
-function recommendSolarEdgeInverter(totalDCkW) {
+// ═════════════════════════════════════════════════════════════
+// SOLAREDGE MULTI-INVERTER + STRING SIZING ENGINE
+// ═════════════════════════════════════════════════════════════
+// Given total DC size, panel wattage, and panel count, this returns the
+// optimal SolarEdge inverter model + QUANTITY + string layout such that:
+//   • Total DC is within inverters' combined maxDCkW cap (DC/AC ≤ ~1.55)
+//   • Each string is within its per-string power cap (maxStringKw)
+//   • Each string is within its per-string optimizer count cap (maxPerString)
+//   • Number of inverters is the minimum that satisfies all of the above
+// As the panel count grows, this function will automatically select
+// additional inverters rather than silently capping at one unit.
+//
+// Returns an object shaped like:
+//   {
+//     inverter:          {model, ratedAC, maxDCkW, dcInputs, maxPerString, maxStringKw, ...},
+//     count:             Number — how many of this inverter are needed,
+//     totalAC:           Number — combined AC rating (kW),
+//     totalMaxDC:        Number — combined max DC input (kW),
+//     dcAcRatio:         Number — actual DC/AC ratio for this layout,
+//     totalStrings:      Number — total strings across all inverters,
+//     stringsPerInverter:Number — strings per single inverter,
+//     panelsPerInverter: Number — panels assigned to each inverter,
+//     panelsPerString:   Number — panels per string (rounded up),
+//     warnings:          Array<String> — non-blocking notes,
+//     errors:            Array<String> — blocking problems (e.g. panel overflows string)
+//   }
+// Returns null only if zero inverters match the customer class.
+function sizeSolarEdgeSystem(totalDCkW, panelW, panelCount) {
   const invs = INVERTER_DB.solaredge.stringInverter;
   const isCommercial = DS_STATE.customerClass === 'commercial';
   const scoped = invs.filter(i => i.application === (isCommercial ? 'commercial' : 'residential'));
-  return scoped.find(i => totalDCkW <= i.maxDCkW) || scoped[scoped.length - 1] || invs[invs.length - 1];
+  if (!scoped.length) return null;
+  if (totalDCkW <= 0 || panelCount <= 0) {
+    // Return a 1-unit placeholder using the smallest inverter so UI stays sane pre-design
+    const fallback = scoped[0];
+    return {
+      inverter: fallback, count: 1,
+      totalAC: fallback.ratedAC, totalMaxDC: fallback.maxDCkW, dcAcRatio: 0,
+      totalStrings: fallback.dcInputs, stringsPerInverter: fallback.dcInputs,
+      panelsPerInverter: 0, panelsPerString: 0,
+      warnings: [], errors: []
+    };
+  }
+
+  // Score every candidate — we evaluate each inverter model × minimum required count.
+  // Goal: lowest count, then DC/AC ratio closest to 1.20 (healthy oversize, low clipping).
+  const TARGET_RATIO = 1.20;
+  const MAX_RATIO    = 1.55;   // SolarEdge hard cap
+  let best = null;
+
+  for (const inv of scoped) {
+    // How many of THIS inverter are needed to cover totalDCkW at/under 1.55 ratio?
+    const minCountByDCcap = Math.ceil(totalDCkW / inv.maxDCkW);
+    const minCountByRatio = Math.ceil(totalDCkW / (inv.ratedAC * MAX_RATIO));
+    const count = Math.max(1, minCountByDCcap, minCountByRatio);
+
+    const totalAC    = inv.ratedAC * count;
+    const totalMaxDC = inv.maxDCkW * count;
+    const dcAcRatio  = totalDCkW / totalAC;
+
+    // String layout across ALL inverters
+    const totalStrings     = inv.dcInputs * count;
+    const panelsPerString  = Math.ceil(panelCount / totalStrings);
+    const stringPowerW     = panelsPerString * panelW;
+    const stringOverCount  = panelsPerString > inv.maxPerString;
+    const stringOverPower  = stringPowerW > inv.maxStringKw * 1000;
+
+    // Heuristic score: minimize count strongly, then prefer DC/AC near target
+    const countScore       = count * 100;
+    const ratioScore       = Math.abs(dcAcRatio - TARGET_RATIO) * 10;
+    const overcapPenalty   = (stringOverCount || stringOverPower) ? 500 : 0;
+    const score            = countScore + ratioScore + overcapPenalty;
+
+    if (!best || score < best.score) {
+      best = {
+        score, inverter: inv, count, totalAC, totalMaxDC, dcAcRatio,
+        totalStrings, stringsPerInverter: inv.dcInputs,
+        panelsPerInverter: Math.ceil(panelCount / count),
+        panelsPerString,
+        stringOverCount, stringOverPower
+      };
+    }
+  }
+
+  const warnings = [];
+  const errors   = [];
+  if (best.count > 1) {
+    warnings.push(`System requires ${best.count} × ${best.inverter.model} to cover ${totalDCkW.toFixed(2)} kW DC within SolarEdge limits.`);
+  }
+  if (best.dcAcRatio > 1.35) {
+    warnings.push(`DC/AC ratio is ${best.dcAcRatio.toFixed(2)} — clipping losses will begin to show above 1.30.`);
+  }
+  if (best.stringOverPower) {
+    errors.push(`Panels per string (${best.panelsPerString} × ${panelW}W = ${(best.panelsPerString * panelW / 1000).toFixed(1)} kW) exceeds ${best.inverter.model}'s ${best.inverter.maxStringKw} kW per-string cap. Add another inverter to split strings.`);
+  }
+  if (best.stringOverCount) {
+    errors.push(`Panels per string (${best.panelsPerString}) exceeds ${best.inverter.model}'s ${best.inverter.maxPerString}-optimizer per-string limit.`);
+  }
+
+  return {
+    inverter: best.inverter,
+    count: best.count,
+    totalAC: best.totalAC,
+    totalMaxDC: best.totalMaxDC,
+    dcAcRatio: best.dcAcRatio,
+    totalStrings: best.totalStrings,
+    stringsPerInverter: best.stringsPerInverter,
+    panelsPerInverter: best.panelsPerInverter,
+    panelsPerString: best.panelsPerString,
+    warnings,
+    errors
+  };
+}
+
+// Legacy single-inverter helper kept for any code paths that still call it,
+// now backed by the sizing engine. Returns the recommended MODEL only.
+function recommendSolarEdgeInverter(totalDCkW) {
+  const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
+  const count  = Math.max(1, Math.round((totalDCkW * 1000) / panelW));
+  const sized  = sizeSolarEdgeSystem(totalDCkW, panelW, count);
+  return sized ? sized.inverter : INVERTER_DB.solaredge.stringInverter[0];
 }
 
 // ------- UI wiring -------
@@ -9145,15 +9262,29 @@ function populateSolarEdgeDropdowns(panelW, totalDCkW) {
   const optRec = document.getElementById('ds-inv-se-opt-rec');
   if (optRec) optRec.textContent = `auto: ${recOpt.model}`;
 
-  const recInv = recommendSolarEdgeInverter(totalDCkW || 0.1);
-  invSel.innerHTML = INVERTER_DB.solaredge.stringInverter.map(i => {
-    const compat = (totalDCkW || 0) <= i.maxDCkW;
-    const badge = compat ? '' : ' <svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-    return `<option value="${i.model}" ${i.model === recInv.model ? 'selected' : ''}>${i.model} — ${i.ratedAC}kW AC${badge}</option>`;
+  // Size the WHOLE system with the multi-inverter engine, then seed the dropdown
+  // with the recommended model + stash the full sized result for BOM/compat UI.
+  const activeCount = activeCountForMode();
+  const sized = sizeSolarEdgeSystem(totalDCkW || 0, panelW, activeCount);
+  DS_STATE.sizedSE = sized;  // consumed by updateInverterCompatDisplay + computeBOM
+
+  const scopedInvs = INVERTER_DB.solaredge.stringInverter.filter(
+    i => i.application === (isCommercial ? 'commercial' : 'residential')
+  );
+  const recInvModel = sized ? sized.inverter.model : scopedInvs[0].model;
+  invSel.innerHTML = scopedInvs.map(i => {
+    // Compute how many of THIS model would be needed, so the user can see the tradeoff
+    const minCount = Math.max(1, Math.ceil((totalDCkW || 0) / i.maxDCkW));
+    const suffix = minCount > 1 ? ` (×${minCount})` : '';
+    return `<option value="${i.model}" ${i.model === recInvModel ? 'selected' : ''}>${i.model} — ${i.ratedAC}kW AC${suffix}</option>`;
   }).join('');
-  DS_STATE.inverterSelection.stringInverter = recInv.model;
+  DS_STATE.inverterSelection.stringInverter = recInvModel;
   const invRec = document.getElementById('ds-inv-se-inv-rec');
-  if (invRec) invRec.textContent = `auto: ${recInv.model}`;
+  if (invRec && sized) {
+    invRec.textContent = sized.count > 1
+      ? `auto: ${sized.count} × ${sized.inverter.model}`
+      : `auto: ${sized.inverter.model}`;
+  }
 
   updateInverterCompatDisplay();
 }
@@ -9218,21 +9349,42 @@ function updateInverterCompatDisplay() {
     const el = document.getElementById('ds-inv-se-compat');
     if (!el) return;
     const opt = INVERTER_DB.solaredge.optimizer.find(o => o.model === DS_STATE.inverterSelection.optimizer);
-    const inv = INVERTER_DB.solaredge.stringInverter.find(i => i.model === DS_STATE.inverterSelection.stringInverter);
-    if (!opt || !inv) { el.textContent = ''; return; }
+    if (!opt) { el.textContent = ''; return; }
     const optOK = panelW <= opt.rated;
-    const invOK = totalDCkW <= inv.maxDCkW;
-    const dcAcRatio = inv.ratedAC > 0 ? (totalDCkW / inv.ratedAC) : 0;
     if (!optOK) {
       el.className = 'ds-inv-compat err';
       el.innerHTML = `<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> <strong>${panelW}W panel exceeds ${opt.model}'s ${opt.rated}W max input.</strong> Pick a larger optimizer.`;
-    } else if (!invOK) {
-      el.className = 'ds-inv-compat warn';
-      el.innerHTML = `<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> <strong>${totalDCkW.toFixed(2)} kW DC exceeds ${inv.model}'s ${inv.maxDCkW.toFixed(1)} kW cap.</strong> Pick a larger string inverter.`;
-    } else {
-      el.className = 'ds-inv-compat';
-      el.innerHTML = `✓ <strong>${activeCount}</strong> × ${opt.model} + <strong>1</strong> × ${inv.model} · DC: <strong>${totalDCkW.toFixed(2)} kW</strong> / AC: <strong>${inv.ratedAC} kW</strong> · ratio: <strong>${dcAcRatio.toFixed(2)}</strong>`;
+      return;
     }
+
+    // Run the sizing engine against the CURRENT panel count — this is what
+    // makes the layout rebalance live as the slider moves.
+    const sized = sizeSolarEdgeSystem(totalDCkW, panelW, activeCount);
+    DS_STATE.sizedSE = sized;
+    if (!sized || activeCount === 0) {
+      el.className = 'ds-inv-compat';
+      el.innerHTML = `<strong>${opt.model}</strong> selected · place panels to size the inverter system.`;
+      return;
+    }
+
+    const inv = sized.inverter;
+    const warnHtml = sized.warnings.map(w => `<div style="margin-top:.25rem">⚠ ${w}</div>`).join('');
+    const errHtml  = sized.errors.map(e => `<div style="margin-top:.25rem">✗ ${e}</div>`).join('');
+    const cls = sized.errors.length ? 'err' : (sized.warnings.length ? 'warn' : '');
+    el.className = 'ds-inv-compat ' + cls;
+    el.innerHTML = `
+      ✓ <strong>${activeCount}</strong> × ${opt.model}
+      + <strong>${sized.count}</strong> × ${inv.model}
+      · DC: <strong>${totalDCkW.toFixed(2)} kW</strong> / AC: <strong>${sized.totalAC.toFixed(1)} kW</strong>
+      · ratio: <strong>${sized.dcAcRatio.toFixed(2)}</strong>
+      <div style="margin-top:.3rem">
+        Strings: <strong>${sized.totalStrings}</strong>
+        (${sized.stringsPerInverter}/inv)
+        · ~<strong>${sized.panelsPerString}</strong> panels/string
+        · ${(sized.panelsPerString * panelW / 1000).toFixed(2)} kW/string
+      </div>
+      ${warnHtml}${errHtml}
+    `;
   }
 }
 
@@ -9287,7 +9439,13 @@ function computeBOM() {
     }
   } else {
     const opt = INVERTER_DB.solaredge.optimizer.find(o => o.model === DS_STATE.inverterSelection.optimizer);
-    const inv = INVERTER_DB.solaredge.stringInverter.find(i => i.model === DS_STATE.inverterSelection.stringInverter);
+    // Pull the full sized system from DS_STATE — this knows how many inverters
+    // and how many strings the auto-balancer picked for the current panel count.
+    const panelWnum = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
+    const sized = DS_STATE.sizedSE || sizeSolarEdgeSystem((panelWnum * activeCount) / 1000, panelWnum, activeCount);
+    const inv = sized ? sized.inverter : null;
+    const invCount = sized ? sized.count : 1;
+
     if (opt) {
       items.push({
         category: 'Optimizers',
@@ -9297,19 +9455,22 @@ function computeBOM() {
       });
     }
     if (inv) {
+      const stringDesc = sized.totalStrings > 0
+        ? ` · ${sized.totalStrings} strings (${sized.stringsPerInverter}/inv, ~${sized.panelsPerString} panels/string)`
+        : '';
       items.push({
         category: 'Inverter',
         name: `SolarEdge ${inv.model}`,
-        meta: `${inv.ratedAC} kW AC rated · ${inv.voltage} · HD-Wave technology · ${inv.notes}`,
-        qty: 1
+        meta: `${inv.ratedAC} kW AC · ${inv.voltage} · ${inv.notes}${stringDesc}`,
+        qty: invCount
       });
     }
-    // DC disconnect for string inverter systems
+    // DC disconnect per inverter (NEC 690.13)
     items.push({
       category: 'Disconnect',
       name: 'DC Disconnect (NEMA 3R)',
       meta: 'Required per NEC 690.13 for string inverter systems',
-      qty: 1
+      qty: invCount
     });
   }
 
