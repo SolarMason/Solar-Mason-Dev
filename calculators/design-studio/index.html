@@ -9443,13 +9443,13 @@ const INVERTER_DB = {
   enphase: {
     micro: [
       // model, peakACva, maxDCinputW, minPanelW, maxPanelW, voltage, notes
-      { model: 'IQ8+',       peakAC: 300, maxDC: 440, minPanelW: 235, maxPanelW: 440, voltage: '240V split', notes: '60/120, 72/144-cell modules', datasheet: '/datasheets/inverters/enphase-iq8-series-residential.pdf' },
-      { model: 'IQ8M',       peakAC: 330, maxDC: 470, minPanelW: 260, maxPanelW: 470, voltage: '240V split', notes: 'Mid-range residential', datasheet: '/datasheets/inverters/enphase-iq8-series-residential.pdf' },
-      { model: 'IQ8A',       peakAC: 366, maxDC: 500, minPanelW: 295, maxPanelW: 500, voltage: '240V split', notes: 'Higher power residential', datasheet: '/datasheets/inverters/enphase-iq8-series-residential.pdf' },
-      { model: 'IQ8H',       peakAC: 384, maxDC: 530, minPanelW: 320, maxPanelW: 530, voltage: '240V split', notes: '240V split-phase backup-ready', datasheet: '/datasheets/inverters/enphase-iq8-series-residential.pdf' },
-      { model: 'IQ8P',       peakAC: 480, maxDC: 650, minPanelW: 400, maxPanelW: 650, voltage: '240V split', notes: 'Large residential + commercial modules', datasheet: '/datasheets/inverters/enphase-iq8-commercial.pdf' },
-      { model: 'IQ8P-3P',    peakAC: 480, maxDC: 640, minPanelW: 380, maxPanelW: 640, voltage: '208V 3-phase', notes: 'Commercial 3-phase (120/208V 4W)', datasheet: '/datasheets/inverters/enphase-iq8-commercial.pdf' },
-      { model: 'IQ8H-3P',    peakAC: 384, maxDC: 540, minPanelW: 320, maxPanelW: 540, voltage: '208V 3-phase', notes: 'Commercial 3-phase (120/208V 4W)', datasheet: '/datasheets/inverters/enphase-iq8-commercial.pdf' },
+      { model: 'IQ8+',       peakAC: 300, maxDC: 440, minPanelW: 235, maxPanelW: 440, maxPerBranch: 13, voltage: '240V split', warranty: '25 years', notes: '60/120, 72/144-cell modules', datasheet: '/datasheets/inverters/enphase-iq8-series-residential.pdf' },
+      { model: 'IQ8M',       peakAC: 330, maxDC: 470, minPanelW: 260, maxPanelW: 470, maxPerBranch: 13, voltage: '240V split', warranty: '25 years', notes: 'Mid-range residential', datasheet: '/datasheets/inverters/enphase-iq8-series-residential.pdf' },
+      { model: 'IQ8A',       peakAC: 366, maxDC: 500, minPanelW: 295, maxPanelW: 500, maxPerBranch: 12, voltage: '240V split', warranty: '25 years', notes: 'Higher power residential', datasheet: '/datasheets/inverters/enphase-iq8-series-residential.pdf' },
+      { model: 'IQ8H',       peakAC: 384, maxDC: 530, minPanelW: 320, maxPanelW: 530, maxPerBranch: 11, voltage: '240V split', warranty: '25 years', notes: '240V split-phase backup-ready', datasheet: '/datasheets/inverters/enphase-iq8-series-residential.pdf' },
+      { model: 'IQ8P',       peakAC: 480, maxDC: 650, minPanelW: 400, maxPanelW: 650, maxPerBranch:  8, voltage: '240V split', warranty: '25 years', notes: 'Large residential + commercial modules', datasheet: '/datasheets/inverters/enphase-iq8-commercial.pdf' },
+      { model: 'IQ8P-3P',    peakAC: 480, maxDC: 640, minPanelW: 380, maxPanelW: 640, maxPerBranch:  8, voltage: '208V 3-phase', warranty: '25 years', notes: 'Commercial 3-phase (120/208V 4W)', datasheet: '/datasheets/inverters/enphase-iq8-commercial.pdf' },
+      { model: 'IQ8H-3P',    peakAC: 384, maxDC: 540, minPanelW: 320, maxPanelW: 540, maxPerBranch: 11, voltage: '208V 3-phase', warranty: '25 years', notes: 'Commercial 3-phase (120/208V 4W)', datasheet: '/datasheets/inverters/enphase-iq8-commercial.pdf' },
     ],
     battery: [
       { model: 'IQ Battery 5P', capacityKwh: 5.0, continuousKw: 3.84, peakKw: 7.68, chemistry: 'LFP', warrantyYears: 15, voltage: '240V/208V split-phase', datasheet: '/datasheets/battery/enphase-iq-battery-5p.pdf', notes: '6 embedded microinverters, wall or pedestal mount' },
@@ -9819,6 +9819,53 @@ function updateInverterCompatDisplay() {
 // BILL OF MATERIALS
 // ============================================================
 
+// ═════════════════════════════════════════════════════════════
+// PASS-THROUGH WARRANTIES
+// ═════════════════════════════════════════════════════════════
+// Every product in the BOM ships with the manufacturer's warranty passed
+// through to the end customer. Solar Mason's installation workmanship is
+// warranted separately under the contract — the manufacturer warranties
+// below cover PARTS ONLY and explicitly do NOT include the labor required
+// to diagnose, remove, or replace a failed component.
+//
+// These are the published warranty terms from the manufacturers as of the
+// current IronRidge / Enphase / SolarEdge / Q CELLS product literature.
+// Verify against the purchase-order documentation on each project before
+// quoting these to a customer.
+const WARRANTY_PARTS_ONLY = '(parts only, labor not included)';
+const WARRANTY = {
+  panelProduct:       '25-year product defect',
+  panelPerformance:   '30-year linear performance (~87.4% at year 30)',
+  enphaseMicro:       '25 years',
+  enphaseGateway:     '5 years',
+  enphaseCombiner:    '5 years',
+  enphaseBattery:     '15 years',
+  solaredgeOptimizer: '25 years',
+  solaredgeInverter:  '12 years standard (extendable to 25 years)',
+  ironridgeRacking:   '20-year limited',
+  avansRacking:       '25-year structural',
+  // EV charger warranties vary by brand — look up per brand
+  evCharger: {
+    'Tesla':       '4 years',
+    'ChargePoint': '3 years',
+    'Enphase':     '5 years',
+    'Emporia':     '3 years',
+    'Wallbox':     '3 years',
+    'Grizzl-E':    '3 years',
+    'JuiceBox':    '3 years',
+    'Autel':       '3 years',
+    'Blink':       '2 years',
+    'ABB':         '2 years'
+  }
+};
+function evChargerWarranty(brand) {
+  return WARRANTY.evCharger[brand] || '1 year';
+}
+// Append pass-through warranty info to a BOM meta string
+function withWarranty(meta, warranty) {
+  return `${meta} · Warranty: ${warranty} ${WARRANTY_PARTS_ONLY}`;
+}
+
 function computeBOM() {
   const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
   // ds-panel-w is a hidden input (the real picker writes to DS_STATE.selectedPanelKey).
@@ -9835,7 +9882,10 @@ function computeBOM() {
   items.push({
     category: 'Modules',
     name: panelLabel,
-    meta: `${panelW}W monocrystalline · 25-yr manufacturer warranty`,
+    meta: withWarranty(
+      `${panelW}W monocrystalline · 25-yr manufacturer warranty`,
+      `${WARRANTY.panelProduct} + ${WARRANTY.panelPerformance}`
+    ),
     qty: activeCount
   });
 
@@ -9846,24 +9896,35 @@ function computeBOM() {
     items.push({
       category: 'Microinverters',
       name: `Enphase ${micro.model}`,
-      meta: `${micro.peakAC} VA peak · ${micro.voltage} · ${micro.notes}`,
+      meta: `${micro.peakAC} VA peak · ${micro.voltage} · ${micro.notes} · Warranty: ${micro.warranty || '25 years'} (parts only, labor not included)`,
       qty: activeCount
     });
     items.push({
       category: 'Monitoring',
       name: 'Enphase IQ Gateway (metered)',
-      meta: 'System-level monitoring + revenue-grade production metering',
+      meta: 'System-level monitoring + revenue-grade production metering · Warranty: 5 years (parts only, labor not included)',
       qty: 1
     });
-    // AC combiner for every 12 micros (rough commercial rule of thumb)
-    if (activeCount > 12) {
-      items.push({
-        category: 'Combiner',
-        name: 'Enphase IQ Combiner 4C (or equivalent AC combiner)',
-        meta: 'Load center with built-in microinverter branch breakers',
-        qty: Math.ceil(activeCount / 12)
-      });
-    }
+    // AC combiner sizing (IQ Combiner 4C holds 4 × 20A microinverter branch circuits).
+    // Branches are limited per-model by Enphase's published max-per-20A-branch value:
+    //   IQ8+ / IQ8M : 13 per branch (240V split)
+    //   IQ8A        : 12
+    //   IQ8H        : 11
+    //   IQ8P        :  8 (higher current draw)
+    // Combiners = ceil(branches / 4), with a minimum of 1.
+    // Previous logic was ceil(activeCount / 12) which emitted one combiner per
+    // ~12 microinverters — that's one combiner per BRANCH, not per 4 branches.
+    // A 60-panel IQ8M system was incorrectly calling for 5 combiners when
+    // 5 branches ÷ 4 = 2 combiners is correct.
+    const maxPerBranch = micro.maxPerBranch || 13;
+    const branches = Math.max(1, Math.ceil(activeCount / maxPerBranch));
+    const combiners = Math.ceil(branches / 4);
+    items.push({
+      category: 'Combiner',
+      name: 'Enphase IQ Combiner 4C',
+      meta: `Load center with 4 × 20A microinverter branch circuits · ${activeCount} ${micro.model}s ÷ ${maxPerBranch}/branch = ${branches} branches · Warranty: 5 years (parts only, labor not included)`,
+      qty: combiners
+    });
   } else {
     const opt = INVERTER_DB.solaredge.optimizer.find(o => o.model === DS_STATE.inverterSelection.optimizer);
     // Pull the full sized system from DS_STATE — this knows how many inverters
@@ -9877,7 +9938,7 @@ function computeBOM() {
       items.push({
         category: 'Optimizers',
         name: `SolarEdge ${opt.model}`,
-        meta: `${opt.rated}W max input · ${opt.notes}`,
+        meta: withWarranty(`${opt.rated}W max input · ${opt.notes}`, WARRANTY.solaredgeOptimizer),
         qty: activeCount
       });
     }
@@ -9888,7 +9949,10 @@ function computeBOM() {
       items.push({
         category: 'Inverter',
         name: `SolarEdge ${inv.model}`,
-        meta: `${inv.ratedAC} kW AC · ${inv.voltage} · ${inv.notes}${stringDesc}`,
+        meta: withWarranty(
+          `${inv.ratedAC} kW AC · ${inv.voltage} · ${inv.notes}${stringDesc}`,
+          WARRANTY.solaredgeInverter
+        ),
         qty: invCount
       });
     }
@@ -9896,7 +9960,7 @@ function computeBOM() {
     items.push({
       category: 'Disconnect',
       name: 'DC Disconnect (NEMA 3R)',
-      meta: 'Required per NEC 690.13 for string inverter systems',
+      meta: 'Required per NEC 690.13 for string inverter systems · Warranty: passed through from disconnect manufacturer ' + WARRANTY_PARTS_ONLY,
       qty: invCount
     });
   }
@@ -9909,7 +9973,7 @@ function computeBOM() {
       items.push({
         category: 'Racking',
         name: 'AVANS 8.0 Ground Rack',
-        meta: '2×4 panel array · 30° fixed tilt · ballasted or ground-screw base · 6 ft clearance',
+        meta: withWarranty('2×4 panel array · 30° fixed tilt · ballasted or ground-screw base · 6 ft clearance', WARRANTY.avansRacking),
         qty: avans8
       });
     }
@@ -9917,7 +9981,7 @@ function computeBOM() {
       items.push({
         category: 'Racking',
         name: 'AVANS 10.0 Ground Rack',
-        meta: '2×5 panel array · 30° fixed tilt · ballasted or ground-screw base · 6 ft clearance',
+        meta: withWarranty('2×5 panel array · 30° fixed tilt · ballasted or ground-screw base · 6 ft clearance', WARRANTY.avansRacking),
         qty: avans10
       });
     }
@@ -9957,7 +10021,7 @@ function computeBOM() {
       items.push({
         category: 'Racking · Rail',
         name: `IronRidge ${ir.series} Rail — 14' (168")`,
-        meta: `${ir.seriesSpec.description} · clear-anodized aluminum · ${ir.rows.length} row${ir.rows.length > 1 ? 's' : ''} · ${(ir.totalRailLenIn / 12).toFixed(0)} linear ft total`,
+        meta: withWarranty(`${ir.seriesSpec.description} · clear-anodized aluminum · ${ir.rows.length} row${ir.rows.length > 1 ? 's' : ''} · ${(ir.totalRailLenIn / 12).toFixed(0)} linear ft total`, WARRANTY.ironridgeRacking),
         qty: ir.railCount
       });
     }
@@ -9965,7 +10029,7 @@ function computeBOM() {
       items.push({
         category: 'Racking · Splice',
         name: `IronRidge ${ir.series} Bonded Splice`,
-        meta: 'Joins 14\' rail sections within a continuous row · integral electrical bonding',
+        meta: withWarranty('Joins 14\' rail sections within a continuous row · integral electrical bonding', WARRANTY.ironridgeRacking),
         qty: ir.splices
       });
     }
@@ -9973,7 +10037,7 @@ function computeBOM() {
       items.push({
         category: 'Racking · Attachment',
         name: 'IronRidge FlashFoot 2 (composition shingle)',
-        meta: `Microflashing + L-foot · max ${ir.seriesSpec.maxSpanIn}" span for ${ir.series} · lag into rafter`,
+        meta: withWarranty(`Microflashing + L-foot · max ${ir.seriesSpec.maxSpanIn}" span for ${ir.series} · lag into rafter`, WARRANTY.ironridgeRacking),
         qty: ir.attachments
       });
     }
@@ -9981,7 +10045,7 @@ function computeBOM() {
       items.push({
         category: 'Racking · Clamp',
         name: 'IronRidge UFO Mid Clamp (UFO-CL-01)',
-        meta: `Universal fastening object · fits ${panel?.thick_mm || 30}–46 mm frames · integral UL 2703 bonding · 80 in-lb torque`,
+        meta: withWarranty(`Universal fastening object · fits ${panel?.thick_mm || 30}–46 mm frames · integral UL 2703 bonding · 80 in-lb torque`, WARRANTY.ironridgeRacking),
         qty: ir.midClamps
       });
     }
@@ -9989,7 +10053,7 @@ function computeBOM() {
       items.push({
         category: 'Racking · Clamp',
         name: 'IronRidge EFO End Clamp (UFO-END-01)',
-        meta: `Single-piece end fastening object · fits ${panel?.thick_mm || 30}–40 mm frames · replaces legacy UFO + Stopper Sleeve combo · integral bonding`,
+        meta: withWarranty(`Single-piece end fastening object · fits ${panel?.thick_mm || 30}–40 mm frames · replaces legacy UFO + Stopper Sleeve combo · integral bonding`, WARRANTY.ironridgeRacking),
         qty: ir.endClamps
       });
     }
@@ -9997,7 +10061,7 @@ function computeBOM() {
       items.push({
         category: 'Racking · End Cap',
         name: 'IronRidge XR Rail End Cap',
-        meta: '4 per row (both ends of both courses) · snap-on, clear-anodized',
+        meta: withWarranty('4 per row (both ends of both courses) · snap-on, clear-anodized', WARRANTY.ironridgeRacking),
         qty: ir.endCaps
       });
     }
@@ -10005,7 +10069,7 @@ function computeBOM() {
       items.push({
         category: 'Racking · Wire Mgmt',
         name: 'IronRidge Wire Clip / Cable Clamp',
-        meta: '~1 clip per 4 ft of rail run · routes module leads along rail',
+        meta: withWarranty('~1 clip per 4 ft of rail run · routes module leads along rail', WARRANTY.ironridgeRacking),
         qty: ir.wireClips
       });
     }
@@ -10013,7 +10077,7 @@ function computeBOM() {
       items.push({
         category: 'Racking · Grounding',
         name: 'IronRidge Grounding Lug (Ilsco GBL-4DBT)',
-        meta: '#6–10 AWG bare copper EGC · one per continuously bonded row',
+        meta: withWarranty('#6–10 AWG bare copper EGC · one per continuously bonded row', WARRANTY.ironridgeRacking),
         qty: ir.groundingLugs
       });
     }
@@ -10028,27 +10092,29 @@ function computeBOM() {
     items.push({
       category: 'EV Charging · Charger',
       name: `${c.brand} ${c.model}`,
-      meta: `${c.level} · ${c.kw.toFixed(1)} kW${c.amps ? ' @ ' + c.amps + 'A' : ''} · ${c.plug} · ${c.cord}' cord · ${c.notes}`,
+      meta: withWarranty(
+        `${c.level} · ${c.kw.toFixed(1)} kW${c.amps ? ' @ ' + c.amps + 'A' : ''} · ${c.plug} · ${c.cord}' cord · ${c.notes}`,
+        evChargerWarranty(c.brand)
+      ),
       qty: 1
     });
     if (c.breaker) {
-      // Residential / commercial Level 2 with a dedicated 240V circuit
       items.push({
         category: 'EV Charging · Circuit',
         name: `${c.breaker}A Double-Pole Breaker`,
-        meta: `Dedicated 240V branch circuit for ${c.brand} ${c.model} · sized per NEC 625.42 (125% of continuous load)`,
+        meta: `Dedicated 240V branch circuit for ${c.brand} ${c.model} · sized per NEC 625.42 (125% of continuous load) · Warranty: passed through from breaker manufacturer ${WARRANTY_PARTS_ONLY}`,
         qty: 1
       });
       items.push({
         category: 'EV Charging · Circuit',
         name: `${c.wireAwg} (run to charger)`,
-        meta: `Copper THHN · sized per NEC 310.16 75°C column for a ${c.breaker}A overcurrent device · home-run from main panel`,
+        meta: `Copper THHN · sized per NEC 310.16 75°C column for a ${c.breaker}A overcurrent device · home-run from main panel · Warranty: passed through from wire manufacturer ${WARRANTY_PARTS_ONLY}`,
         qty: 1
       });
       items.push({
         category: 'EV Charging · Disconnect',
         name: 'NEMA 3R EV Disconnect',
-        meta: `240V AC disconnect mounted within sight of the charger per NEC 625.43 · matches ${c.breaker}A circuit`,
+        meta: `240V AC disconnect mounted within sight of the charger per NEC 625.43 · matches ${c.breaker}A circuit · Warranty: passed through from disconnect manufacturer ${WARRANTY_PARTS_ONLY}`,
         qty: 1
       });
     } else {
@@ -10066,7 +10132,7 @@ function computeBOM() {
   items.push({
     category: 'BOS',
     name: 'PV Wire, Conduit, Connectors',
-    meta: 'Module-level cabling, 10 AWG THWN-2 home-runs, MC4 tools',
+    meta: 'Module-level cabling, 10 AWG THWN-2 home-runs, MC4 tools · Warranty: passed through from component manufacturers ' + WARRANTY_PARTS_ONLY,
     qty: 1
   });
   items.push({
@@ -10074,6 +10140,18 @@ function computeBOM() {
     name: 'Rapid Shutdown / PV Disconnect Signage',
     meta: 'NEC 690.56(C) rapid shutdown placard + directory labels',
     qty: 1
+  });
+
+  // Final disclaimer row — explicitly calls out that every warranty in this
+  // BOM is a pass-through from the original equipment manufacturer and does
+  // NOT include Solar Mason labor to diagnose, remove, or replace components.
+  // Solar Mason's workmanship warranty is a separate line item in the
+  // project contract, not in this equipment BOM.
+  items.push({
+    category: '⚠ Warranty Notice',
+    name: 'All warranties above are PASS-THROUGH (parts only)',
+    meta: 'Every warranty listed in this BOM is the manufacturer\'s original warranty, passed through to the customer at time of installation. These warranties cover DEFECTIVE PARTS ONLY. They do NOT include the labor required to diagnose, remove, ship, reinstall, or replace a failed component. Solar Mason\'s installation workmanship warranty is separate and is documented in the project contract.',
+    qty: '—'
   });
 
   return items;
