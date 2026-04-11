@@ -10299,12 +10299,16 @@ function onEvChargerChange() {
     metaEl.classList.add('show');
   }
   renderBOM();
+  // Re-evaluate the service capacity check — the new EV load is a
+  // demand-side input to the MPU engine
+  if (typeof recalcMpu === 'function') recalcMpu();
 }
 
 function onEvChargerQtyChange() {
   const v = parseInt(document.getElementById('ds-ev-charger-qty')?.value) || 1;
   DS_STATE.evChargerQty = Math.max(1, Math.min(99, v));
   renderBOM();
+  if (typeof recalcMpu === 'function') recalcMpu();
 }
 
 // Wire up period tabs — called from the main init block at end of file
@@ -11085,6 +11089,92 @@ function onMpuChange() {
 // inverter in INVERTER_DB, which is what NEC 690.8(A)(1)(1) actually
 // requires: "the sum of the continuous output current ratings of the
 // inverters shall be used as the inverter output circuit current".
+// Shared helper — voltage denominator for computing line current from a
+// known AC power. Single-phase uses V_LL; three-phase uses V_LL × √3.
+function mpuVoltageDenom(voltage) {
+  const v = voltage || '120/240';
+  const map = {
+    '120/240': 240,                       // split-phase single
+    '120/208': 208 * Math.sqrt(3),        // 3Φ wye line current
+    '277/480': 480 * Math.sqrt(3),        // 3Φ wye
+    '240/480': 480 * Math.sqrt(3)         // 3Φ delta
+  };
+  return map[v] || 240;
+}
+
+// Convert a service amp rating to its kVA equivalent at a given voltage.
+// Used for both service capacity display and upstream transformer sizing.
+function serviceKvaFromAmps(amps, voltage) {
+  const denom = mpuVoltageDenom(voltage);
+  return (amps * denom) / 1000;
+}
+
+// Estimate the home's peak demand current. Used as the demand-side
+// baseline for the "is the existing service adequate with a new EV load"
+// check. Without an actual service-entrance CT log we can't know the real
+// number, so we use two fallback heuristics:
+//   1) If a bill is loaded:  peak ≈ avg × 3 (load factor ≈ 0.33 typical)
+//   2) Otherwise:             peak = 50% of service rating (reasonable
+//                             ballpark for a moderate residential home)
+// Returned in amps at the configured service voltage.
+function estimatePeakHomeDemandAmps() {
+  const voltage = DS_STATE.mpu.voltage || '120/240';
+  const denom = mpuVoltageDenom(voltage);
+  const existing = DS_STATE.mpu.existingAmps || 200;
+
+  const billKwh = DS_STATE.billData?.annualKwh || 0;
+  if (billKwh > 0) {
+    // Average power over the year, scaled up by 3 to approximate the
+    // actual evening/AC peak. Load factor ~0.33 is typical US residential.
+    const avgKw = billKwh / 8760;
+    const peakKw = avgKw * 3.0;
+    return (peakKw * 1000) / denom;
+  }
+  return existing * 0.50;  // fallback
+}
+
+// Compute the installed EV charging load in amps at the service voltage.
+// Combines the primary charger × quantity. Returns 0 if no charger is
+// configured. This is the CONTINUOUS rated load — the 125% factor for
+// NEC 625.42 is applied later in the check.
+function computeEvLoadAmps() {
+  if (!DS_STATE.evCharger) return 0;
+  const qty = Math.max(1, DS_STATE.evChargerQty || 1);
+  const totalKw = DS_STATE.evCharger.kw * qty;
+  const denom = mpuVoltageDenom(DS_STATE.mpu.voltage || '120/240');
+  return (totalKw * 1000) / denom;
+}
+
+// Compute the required upstream utility transformer size in kVA.
+// Utility transformers must handle the larger of:
+//   (a) the service nameplate rating — max legal continuous draw
+//   (b) the actual computed demand — home load + EV continuous load
+// We use the larger, then round up to the next standard transformer size
+// from the appropriate 1Φ or 3Φ ladder. Returns the computed number plus
+// the recommended standard size.
+function computeRequiredTransformerKva(existing, voltage, peakHomeAmps, evAmps) {
+  const serviceKva = serviceKvaFromAmps(existing, voltage);
+
+  // Actual demand in kVA (assume 0.90 power factor for residential/
+  // commercial mixed loads — standard planning assumption)
+  const denom = mpuVoltageDenom(voltage);
+  const demandAmps = peakHomeAmps + (evAmps * 1.25);  // 125% for continuous EV
+  const demandKw = (demandAmps * denom) / 1000;
+  const demandKva = demandKw / 0.90;
+
+  const requiredKva = Math.max(serviceKva, demandKva);
+
+  // Standard utility transformer sizes — different ladders for single-
+  // phase vs three-phase. Source: ANSI/IEEE C57.12 standard ratings.
+  const is3Phase = /3Φ|208|480/.test(voltage) && voltage !== '120/240';
+  const standards = is3Phase
+    ? [45, 75, 112.5, 150, 225, 300, 500, 750, 1000, 1500, 2500]
+    : [10, 15, 25, 37.5, 50, 75, 100, 167, 250];
+  const recommended = standards.find(s => s >= requiredKva) || standards[standards.length - 1];
+
+  return { serviceKva, demandKva, requiredKva, recommended, is3Phase };
+}
+
 function computeInverterAcAmps() {
   const activeCount = (typeof activeCountForMode === 'function') ? activeCountForMode() : 0;
   if (activeCount === 0) return 0;
@@ -11124,18 +11214,7 @@ function computeInverterAcAmps() {
     inverterAcW = totalDcW / 1.20;
   }
 
-  // Compute line current from AC power and service voltage.
-  // Single-phase:  I = P / V_LL
-  // Three-phase:   I = P / (V_LL × √3)
-  const v = DS_STATE.mpu.voltage || '120/240';
-  const voltageMap = {
-    '120/240': 240,
-    '120/208': 208 * Math.sqrt(3),   // 3Φ wye line current denominator
-    '277/480': 480 * Math.sqrt(3),
-    '240/480': 480 * Math.sqrt(3)
-  };
-  const voltageDenom = voltageMap[v] || 240;
-  return inverterAcW / voltageDenom;
+  return inverterAcW / mpuVoltageDenom(DS_STATE.mpu.voltage || '120/240');
 }
 
 // NEC 705.12(B)(2) 120% rule check with realistic solution paths.
@@ -11145,6 +11224,9 @@ function computeInverterAcAmps() {
 //                  Cheapest fix. No panel upgrade, no utility coordination.
 //                  Only possible if the derated main is still practical
 //                  for the home's peak grid draw (we default the floor to 100A).
+//                  NOTE: Derate only helps the SUPPLY-side PV backfeed check.
+//                  It does NOT help when the DEMAND side (home + EV) fails —
+//                  in that case a full upgrade or demand management is needed.
 //
 //   2. UPGRADE   — full main panel upgrade to a larger residential service
 //                  (225A, 320A, 400A). Residential upgrades cap at 400A;
@@ -11154,76 +11236,161 @@ function computeInverterAcAmps() {
 //   3. LINE-SIDE — supply-side tap per NEC 705.11, interconnecting between
 //                  the utility meter and the main breaker. Bypasses the
 //                  120% rule entirely. Standard practice for large
-//                  residential PV systems where derate + upgrade both fail.
-//
-// The old code walked to 800A residential service, which nobody installs.
+//                  residential PV systems.
+//                  NOTE: Line-side tap only fixes the SUPPLY side. If the
+//                  DEMAND side also fails from large EV loads, a full
+//                  upgrade is still required in addition to the tap.
 function recalcMpu() {
   const existing = DS_STATE.mpu.existingAmps || 200;
-  const acAmps = computeInverterAcAmps();
-  const pvBreakerAmps = Math.ceil((acAmps * 1.25) / 5) * 5;  // NEC 690.8/690.9: 125% rounded to nearest 5A
-  const allowedFeed = existing * 1.20;                        // NEC 705.12 120% rule
-  const totalLoad = existing + pvBreakerAmps;                 // main + PV backfeed
-  const headroomAmps = allowedFeed - totalLoad;
-  const passes = totalLoad <= allowedFeed && acAmps > 0;
+  const voltage = DS_STATE.mpu.voltage || '120/240';
 
-  let solution = null;             // 'ok' | 'derate' | 'upgrade' | 'lineside'
-  let mpuRequired = false;          // only true for full panel upgrades
+  // ─── SUPPLY-SIDE CHECK (NEC 705.12 120% rule for PV backfeed) ───
+  const acAmps = computeInverterAcAmps();
+  const pvBreakerAmps = Math.ceil((acAmps * 1.25) / 5) * 5;
+  const allowedFeed = existing * 1.20;
+  const totalSupply = existing + pvBreakerAmps;
+  const headroomAmps = allowedFeed - totalSupply;
+  // Supply passes trivially when there's no PV at all (nothing to backfeed).
+  // Otherwise, main + PV breaker must fit under the 120% rule.
+  const supplyPasses = acAmps === 0 || totalSupply <= allowedFeed;
+
+  // ─── DEMAND-SIDE CHECK (NEC 625.42 continuous EV load + home baseline) ───
+  // Only applied when an EV charger is configured. Without an EV load we
+  // assume the existing service is sized for the existing home's baseline,
+  // since that's how the homeowner has been running it up to this point.
+  const peakHomeAmps = estimatePeakHomeDemandAmps();
+  const evAmps = computeEvLoadAmps();
+  const evContinuousAmps = evAmps * 1.25;  // NEC 625.42 — 125% of continuous
+  const totalDemand = peakHomeAmps + evContinuousAmps;
+  const demandPasses = evAmps === 0 || totalDemand <= existing;
+  const demandHeadroom = existing - totalDemand;
+
+  // ─── UPSTREAM UTILITY TRANSFORMER SIZING ───
+  const xfmr = computeRequiredTransformerKva(existing, voltage, peakHomeAmps, evAmps);
+
+  let solution = null;             // 'ok' | 'derate' | 'upgrade' | 'upgrade-lineside' | 'lineside'
+  let mpuRequired = false;          // true for full panel upgrades
   let recommendedNewService = existing;
   let deratedMain = null;
+  let failReason = null;            // 'supply' | 'demand' | 'both'
 
-  if (acAmps === 0) {
+  if (acAmps === 0 && evAmps === 0) {
     DS_STATE.mpu.result = null;
     updateMpuCard();
     if (typeof renderBOM === 'function') renderBOM();
     return;
   }
 
-  if (passes) {
+  // Residential upgrade ladder caps at 400A; commercial extends through
+  // industrial-scale services for fleet DCFC depots and megawatt charging.
+  // ANSI/IEEE standard switchgear ratings through 4000A.
+  const standards = (DS_STATE.customerClass === 'commercial')
+    ? [225, 320, 400, 600, 800, 1200, 1600, 2000, 2500, 3000, 4000]
+    : [225, 320, 400];
+
+  if (supplyPasses && demandPasses) {
     solution = 'ok';
-  } else {
-    // Path 1: try main breaker derate. The maximum main breaker that
-    // still satisfies main + PV ≤ 1.20 × busbar is (allowance − PV).
-    // Floor it to a practical minimum of 100A (below that is usually
-    // impractical for a modern home).
+  } else if (!supplyPasses && demandPasses) {
+    // Supply-only failure — try derate, then upgrade, then lineside
+    failReason = 'supply';
+
+    // DERATE: maxDerate must be ≥ actual peak demand or the new main can't
+    // carry the home's existing load
     const maxDerate = Math.floor((allowedFeed - pvBreakerAmps) / 5) * 5;
-    if (maxDerate >= 100) {
+    const demandFloor = Math.max(100, Math.ceil(totalDemand / 5) * 5);
+    if (maxDerate >= demandFloor) {
       solution = 'derate';
       deratedMain = maxDerate;
-      // No service upgrade, no new panel — just a breaker swap
     }
 
-    // Path 2: residential service upgrade (capped at 400A) that satisfies
-    // the 120% rule without any derate. Commercial can go higher.
-    const standards = (DS_STATE.customerClass === 'commercial')
-      ? [225, 320, 400, 600, 800, 1200]
-      : [225, 320, 400];
-    let upgradeThatPasses = null;
+    // UPGRADE that passes supply
+    if (!solution) {
+      for (const s of standards) {
+        if (s <= existing) continue;
+        if ((s + pvBreakerAmps) <= s * 1.20) {
+          solution = 'upgrade';
+          mpuRequired = true;
+          recommendedNewService = s;
+          break;
+        }
+      }
+    }
+
+    // LINESIDE — supply too big for any reasonable upgrade
+    if (!solution) {
+      solution = 'lineside';
+    }
+  } else if (supplyPasses && !demandPasses) {
+    // Demand-only failure — must upgrade, can't be fixed by derate or tap
+    failReason = 'demand';
     for (const s of standards) {
       if (s <= existing) continue;
-      if ((s + pvBreakerAmps) <= s * 1.20) {
-        upgradeThatPasses = s;
+      if (totalDemand <= s) {
+        solution = 'upgrade';
+        mpuRequired = true;
+        recommendedNewService = s;
+        break;
+      }
+    }
+    // No residential upgrade fits the demand — push to the largest
+    // available standard and note that demand management (load shedding,
+    // EV charge scheduling) is also needed.
+    if (!solution) {
+      solution = 'upgrade';
+      mpuRequired = true;
+      recommendedNewService = standards[standards.length - 1];
+    }
+  } else {
+    // Both supply AND demand fail
+    failReason = 'both';
+
+    // Try a single upgrade that fixes BOTH constraints
+    for (const s of standards) {
+      if (s <= existing) continue;
+      const newSupply = (s + pvBreakerAmps) <= s * 1.20;
+      const newDemand = totalDemand <= s;
+      if (newSupply && newDemand) {
+        solution = 'upgrade';
+        mpuRequired = true;
+        recommendedNewService = s;
         break;
       }
     }
 
-    // Prefer derate over upgrade (cheaper, faster, no utility coordination)
-    if (!solution && upgradeThatPasses) {
-      solution = 'upgrade';
-      mpuRequired = true;
-      recommendedNewService = upgradeThatPasses;
+    // No single upgrade fixes both — need the combined upgrade + lineside.
+    // Find the smallest upgrade that handles demand, use lineside for supply.
+    if (!solution) {
+      for (const s of standards) {
+        if (s <= existing) continue;
+        if (totalDemand <= s) {
+          solution = 'upgrade-lineside';
+          mpuRequired = true;
+          recommendedNewService = s;
+          break;
+        }
+      }
     }
 
-    // Path 3: fall back to line-side tap. Standard practice for large PV
-    // systems where derate + upgrade both fail.
+    // Worst case: demand too large even for the largest standard — use
+    // the max available standard and note that demand management (load
+    // shedding, EV charge scheduling) is also needed.
     if (!solution) {
-      solution = 'lineside';
-      // Not a panel upgrade — no mpuRequired, but still emits a BOM line
+      solution = 'upgrade-lineside';
+      mpuRequired = true;
+      recommendedNewService = standards[standards.length - 1];
     }
   }
 
   DS_STATE.mpu.result = {
-    acAmps, pvBreakerAmps, allowedFeed, totalLoad, headroomAmps,
-    passes, mpuRequired, recommendedNewService, existing, solution, deratedMain
+    acAmps, pvBreakerAmps, allowedFeed, totalSupply, headroomAmps, supplyPasses,
+    peakHomeAmps, evAmps, evContinuousAmps, totalDemand, demandHeadroom, demandPasses,
+    passes: supplyPasses && demandPasses, mpuRequired, recommendedNewService,
+    existing, solution, deratedMain, failReason,
+    xfmrServiceKva: xfmr.serviceKva,
+    xfmrDemandKva: xfmr.demandKva,
+    xfmrRequiredKva: xfmr.requiredKva,
+    xfmrRecommendedKva: xfmr.recommended,
+    xfmrIs3Phase: xfmr.is3Phase
   };
   updateMpuCard();
   if (typeof renderBOM === 'function') renderBOM();
@@ -11236,53 +11403,54 @@ function updateMpuCard() {
   const r = DS_STATE.mpu.result;
   card.classList.remove('warn','danger','ok');
   if (!r) {
-    txt.textContent = 'Add panels to evaluate the service.';
+    txt.textContent = 'Add panels or configure an EV charger to evaluate the service.';
     return;
   }
 
-  // Shared line printed at the top of every state — shows the inputs
-  const inputs = `Inverter AC: <strong>${r.acAmps.toFixed(1)} A</strong> · PV breaker (125%): <strong>${r.pvBreakerAmps} A</strong> · Existing ${r.existing} A bus allowance: <strong>${r.allowedFeed.toFixed(0)} A</strong> (NEC 705.12 120% rule)`;
+  const hasPv = r.acAmps > 0;
+  const hasEv = r.evAmps > 0;
+
+  // Build a combined inputs block showing supply + demand + transformer
+  let inputs = '';
+  if (hasPv) {
+    inputs += `<div><strong>PV backfeed:</strong> inverter ${r.acAmps.toFixed(1)} A continuous · ${r.pvBreakerAmps} A breaker (125%) · bus allowance ${r.allowedFeed.toFixed(0)} A (NEC 705.12)</div>`;
+  }
+  if (hasEv) {
+    inputs += `<div><strong>EV load:</strong> ${r.evAmps.toFixed(1)} A continuous × 1.25 = ${r.evContinuousAmps.toFixed(0)} A (NEC 625.42)</div>`;
+  }
+  inputs += `<div><strong>Service:</strong> ${r.existing} A · estimated peak home demand ${r.peakHomeAmps.toFixed(0)} A${hasEv ? ` · total demand w/ EV ${r.totalDemand.toFixed(0)} A` : ''}</div>`;
+  inputs += `<div style="margin-top:.3rem;padding-top:.3rem;border-top:1px dashed currentColor;opacity:.85"><strong>Upstream transformer:</strong> ${r.xfmrIs3Phase ? '3-phase' : '1-phase'} · service nameplate ${r.xfmrServiceKva.toFixed(1)} kVA · actual demand ${r.xfmrDemandKva.toFixed(1)} kVA · recommend <strong>≥ ${r.xfmrRecommendedKva} kVA utility transformer</strong></div>`;
 
   if (r.solution === 'ok') {
-    if (r.headroomAmps < (r.existing * 0.10)) {
-      // Passes but tight — amber warning for future load growth
+    const supplyHeadroom = hasPv ? `supply headroom ${r.headroomAmps.toFixed(0)} A` : '';
+    const demandHeadroom = hasEv ? `demand headroom ${r.demandHeadroom.toFixed(0)} A` : '';
+    const headroomParts = [supplyHeadroom, demandHeadroom].filter(Boolean).join(' · ');
+    const tight = (hasPv && r.headroomAmps < r.existing * 0.10) ||
+                  (hasEv && r.demandHeadroom < r.existing * 0.10);
+    if (tight) {
       card.classList.add('warn');
-      txt.innerHTML = `
-        <strong>Passes the 120% rule, but headroom is tight (${r.headroomAmps.toFixed(0)} A).</strong><br>
-        ${inputs}<br>
-        Future EV / heat pump / load additions may push over the limit. Consider proactive upgrade or plan for it when adding loads.
-      `;
+      txt.innerHTML = `<strong>Passes all checks, but headroom is tight.</strong><br>${inputs}<div style="margin-top:.3rem">${headroomParts}. Future load additions may push over the limit — consider proactive upgrade.</div>`;
     } else {
       card.classList.add('ok');
-      txt.innerHTML = `
-        <strong>Existing ${r.existing} A service is adequate.</strong><br>
-        ${inputs}<br>
-        Main + PV total: ${r.totalLoad.toFixed(0)} A · Headroom: <strong>${r.headroomAmps.toFixed(0)} A</strong>.
-      `;
+      txt.innerHTML = `<strong>Existing ${r.existing} A service is adequate.</strong><br>${inputs}<div style="margin-top:.3rem">${headroomParts || 'No PV or EV load configured yet.'}</div>`;
     }
   } else if (r.solution === 'derate') {
     card.classList.add('warn');
-    txt.innerHTML = `
-      <strong>Main breaker derate — no panel upgrade needed.</strong><br>
-      ${inputs}<br>
-      Swap the existing ${r.existing} A main for a <strong>${r.deratedMain} A main breaker</strong>, keeping the existing service panel. Per NEC 705.12(B)(2)(3)(b): ${r.deratedMain} + ${r.pvBreakerAmps} = ${r.deratedMain + r.pvBreakerAmps} A ≤ ${r.allowedFeed.toFixed(0)} A allowance.<br>
-      <em>Verify ${r.deratedMain} A is adequate for the home's peak grid draw after PV offset.</em>
-    `;
+    txt.innerHTML = `<strong>Main breaker derate — no panel upgrade needed.</strong><br>${inputs}<div style="margin-top:.3rem">Swap the existing ${r.existing} A main for a <strong>${r.deratedMain} A main breaker</strong>, keeping the existing service panel. Per NEC 705.12(B)(2)(3)(b): ${r.deratedMain} + ${r.pvBreakerAmps} = ${r.deratedMain + r.pvBreakerAmps} A ≤ ${r.allowedFeed.toFixed(0)} A allowance. <em>Verify ${r.deratedMain} A is adequate for peak grid draw after PV offset.</em></div>`;
   } else if (r.solution === 'upgrade') {
     card.classList.add('warn');
-    txt.innerHTML = `
-      <strong>Service upgrade to ${r.recommendedNewService} A.</strong><br>
-      ${inputs}<br>
-      Main + PV (${r.totalLoad.toFixed(0)} A) exceeds the ${r.allowedFeed.toFixed(0)} A allowance. A ${r.recommendedNewService} A service provides ${(r.recommendedNewService * 1.20).toFixed(0)} A allowance, comfortably accommodating the ${r.pvBreakerAmps} A PV backfeed.
-    `;
+    const reason = r.failReason === 'both'
+      ? `both the 120% rule AND the demand-side load check fail on the existing service`
+      : r.failReason === 'demand'
+      ? `EV continuous load (${r.evContinuousAmps.toFixed(0)} A) + peak home demand (${r.peakHomeAmps.toFixed(0)} A) exceeds ${r.existing} A service rating`
+      : `Main + PV (${r.totalSupply.toFixed(0)} A) exceeds the ${r.allowedFeed.toFixed(0)} A allowance`;
+    txt.innerHTML = `<strong>Service upgrade to ${r.recommendedNewService} A.</strong><br>${inputs}<div style="margin-top:.3rem">${reason}. A ${r.recommendedNewService} A service provides ${(r.recommendedNewService * 1.20).toFixed(0)} A supply allowance and accommodates the demand side.</div>`;
+  } else if (r.solution === 'upgrade-lineside') {
+    card.classList.add('danger');
+    txt.innerHTML = `<strong>Service upgrade to ${r.recommendedNewService} A + line-side tap.</strong><br>${inputs}<div style="margin-top:.3rem">This is a COMBINED fix — neither action alone is sufficient. The demand side (${r.totalDemand.toFixed(0)} A = home ${r.peakHomeAmps.toFixed(0)} + EV ${r.evContinuousAmps.toFixed(0)}) requires a larger service, AND the PV backfeed (${r.pvBreakerAmps} A) exceeds what the new service can accept under the 120% rule. Upgrade the service to ${r.recommendedNewService} A to handle the demand, then interconnect the PV via NEC 705.11 line-side tap between the utility meter and the new main breaker.<br><em>Requires utility coordination for both the service upgrade AND the line-side tap.</em></div>`;
   } else if (r.solution === 'lineside') {
     card.classList.add('danger');
-    txt.innerHTML = `
-      <strong>Line-side tap recommended (NEC 705.11).</strong><br>
-      ${inputs}<br>
-      PV backfeed (${r.pvBreakerAmps} A) is too large for any reasonable residential service upgrade under the 120% rule. <strong>Industry-standard solution:</strong> supply-side connection between the utility meter and the main breaker. This bypasses NEC 705.12 entirely — no service upgrade, no main breaker swap.<br>
-      <em>Line-side tap requires utility coordination + dedicated PV disconnect.</em>
-    `;
+    txt.innerHTML = `<strong>Line-side tap recommended (NEC 705.11).</strong><br>${inputs}<div style="margin-top:.3rem">PV backfeed (${r.pvBreakerAmps} A) is too large for any reasonable residential service upgrade under the 120% rule. <strong>Industry-standard solution:</strong> supply-side connection between the utility meter and the main breaker. This bypasses NEC 705.12 entirely — no service upgrade, no main breaker swap.<br><em>Line-side tap requires utility coordination + dedicated PV disconnect.</em></div>`;
   }
 }
 
@@ -12318,6 +12486,33 @@ function computeBOM() {
           qty: 1
         });
       }
+      // Path 4: UPGRADE + LINE-SIDE — both needed
+      else if (mpuRes.solution === 'upgrade-lineside') {
+        items.push({
+          category: 'Service · Main Panel',
+          name: `Main Panel Upgrade — ${mpuRes.existing}A → ${mpuRes.recommendedNewService}A`,
+          meta: withWarranty(
+            `Demand-side requirement (home ${mpuRes.peakHomeAmps.toFixed(0)}A + EV ${mpuRes.evContinuousAmps.toFixed(0)}A = ${mpuRes.totalDemand.toFixed(0)}A) exceeds existing ${mpuRes.existing}A service · ${DS_STATE.mpu.voltage}V · includes meter base, main breaker, ground bar, busbar listed for PV backfeed`,
+            '10-year limited (panel manufacturer)'
+          ),
+          qty: 1
+        });
+        items.push({
+          category: 'Service · Line-Side Tap',
+          name: 'Supply-Side Tap (NEC 705.11) — PV interconnection',
+          meta: withWarranty(
+            `Required IN ADDITION to the service upgrade — PV backfeed (${mpuRes.pvBreakerAmps}A) exceeds the ${(mpuRes.recommendedNewService * 0.20).toFixed(0)}A headroom even on the upgraded ${mpuRes.recommendedNewService}A service · PV ties in on the supply side of the new main breaker via NEC 705.11 · includes fused line-side disconnect, wire trough, all tap hardware`,
+            '10-year limited'
+          ),
+          qty: 1
+        });
+        items.push({
+          category: 'Service · Permits',
+          name: 'Utility Service Upgrade + Line-Side Tap Coordination',
+          meta: 'Combined permit + inspection for BOTH the service upgrade (meter pull, main breaker swap, re-energize) AND the supply-side tap (dedicated PV disconnect between meter and new main breaker) · coordinate both with serving utility in a single interconnection application',
+          qty: 1
+        });
+      }
     }
 
     if (DS_STATE.mpu.includeMeter) {
@@ -12333,6 +12528,22 @@ function computeBOM() {
         category: 'Service · Sub-Panel',
         name: 'Critical-Loads Sub-Panel (battery backup integration)',
         meta: withWarranty('60A or 100A NEMA 3R sub-panel for critical loads downstream of battery system controller · isolates essential circuits during grid outage · sized to selected backup loads', '10-year limited'),
+        qty: 1
+      });
+    }
+
+    // Upstream utility transformer recommendation — NOT a Solar Mason
+    // install item, but included in the BOM as a customer-facing advisory
+    // so the customer knows to verify (or request upgrade) with the
+    // serving utility. Transformer is utility-owned equipment.
+    if (mpuRes && mpuRes.xfmrRecommendedKva) {
+      const xfmrNote = mpuRes.xfmrDemandKva > mpuRes.xfmrServiceKva
+        ? `Computed demand (${mpuRes.xfmrDemandKva.toFixed(1)} kVA) exceeds service nameplate (${mpuRes.xfmrServiceKva.toFixed(1)} kVA) — existing transformer may be undersized, coordinate with utility`
+        : `Service nameplate ${mpuRes.xfmrServiceKva.toFixed(1)} kVA · computed actual demand ${mpuRes.xfmrDemandKva.toFixed(1)} kVA`;
+      items.push({
+        category: 'Service · Utility (advisory)',
+        name: `Upstream Transformer — verify ≥ ${mpuRes.xfmrRecommendedKva} kVA (${mpuRes.xfmrIs3Phase ? '3Φ' : '1Φ'})`,
+        meta: `UTILITY-OWNED — not a Solar Mason install item. ${xfmrNote}. Verify with serving utility (PPL, PennPower, UGI, etc.) that the existing pad-mount or pole-top transformer is rated to handle the post-PV + EV demand. If undersized, request utility upgrade as part of the interconnection agreement.`,
         qty: 1
       });
     }
