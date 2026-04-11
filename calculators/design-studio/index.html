@@ -5612,6 +5612,15 @@ async function flyToCompass(dir) {
 // ═════════════════════════════════════════════════════════════
 async function render3DPanels() {
   if (!DS_STATE.cesiumViewer || !DS_STATE.cesiumMode) return;
+
+  // Generation counter: if a newer render3DPanels starts while we're
+  // awaiting clampToHeightMostDetailed, this token will no longer match
+  // DS_STATE.render3DGen and we bail out before touching the entity list.
+  // Without this, rapid slider drags could race two concurrent renders and
+  // stack duplicate entities into the viewer ("ghost" panels).
+  DS_STATE.render3DGen = (DS_STATE.render3DGen || 0) + 1;
+  const myGen = DS_STATE.render3DGen;
+
   clear3DPanels();
 
   const viewer = DS_STATE.cesiumViewer;
@@ -5651,6 +5660,11 @@ async function render3DPanels() {
       console.warn('[DS] clampToHeightMostDetailed failed', e);
     }
   }
+
+  // Bail out if a newer render started while we were awaiting the clamp.
+  // The newer render will handle the current state — if we kept going we'd
+  // stack duplicate entities on top of its entities.
+  if (myGen !== DS_STATE.render3DGen) return;
 
   // Map segment ID → clamped center height
   const segHeightMap = {};
@@ -5821,14 +5835,24 @@ async function fetchSolarInsights() {
     };
   });
 
-  // Parse all individual panels — capture yearly kWh which bakes in shading
+  // Parse all individual panels — capture yearly kWh which bakes in shading.
+  // CRITICAL: we sort by yearlyEnergyDcKwh DESCENDING here so that every
+  // downstream "top N panels by energy" operation (slider, offset presets,
+  // initial auto-selection) actually picks the best panels first. Without
+  // this sort, top-N was just "first N in Google Solar API source order",
+  // which caused panels to ghost in/out at seemingly random positions as
+  // the slider moved — because deactivating the LAST N in source order
+  // removes arbitrary panels from the middle of the roof, not the worst
+  // producers. idx is stored as a PROPERTY (not array index) so sorting
+  // doesn't break the panelPolygons Map or any find(p => p.idx === n)
+  // lookups elsewhere in the code.
   DS_STATE.allPanels = (sp.solarPanels || []).map((p, idx) => ({
     idx,
     center: p.center,
     orientation: p.orientation || 'LANDSCAPE',
     yearlyEnergyDcKwh: p.yearlyEnergyDcKwh || 0,
     segmentIndex: p.segmentIndex || 0
-  }));
+  })).sort((a, b) => b.yearlyEnergyDcKwh - a.yearlyEnergyDcKwh);
 
   // Reset overrides, ground state, and obstructions on new load
   DS_STATE.panelTiltOverride.clear();
