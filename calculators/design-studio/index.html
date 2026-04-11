@@ -4037,7 +4037,31 @@ html, body { background-attachment: scroll !important; }
 .ds-map-background .ds-legend{bottom:1rem;right:1rem}
 
 @media(max-width:768px){
-  .ds-studio-fullscreen{height:calc(100svh - 60px);touch-action:none}
+  /* ═══ MOBILE: STUDIO + TOOLS PANEL IN NORMAL DOCUMENT FLOW ═══
+     On desktop the tools panel floats over the map as an overlay.
+     On mobile that pattern caused two problems:
+       1. The fixed bottom-sheet covered half the map
+       2. After 3D rendering kicked in, viewport math shifted and the
+          footer "crawled up" the page over the studio area
+     Fix: convert the entire studio + tools panel to normal block flow
+     so the footer sits deterministically below the tools panel and
+     scroll behavior is predictable. Map gets a fixed-height block,
+     tools panel becomes a static block below it, footer follows. */
+  .ds-studio-fullscreen{
+    height:auto;             /* was 100svh — release the viewport lock */
+    min-height:0;
+    touch-action:auto;       /* was 'none' — let the page scroll normally */
+    overflow:visible;        /* was 'hidden' — let the tools panel below show */
+    display:block;
+  }
+  /* The map canvas stays fixed-height inside the studio container so
+     it has a predictable viewport for Google Maps + Cesium 3D init. */
+  #ds-map, #ds-cesium-container{
+    position:relative !important;
+    height:60vh !important;
+    min-height:380px !important;
+    max-height:560px !important;
+  }
 
   /* Hide the 'Ready to Go Solar?' CTA banner on mobile — it sits in the
      normal document flow below the studio, but on small screens with the
@@ -4047,46 +4071,53 @@ html, body { background-attachment: scroll !important; }
      here doesn't lose any conversion path. */
   .cta-banner{display:none !important}
 
-  /* ═══ TOOLS OVERLAY → BOTTOM SHEET ═══ */
+  /* ═══ TOOLS PANEL → STATIC BLOCK BELOW MAP (no longer a bottom sheet) ═══ */
   .ds-tools-overlay{
-    position:fixed;top:auto;left:0;right:0;bottom:0;
+    position:static !important;     /* was 'fixed' */
+    top:auto;left:auto;right:auto;bottom:auto;
     width:100%;max-width:none;
-    height:55vh;min-height:320px;max-height:calc(100svh - 100px);
-    border-radius:20px 20px 0 0;
-    box-shadow:0 -8px 40px rgba(15,23,42,.2);
-    z-index:200;
-    transition:transform .3s cubic-bezier(.4,0,.2,1);
-    will-change:transform;
+    height:auto !important;          /* let content determine height */
+    min-height:0;max-height:none;
+    margin:.75rem 0 1rem;
+    border-radius:18px 18px 0 0;
+    box-shadow:0 -4px 20px rgba(15,23,42,.08);
+    z-index:auto;
+    transform:none !important;       /* kill any leftover swipe transform */
+    transition:none;
+    will-change:auto;
   }
   .ds-tools-overlay.collapsed{
-    transform:translateY(calc(100% - 54px));
-    bottom:0;
+    transform:none !important;       /* the collapsed state had a translateY
+                                        that hid the panel — meaningless now
+                                        that the panel is in normal flow */
+    bottom:auto;
   }
   .ds-tools-overlay.collapsed .ds-tools-header-title{opacity:1}
-  .ds-tools-overlay.collapsed .ds-tools-toggle{transform:rotate(90deg)}
+  .ds-tools-overlay.collapsed .ds-tools-toggle{transform:rotate(0deg)}
 
-  /* ═══ HEADER → DRAG HANDLE ═══ */
+  /* ═══ HEADER — no drag handle needed in normal flow ═══ */
   .ds-tools-header{
-    padding:.6rem 1rem .5rem;
+    padding:.7rem 1rem .6rem;
     position:relative;
-    cursor:grab;
-    -webkit-user-select:none;user-select:none;
-    touch-action:none;
+    cursor:default;                  /* was 'grab' */
+    -webkit-user-select:auto;user-select:auto;
+    touch-action:auto;               /* was 'none' */
   }
   .ds-tools-header::before{
-    content:'';display:block;width:40px;height:4px;
-    border-radius:2px;background:rgba(0,0,0,.15);
-    margin:0 auto .5rem;
+    /* Drag-handle pill is hidden — the panel doesn't drag anymore */
+    display:none;
   }
   .ds-tools-header-title{font-size:.82rem}
-  .ds-tools-toggle{width:36px;height:36px;font-size:.85rem}
+  .ds-tools-toggle{display:none}     /* collapse arrow is meaningless in flow */
 
-  /* ═══ BODY — SCROLLABLE ═══ */
+  /* ═══ BODY — normal page scrolling, no contained scroll ═══ */
   .ds-tools-body{
-    padding:.5rem .75rem 2rem;
-    overscroll-behavior-y:contain;
-    -webkit-overflow-scrolling:touch;
-    touch-action:pan-y;
+    padding:.6rem .85rem 1rem;
+    overscroll-behavior-y:auto;
+    -webkit-overflow-scrolling:auto;
+    touch-action:auto;
+    overflow:visible;                /* let the page scroll, not the panel */
+    max-height:none;
   }
 
   /* ═══ PANELS — LARGER TOUCH ═══ */
@@ -4167,7 +4198,9 @@ html, body { background-attachment: scroll !important; }
   .ds-result-label{font-size:.6rem}
 
   /* ═══ MAP FAB ═══ */
-  .ds-map-fab{top:auto;bottom:calc(55vh + .5rem);right:.5rem;z-index:210}
+  /* The bottom sheet is gone on mobile — FAB now sits at the bottom-right
+     of the map block, not above where the sheet used to be */
+  .ds-map-fab{top:auto;bottom:.75rem;right:.75rem;z-index:50}
   /* ═══ VIEW TOGGLE ═══ */
 
 
@@ -12304,10 +12337,16 @@ function toggleToolsOverlay() {
   }, 350);
 }
 
-// ── Bottom-sheet swipe gesture (mobile only) ──
-// Only intercepts touches on the drag-handle header. Does NOT attach
-// document-level listeners that would interfere with page/sheet scrolling.
+// ── Bottom-sheet swipe gesture (DESKTOP ONLY now) ──
+// Originally this provided a draggable bottom-sheet on mobile. As of the
+// "tools panel below map in normal flow" mobile push, the panel is no
+// longer fixed-positioned on small screens, so the drag gesture is
+// completely disabled below 768px and the static panel just scrolls
+// with the rest of the page. The collapse/expand toggle remains usable
+// on desktop where the overlay still floats over the map.
 (function initBottomSheetGesture() {
+  // Mobile uses normal document flow — no drag, no collapse, no swipe
+  if (window.innerWidth <= 768) return;
   const overlay = document.getElementById('ds-tools-overlay');
   const header = document.querySelector('.ds-tools-header');
   const body = document.querySelector('.ds-tools-body');
