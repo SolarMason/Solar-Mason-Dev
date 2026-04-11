@@ -4948,6 +4948,12 @@ body.ds-mode-ground .ds-ground-only{display:block}
           <div class="ds-ev-result-val"><span id="ds-ev-annual-kwh">0</span> <span class="unit">kWh/yr</span></div>
         </div>
 
+        <!-- V2H bidirectional callout — appears when the selected EV is V2H-capable -->
+        <div class="ds-bat-v2h-callout" id="ds-ev-v2h-callout">
+          <span class="v2h-title">⚡ Bidirectional Charging Capable</span>
+          <span id="ds-ev-v2h-text"></span>
+        </div>
+
         <!-- Charger hardware -->
         <div class="ds-field">
           <label>Charger Hardware <em style="font-weight:500;color:#94a3b8;font-size:.65rem">(goes in BOM)</em></label>
@@ -10158,22 +10164,64 @@ function showBatteryControllerInfo() {
 
 // Show the V2H callout if the currently-selected EV is on the bidirectional list.
 // Tries to match by brand+model substring against EV_DB[evIndex].
+// Update both V2H callouts (EV section + Battery section). The two callouts
+// have different framing — the one in the EV section is purely informational
+// about the vehicle's bidirectional capability, while the battery-section
+// version factors in the configured essential loads to estimate how many
+// days of backup the EV battery alone could provide. Both pull from the
+// same V2H_CAPABLE_EVS table so the data stays consistent.
 function updateV2hCallout() {
-  const cb = document.getElementById('ds-bat-v2h-callout');
-  const txt = document.getElementById('ds-bat-v2h-text');
-  if (!cb || !txt) return;
+  const evCb  = document.getElementById('ds-ev-v2h-callout');
+  const evTxt = document.getElementById('ds-ev-v2h-text');
+  const batCb = document.getElementById('ds-bat-v2h-callout');
+  const batTxt = document.getElementById('ds-bat-v2h-text');
+
+  const hideAll = () => {
+    if (evCb)  evCb.classList.remove('show');
+    if (batCb) batCb.classList.remove('show');
+  };
+
   const evLoad = DS_STATE.evLoad;
   if (!evLoad || evLoad.evIndex == null || evLoad.evIndex < 0) {
-    cb.classList.remove('show');
+    hideAll();
     return;
   }
   const ev = EV_DB[evLoad.evIndex];
-  if (!ev) { cb.classList.remove('show'); return; }
+  if (!ev) { hideAll(); return; }
   const evLabel = `${ev.brand} ${ev.model}`;
   const v2h = V2H_CAPABLE_EVS.find(v => evLabel.toLowerCase().includes(v.match.toLowerCase()));
-  if (!v2h) { cb.classList.remove('show'); return; }
-  cb.classList.add('show');
-  txt.innerHTML = `Your <strong>${ev.brand} ${ev.model}</strong> supports bidirectional charging — its <strong>~${v2h.pack} kWh battery</strong> can power your home during an outage at up to <strong>${v2h.kWcapable} kW</strong>. That's roughly <strong>${(v2h.pack / (DS_STATE.batterySizing?.totalDailyKwh || 30)).toFixed(1)} days</strong> of your essential loads with no additional Powerwalls. Required hardware: ${v2h.charger}.`;
+  if (!v2h) { hideAll(); return; }
+
+  // ── EV-section callout (always visible when V2H-capable) ──
+  // Frames the benefit purely from the vehicle side. If a battery has
+  // been sized, includes a comparison line so the customer sees the EV
+  // pack as a "free battery" relative to the recommended count.
+  if (evCb && evTxt) {
+    let comparison = '';
+    if (DS_STATE.batterySelection && DS_STATE.batterySizing && DS_STATE.batterySizing.count > 0) {
+      const equivBatteries = (v2h.pack / DS_STATE.batterySelection.usableKwh).toFixed(1);
+      comparison = ` That's roughly <strong>${equivBatteries} × ${DS_STATE.batterySelection.brand} ${DS_STATE.batterySelection.model}</strong> worth of usable storage — already sitting in your driveway.`;
+    } else {
+      // No battery selected yet — frame against typical home usage
+      const dailyAvg = (DS_STATE.billData?.annualKwh || 10950) / 365;  // 10,950 kWh/yr ≈ US avg
+      const daysOfWholeHome = (v2h.pack * 0.7 / dailyAvg).toFixed(1);  // 70% usable
+      comparison = ` Roughly <strong>${daysOfWholeHome} days</strong> of typical whole-home usage.`;
+    }
+    evTxt.innerHTML = `Your <strong>${ev.brand} ${ev.model}</strong> can push power back to your home during an outage at up to <strong>${v2h.kWcapable} kW</strong> from its <strong>~${v2h.pack} kWh battery</strong>.${comparison} Required hardware: ${v2h.charger}.`;
+    evCb.classList.add('show');
+  }
+
+  // ── Battery-section callout (load-aware, only when battery picked) ──
+  if (batCb && batTxt) {
+    if (!DS_STATE.batterySelection) {
+      batCb.classList.remove('show');
+    } else {
+      const dailyKwh = DS_STATE.batterySizing?.totalDailyKwh || 30;
+      const days = (v2h.pack * 0.7 / dailyKwh).toFixed(1);  // 70% usable to be conservative
+      batTxt.innerHTML = `Your <strong>${ev.brand} ${ev.model}</strong> supports bidirectional charging — its <strong>~${v2h.pack} kWh battery</strong> can power your home during an outage at up to <strong>${v2h.kWcapable} kW</strong>. That's roughly <strong>${days} days</strong> of your selected essential loads with no additional batteries needed. Required hardware: ${v2h.charger}.`;
+      batCb.classList.add('show');
+    }
+  }
 }
 
 function initBatterySection() {
