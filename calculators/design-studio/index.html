@@ -5033,6 +5033,17 @@ body.ds-mode-ground .ds-ground-only{display:block}
         </div>
       </div>
 
+      <!-- Upload a custom inverter datasheet (PDF) — auto-extracts
+           AC rating / max DC / voltage and adds the inverter to the
+           active session (not persisted). Works for both Enphase
+           microinverters and SolarEdge-style string inverters. -->
+      <div style="margin-top:.45rem;padding:.45rem .55rem;background:rgba(45,130,190,.04);border:1px dashed rgba(45,130,190,.28);border-radius:7px;font-size:.6rem;color:#64748B;line-height:1.4">
+        Don't see your inverter? <a href="#" onclick="document.getElementById('ds-inv-datasheet-input').click();return false;" style="color:#2D82BE;font-weight:800;text-decoration:none">Upload Inverter Datasheet (PDF)</a> — we'll auto-extract specs for this session.
+        <input type="file" id="ds-inv-datasheet-input" accept="application/pdf" style="display:none" onchange="if(this.files[0])processInverterDatasheetFile(this.files[0]).catch(function(e){console.error('[DS] Inv datasheet error:',e)})">
+        <div style="margin-top:.2rem;font-size:.55rem;font-style:italic">To permanently add an inverter to our catalog, email the datasheet to <a href="mailto:engineering@solarmason.com" style="color:#2D82BE;font-weight:700">engineering@solarmason.com</a>.</div>
+        <div id="ds-inv-datasheet-status" style="margin-top:.25rem;font-weight:700;display:none"></div>
+      </div>
+
       <!-- Hidden: kept for backwards compat with runDesignStudio. Default to fixed roof/ground
            driven by the mount-mode toggle in Step 3 — the dropdown was removed as redundant. -->
       <select id="ds-array" style="display:none">
@@ -11660,6 +11671,153 @@ function extractPanelSpecsFromText(rawText, filename) {
     tech: 'Custom upload (session only)',
     datasheet: null
   };
+}
+
+// ============================================================
+// CUSTOM INVERTER DATASHEET UPLOAD (session-only)
+// ============================================================
+// Parses an inverter datasheet PDF, auto-detects whether it's a
+// microinverter or string inverter based on wattage class and label
+// patterns, extracts the key ratings, and adds it to INVERTER_DB
+// under the currently-selected brand family. Does NOT persist.
+async function processInverterDatasheetFile(file) {
+  const status = document.getElementById('ds-inv-datasheet-status');
+  const show = (msg, color) => {
+    if (!status) return;
+    status.style.display = 'block';
+    status.style.color = color || '#2D82BE';
+    status.innerHTML = msg;
+  };
+  show('Parsing inverter datasheet…');
+  try {
+    const ab = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+    let text = '';
+    for (let i = 1; i <= Math.min(pdf.numPages, 4); i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += ' ' + content.items.map(it => it.str).join(' ');
+    }
+    const spec = extractInverterSpecsFromText(text, file.name);
+    if (!spec) {
+      show('❌ Could not extract inverter specs. Email the datasheet to <a href="mailto:engineering@solarmason.com" style="color:#2D82BE">engineering@solarmason.com</a> for manual addition.', '#dc2626');
+      return;
+    }
+
+    // Route to the correct inverter family based on type + active brand
+    if (spec.type === 'micro') {
+      INVERTER_DB.enphase.micro.push(spec.entry);
+      if (DS_STATE.inverterBrand !== 'enphase') setInverterBrand('enphase');
+      const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
+      populateEnphaseMicroDropdown(panelW);
+      const sel = document.getElementById('ds-inv-ep-model');
+      if (sel) { sel.value = spec.entry.model; onInverterModelChange(); }
+    } else {
+      INVERTER_DB.solaredge.stringInverter.push(spec.entry);
+      if (DS_STATE.inverterBrand !== 'solaredge') setInverterBrand('solaredge');
+      const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
+      const activeCount = (typeof activeCountForMode === 'function') ? activeCountForMode() : 0;
+      const totalDCkW = (activeCount * panelW) / 1000;
+      populateSolarEdgeDropdowns(panelW, totalDCkW);
+      const sel = document.getElementById('ds-inv-se-inv');
+      if (sel) { sel.value = spec.entry.model; onInverterModelChange(); }
+    }
+
+    const typeLabel = spec.type === 'micro' ? 'Microinverter' : 'String Inverter';
+    const ratingLabel = spec.type === 'micro'
+      ? `${spec.entry.peakAC}VA peak AC`
+      : `${spec.entry.ratedAC}kW AC · ${spec.entry.maxDCkW}kW max DC`;
+    show(`✓ <strong>${spec.entry.model}</strong> loaded as ${typeLabel} (${ratingLabel}). Session only — email engineering@solarmason.com to add permanently.`, '#059669');
+    if (typeof recalcMpu === 'function') recalcMpu();
+  } catch (err) {
+    console.error('[DS] Inverter datasheet parse error:', err);
+    show('❌ Parse error: ' + (err.message || 'unknown'), '#dc2626');
+  }
+}
+
+// Regex-based inverter spec extraction. Handles both micro- and string-
+// inverter datasheet layouts. The key heuristic for type detection is
+// the rated AC power — anything under 1.5 kW is almost certainly a
+// microinverter, anything over is a string inverter.
+function extractInverterSpecsFromText(rawText, filename) {
+  const t = rawText.replace(/\s+/g, ' ');
+  const grab = (patterns) => {
+    for (const re of patterns) {
+      const m = t.match(re);
+      if (m) return parseFloat(m[1]);
+    }
+    return null;
+  };
+  // Rated AC power — look for continuous output rating
+  // Could be in W (micros) or kW (string). Try both.
+  const acW = grab([
+    /(?:Continuous Output Power|Maximum Continuous Output Power|Peak Output Power|Rated Output Power)[^0-9]{0,30}(\d{3,4})\s*(?:VA|W)\b/i,
+    /(?:Peak|Max|Continuous|Rated)\s*AC\s*(?:Output\s*)?(?:Power|Rating)?[^0-9]{0,20}(\d{3,4})\s*(?:VA|W)\b/i
+  ]);
+  const acKw = grab([
+    /(?:Continuous AC Power|Rated AC Power|AC Output Power|Nominal AC Output)[^0-9]{0,30}(\d{1,3}(?:\.\d{1,2})?)\s*kW/i,
+    /Max(?:imum)?\s*(?:AC\s*)?Output[^0-9]{0,20}(\d{1,3}(?:\.\d{1,2})?)\s*kW/i
+  ]);
+
+  // Max DC input power (string inverters)
+  const maxDCkW = grab([
+    /(?:Max(?:imum)?\s*DC\s*(?:Input\s*)?Power|Recommended\s*Max(?:imum)?\s*PV\s*Power)[^0-9]{0,30}(\d{1,3}(?:\.\d{1,2})?)\s*kW/i
+  ]);
+
+  // Nominal grid voltage
+  const voltageMatch = t.match(/(\d{3})[\/ ](\d{3})\s*V\s*(?:split|1[ΦP]|single)/i)
+                    || t.match(/(208|240|480)\s*V\s*(?:3[ΦP]|three)/i)
+                    || t.match(/Nominal\s*(?:Grid|Output)\s*Voltage[^0-9]{0,10}(\d{3})/i);
+  const voltage = voltageMatch ? voltageMatch[0].replace(/\s+/g, ' ').trim() : '240V 1Φ';
+
+  // Determine type: microinverter (≤1500W / ≤1.5kW) vs string inverter
+  let isMicro = false;
+  if (acW && acW <= 1500) isMicro = true;
+  if (acKw && acKw <= 1.5) isMicro = true;
+  // Filename hints
+  if (/iq\s*8|enphase|micro/i.test(filename)) isMicro = true;
+  if (/string|solaredge|fronius|sma|growatt|hoymiles-ms/i.test(filename)) isMicro = false;
+
+  const modelName = filename.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ').trim() || 'Custom Inverter';
+
+  if (isMicro) {
+    const peakAC = acW || (acKw ? acKw * 1000 : 0);
+    if (!peakAC) return null;
+    return {
+      type: 'micro',
+      entry: {
+        model: modelName,
+        peakAC: Math.round(peakAC),
+        maxDC: Math.round(peakAC * 1.35),   // typical DC-AC headroom for micros
+        minPanelW: 280,                      // conservative residential range
+        maxPanelW: 640,
+        maxPerBranch: 13,
+        voltage: /3[ΦP]|208/.test(voltage) ? '208V 3-phase' : '240V split-phase',
+        warranty: '25 years',
+        notes: 'Custom upload (session only)',
+        datasheet: null
+      }
+    };
+  } else {
+    const ratedAC = acKw || (acW ? acW / 1000 : 0);
+    if (!ratedAC) return null;
+    const isThreePhase = /3[ΦP]|208|480/.test(voltage);
+    return {
+      type: 'string',
+      entry: {
+        model: modelName,
+        ratedAC: Math.round(ratedAC * 100) / 100,
+        maxDCkW: maxDCkW || Math.round(ratedAC * 1.50 * 100) / 100,
+        dcInputs: isThreePhase ? 6 : 2,
+        maxPerString: 25,
+        maxStringKw: Math.min(13.5, (maxDCkW || ratedAC * 1.5)),
+        voltage: isThreePhase ? '480V 3Φ' : '240V 1Φ',
+        notes: 'Custom upload (session only)',
+        application: isThreePhase ? 'commercial' : 'residential',
+        datasheet: null
+      }
+    };
+  }
 }
 
 function setIronRidgeSeries(series) {
