@@ -4409,6 +4409,46 @@ html { scroll-behavior: smooth; }
 .ds-inv-compat.err{background:rgba(220,38,38,.06);border-color:rgba(220,38,38,.3);color:#991b1b}
 .ds-inv-compat strong{color:inherit;font-weight:800}
 
+/* ─── BATTERY BACKUP SECTION ─────────────────────────────── */
+.ds-bat-strategy{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.3rem;margin:.4rem 0 .55rem}
+.ds-bat-strat-btn{padding:.45rem .3rem;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:7px;font-size:.6rem;font-weight:700;color:#64748B;cursor:pointer;font-family:inherit;text-align:center;line-height:1.25;transition:all .15s}
+.ds-bat-strat-btn:hover{background:#f1f5f9;border-color:rgba(59,112,162,.35)}
+.ds-bat-strat-btn.active{background:linear-gradient(135deg,rgba(59,112,162,.1),rgba(59,112,162,.02));border-color:#3B70A2;color:#0B2545}
+.ds-bat-strat-btn .strat-name{display:block;font-size:.66rem;font-weight:800;color:#0B2545;margin-bottom:.05rem}
+.ds-bat-strat-btn .strat-sub{display:block;font-size:.52rem;color:#94a3b8;font-weight:600}
+.ds-bat-strat-btn.active .strat-sub{color:#64748B}
+
+.ds-bat-loads{margin-top:.4rem;max-height:280px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:9px;padding:.45rem .55rem;background:#fff}
+.ds-bat-load-cat{margin-top:.5rem;padding-bottom:.15rem;border-bottom:1px solid rgba(59,112,162,.12);font-size:.55rem;font-weight:900;color:#3B70A2;text-transform:uppercase;letter-spacing:.05em}
+.ds-bat-load-cat:first-child{margin-top:0}
+.ds-bat-load-row{display:flex;align-items:center;gap:.45rem;padding:.32rem .15rem;cursor:pointer;border-radius:5px;transition:background .12s}
+.ds-bat-load-row:hover{background:rgba(59,112,162,.04)}
+.ds-bat-load-row input[type=checkbox]{width:14px;height:14px;accent-color:#3B70A2;cursor:pointer;flex-shrink:0}
+.ds-bat-load-name{flex:1;font-size:.66rem;font-weight:700;color:#0B2545;line-height:1.25}
+.ds-bat-load-spec{font-size:.55rem;color:#64748B;font-weight:600;text-align:right;flex-shrink:0;line-height:1.25}
+.ds-bat-load-spec strong{color:#0B2545;font-weight:800;display:block}
+
+.ds-bat-result-card{margin:.7rem 0 .5rem;padding:.75rem .85rem;background:linear-gradient(135deg,rgba(45,130,190,.08),rgba(45,130,190,.02));border:1px solid rgba(45,130,190,.25);border-radius:10px}
+.ds-bat-result-card.empty{background:rgba(148,163,184,.06);border-color:rgba(148,163,184,.2)}
+.ds-bat-result-row{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.3rem}
+.ds-bat-result-row:last-child{margin-bottom:0}
+.ds-bat-result-label{font-size:.6rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.04em}
+.ds-bat-result-val{font-size:1.1rem;font-weight:900;color:#0B2545;line-height:1}
+.ds-bat-result-val.big{font-size:1.6rem;color:#2D82BE}
+.ds-bat-result-val .unit{font-size:.55rem;color:#64748B;font-weight:600;margin-left:.15rem}
+.ds-bat-result-card.empty .ds-bat-result-val{color:#94a3b8}
+.ds-bat-result-divider{height:1px;background:rgba(45,130,190,.15);margin:.45rem 0}
+
+.ds-bat-bottleneck{display:inline-flex;align-items:center;gap:.25rem;padding:.15rem .4rem;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:4px;font-size:.5rem;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.04em}
+
+.ds-bat-controller-meta{margin-top:.4rem;padding:.5rem .65rem;background:rgba(45,130,190,.05);border:1px solid rgba(45,130,190,.18);border-radius:8px;font-size:.6rem;color:#475569;line-height:1.5}
+.ds-bat-controller-meta strong{color:#0B2545;font-weight:800}
+
+.ds-bat-v2h-callout{margin-top:.55rem;padding:.6rem .75rem;background:linear-gradient(135deg,rgba(34,197,94,.1),rgba(34,197,94,.02));border:1px solid rgba(34,197,94,.35);border-left:3px solid #22c55e;border-radius:8px;font-size:.62rem;color:#14532d;line-height:1.5;display:none}
+.ds-bat-v2h-callout.show{display:block}
+.ds-bat-v2h-callout strong{color:#14532d;font-weight:900}
+.ds-bat-v2h-callout .v2h-title{display:block;font-size:.7rem;color:#14532d;font-weight:900;margin-bottom:.2rem}
+
 /* ─── EV CHARGING SECTION ────────────────────────────────────── */
 .ds-ev-meta{margin-top:.3rem;font-size:.62rem;color:#64748B;line-height:1.4}
 .ds-ev-meta strong{color:#0B2545;font-weight:800}
@@ -4896,9 +4936,99 @@ body.ds-mode-ground .ds-ground-only{display:block}
       </div>
     </details>
 
+    <!-- Battery Backup (optional) — essential loads picker, auto-sizing, system controller hardware -->
+    <details class="ds-panel">
+      <summary><h3><span class="step">8</span> Battery Backup <em style="font-weight:500;color:#94a3b8;font-size:.7rem;margin-left:.3rem">(optional)</em></h3></summary>
+      <div class="ds-panel-body">
+
+        <!-- Battery brand + model -->
+        <div class="ds-field">
+          <label>Battery System</label>
+          <select id="ds-bat-model" onchange="onBatteryChange()">
+            <option value="">— No Battery —</option>
+          </select>
+          <div class="ds-ev-meta" id="ds-bat-meta">Choose a battery to size your backup. Auto-defaults to match your inverter brand.</div>
+        </div>
+
+        <!-- Backup strategy: whole home / partial / critical -->
+        <div class="ds-field" id="ds-bat-strategy-field" style="display:none">
+          <label>Backup Strategy</label>
+          <div class="ds-bat-strategy" id="ds-bat-strategy">
+            <button type="button" class="ds-bat-strat-btn active" data-strategy="critical" onclick="setBatteryStrategy('critical')">
+              <span class="strat-name">Critical Loads</span>
+              <span class="strat-sub">Fridge · lights · medical</span>
+            </button>
+            <button type="button" class="ds-bat-strat-btn" data-strategy="essentials" onclick="setBatteryStrategy('essentials')">
+              <span class="strat-name">Essentials</span>
+              <span class="strat-sub">+ Heat · cooking · WiFi</span>
+            </button>
+            <button type="button" class="ds-bat-strat-btn" data-strategy="whole" onclick="setBatteryStrategy('whole')">
+              <span class="strat-name">Whole Home</span>
+              <span class="strat-sub">Everything in panel</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Essential loads picker (only shown when not whole-home) -->
+        <div class="ds-field" id="ds-bat-loads-field" style="display:none">
+          <label>Loads to Back Up <em style="font-weight:500;color:#94a3b8;font-size:.65rem">(toggle on/off)</em></label>
+          <div class="ds-bat-loads" id="ds-bat-loads"></div>
+        </div>
+
+        <!-- Backup duration -->
+        <div class="ds-field" id="ds-bat-duration-field" style="display:none">
+          <label>Backup Duration Target</label>
+          <div class="ds-ev-tabs" id="ds-bat-duration-tabs">
+            <button type="button" class="ds-ev-tab" data-duration="4h">4 hr</button>
+            <button type="button" class="ds-ev-tab" data-duration="8h">8 hr</button>
+            <button type="button" class="ds-ev-tab active" data-duration="1d">1 day</button>
+            <button type="button" class="ds-ev-tab" data-duration="3d">3 day</button>
+          </div>
+          <div class="ds-ev-meta">How long the selected loads should run on stored energy alone (no solar input).</div>
+        </div>
+
+        <!-- Sizing result card -->
+        <div class="ds-bat-result-card empty" id="ds-bat-result-card">
+          <div class="ds-bat-result-row">
+            <div>
+              <div class="ds-bat-result-label">Recommended</div>
+            </div>
+            <div class="ds-bat-result-val big"><span id="ds-bat-rec-count">0</span> <span class="unit">batteries</span></div>
+          </div>
+          <div class="ds-bat-result-divider"></div>
+          <div class="ds-bat-result-row">
+            <div class="ds-bat-result-label">Total Usable</div>
+            <div class="ds-bat-result-val"><span id="ds-bat-total-kwh">0</span> <span class="unit">kWh</span></div>
+          </div>
+          <div class="ds-bat-result-row">
+            <div class="ds-bat-result-label">Continuous</div>
+            <div class="ds-bat-result-val"><span id="ds-bat-total-kw">0</span> <span class="unit">kW</span></div>
+          </div>
+          <div class="ds-bat-result-row">
+            <div class="ds-bat-result-label">Peak / Surge</div>
+            <div class="ds-bat-result-val"><span id="ds-bat-total-peak">0</span> <span class="unit">kW</span></div>
+          </div>
+          <div class="ds-bat-result-row">
+            <div class="ds-bat-result-label">Bottleneck</div>
+            <div><span class="ds-bat-bottleneck" id="ds-bat-bottleneck">—</span></div>
+          </div>
+        </div>
+
+        <!-- System controller hardware (auto-selected) -->
+        <div class="ds-bat-controller-meta" id="ds-bat-controller-meta" style="display:none"></div>
+
+        <!-- V2H bidirectional EV callout -->
+        <div class="ds-bat-v2h-callout" id="ds-bat-v2h-callout">
+          <span class="v2h-title">⚡ Bidirectional EV Charging Available</span>
+          <span id="ds-bat-v2h-text"></span>
+        </div>
+
+      </div>
+    </details>
+
     <!-- Financials -->
     <details class="ds-panel">
-      <summary><h3><span class="step">8</span> Financial Inputs</h3></summary>
+      <summary><h3><span class="step">9</span> Financial Inputs</h3></summary>
       <div class="ds-panel-body">
 
       <!-- Residential vs Commercial toggle -->
@@ -4975,7 +5105,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Auto-Detected Incentives -->
     <details class="ds-panel" open>
-      <summary><h3><span class="step">9</span> Incentives &amp; Credits</h3></summary>
+      <summary><h3><span class="step">10</span> Incentives &amp; Credits</h3></summary>
       <div class="ds-panel-body">
       <p class="ds-incent-intro">Auto-detected based on your project's <strong>state</strong> and <strong>utility</strong>. Toggle any line on/off — values flow into the 25-year financial model. Hover or tap a type badge for a plain-English explanation.</p>
 
@@ -9406,6 +9536,7 @@ function onEvModelChange() {
     metaEl.innerHTML = 'Select a vehicle to estimate annual charging load';
     updateEvResultCard();
     refreshOffsetPresets();
+    if (typeof updateV2hCallout === 'function') updateV2hCallout();
     renderBOM();
     return;
   }
@@ -9476,6 +9607,7 @@ function recalcEvLoad() {
   DS_STATE.evLoad = { evIndex: idx, whPerMi, miles, period: DS_STATE.evPeriod, milesAnnual, annualKwh };
   updateEvResultCard();
   refreshOffsetPresets();  // offset targets now include EV load
+  if (typeof updateV2hCallout === 'function') updateV2hCallout();
 }
 
 function updateEvResultCard() {
@@ -9532,6 +9664,455 @@ function initEvSection() {
   document.querySelectorAll('#ds-ev-period-tabs .ds-ev-tab').forEach(b => {
     b.addEventListener('click', () => setEvPeriod(b.dataset.period));
   });
+}
+
+// ============================================================
+// BATTERY BACKUP
+// ============================================================
+// Whole-system battery sizing engine. Lets the user pick a backup strategy
+// (Critical / Essentials / Whole Home), toggle individual loads, then auto-
+// recommends a battery count that satisfies THREE constraints:
+//   1. Energy capacity:   sum(daily kWh × duration) ≤ count × usableKwh
+//   2. Continuous power:  sum(running W) ≤ count × continuousKw
+//   3. Surge / LRA:       max(surgeW) ≤ count × peakKw
+//
+// The bottleneck (whichever constraint demanded the highest count) is shown
+// to the installer so they can talk to the customer about it intelligently
+// — "you needed 3 batteries for the heat pump surge, not the energy."
+//
+// Battery brand auto-selects from the inverter brand by default (Enphase
+// inverter → Enphase IQ Battery 5P, SolarEdge → Energy Bank), but the user
+// can override to Tesla / FranklinWH / Generac for any inverter family.
+
+const BATTERY_DB = [
+  // ─── Enphase ─────────────────────────────────────────────
+  {
+    key: 'enphase-iq5p',
+    brand: 'Enphase', model: 'IQ Battery 5P',
+    family: 'enphase',
+    usableKwh: 5.0, continuousKw: 3.84, peakKw: 7.68,
+    chemistry: 'LFP', voltage: '240V split-phase',
+    warranty: '15 years',
+    maxStack: 16,
+    notes: 'Stackable up to 16 units · passive cooling · IQ System Controller 3 required for backup'
+  },
+  {
+    key: 'enphase-iq10c',
+    brand: 'Enphase', model: 'IQ Battery 10C',
+    family: 'enphase',
+    usableKwh: 10.5, continuousKw: 7.68, peakKw: 10.24,
+    chemistry: 'LFP', voltage: '240V split-phase',
+    warranty: '15 years',
+    maxStack: 8,
+    notes: 'Higher density commercial/residential · IQ System Controller 3 required'
+  },
+  // ─── SolarEdge ──────────────────────────────────────────
+  {
+    key: 'se-energybank',
+    brand: 'SolarEdge', model: 'Energy Bank 10 kWh',
+    family: 'solaredge',
+    usableKwh: 9.7, continuousKw: 5.0, peakKw: 7.5,
+    chemistry: 'NMC', voltage: 'DC-coupled (Energy Hub required)',
+    warranty: '10 years',
+    maxStack: 3,
+    notes: 'DC-coupled to Energy Hub inverter · up to 3 batteries per Energy Hub · Backup Interface required'
+  },
+  // ─── Third-party (work with any inverter family) ────────
+  {
+    key: 'tesla-pw3',
+    brand: 'Tesla', model: 'Powerwall 3',
+    family: 'thirdparty',
+    usableKwh: 13.5, continuousKw: 11.5, peakKw: 22.0,
+    chemistry: 'LFP', voltage: '240V split-phase',
+    warranty: '10 years',
+    maxStack: 4,
+    notes: 'Built-in solar inverter (6 MPPTs) · 185A LRA motor start · whole-home backup native · Tesla Backup Gateway required'
+  },
+  {
+    key: 'franklin-apower2',
+    brand: 'FranklinWH', model: 'aPower 2',
+    family: 'thirdparty',
+    usableKwh: 15.0, continuousKw: 10.0, peakKw: 14.0,
+    chemistry: 'LFP', voltage: '240V split-phase',
+    warranty: '15 years',
+    maxStack: 15,
+    notes: 'Modular up to 15 units (225 kWh) · aGate controller required for whole-home backup · 200A pass-through'
+  },
+  {
+    key: 'generac-pwrcell',
+    brand: 'Generac', model: 'PWRcell M6',
+    family: 'thirdparty',
+    usableKwh: 18.0, continuousKw: 9.0, peakKw: 12.0,
+    chemistry: 'NMC', voltage: '240V split-phase',
+    warranty: '10 years',
+    maxStack: 2,
+    notes: 'PWRcell inverter required · integrates with PWRgenerator transfer · 200A whole-home'
+  }
+];
+
+// System controller / transfer hardware required to actually achieve backup
+// for each battery family. Critical: a battery alone is NOT a backup system —
+// you need the controller for grid disconnection + load management.
+const BATTERY_CONTROLLERS = {
+  'enphase-iq5p': {
+    name: 'Enphase IQ System Controller 3',
+    meta: 'Microgrid interconnect device + automatic transfer switch · 200A service rated · NEC 705.13 compliant · Enphase ecosystem',
+    warranty: '5 years'
+  },
+  'enphase-iq10c': {
+    name: 'Enphase IQ System Controller 3',
+    meta: 'Microgrid interconnect device + automatic transfer switch · 200A service rated · NEC 705.13 compliant · Enphase ecosystem',
+    warranty: '5 years'
+  },
+  'se-energybank': {
+    name: 'SolarEdge Backup Interface',
+    meta: 'Whole-home automatic transfer switch · works with Energy Hub Inverter · 200A service rated · SolarEdge ecosystem',
+    warranty: '12 years'
+  },
+  'tesla-pw3': {
+    name: 'Tesla Backup Gateway 2',
+    meta: 'Whole-home transfer switch + Tesla App control · 200A service rated · required for any Powerwall backup install',
+    warranty: '10 years'
+  },
+  'franklin-apower2': {
+    name: 'FranklinWH aGate',
+    meta: 'Whole-home smart transfer + load management · 200A pass-through · controls up to 15 aPower units',
+    warranty: '12 years'
+  },
+  'generac-pwrcell': {
+    name: 'Generac PWRcell ATS',
+    meta: 'Automatic transfer switch sized to PWRcell inverter output · whole-home or essential-loads sub-panel',
+    warranty: '10 years'
+  }
+};
+
+// Essential loads library — typical residential equipment with running watts,
+// surge watts (motor start LRA), and average daily kWh consumption.
+// Sources: Energy.gov appliance data, manufacturer spec plates, NEC 220.
+// Categories drive the UI grouping in the loads picker.
+const ESSENTIAL_LOADS = [
+  // Critical
+  { id: 'fridge',     name: 'Refrigerator (full size)',  cat: 'Critical', runW: 150,  surgeW: 700,  dailyKwh: 1.5, defaultStrategy: ['critical','essentials','whole'] },
+  { id: 'freezer',    name: 'Chest freezer',             cat: 'Critical', runW: 100,  surgeW: 500,  dailyKwh: 1.0, defaultStrategy: ['essentials','whole'] },
+  { id: 'lights',     name: 'LED lights (whole home)',   cat: 'Critical', runW: 150,  surgeW: 150,  dailyKwh: 1.0, defaultStrategy: ['critical','essentials','whole'] },
+  { id: 'internet',   name: 'Internet (router + modem)', cat: 'Critical', runW: 30,   surgeW: 30,   dailyKwh: 0.7, defaultStrategy: ['critical','essentials','whole'] },
+  { id: 'medical',    name: 'CPAP / medical equipment',  cat: 'Critical', runW: 60,   surgeW: 100,  dailyKwh: 0.5, defaultStrategy: ['critical','essentials','whole'] },
+  { id: 'sumppump',   name: 'Sump pump',                 cat: 'Critical', runW: 750,  surgeW: 2500, dailyKwh: 0.5, defaultStrategy: ['critical','essentials','whole'] },
+  { id: 'wellpump',   name: 'Well pump (1/2 HP)',        cat: 'Critical', runW: 750,  surgeW: 2500, dailyKwh: 1.0, defaultStrategy: ['critical','essentials','whole'] },
+  // Comfort / HVAC
+  { id: 'furnace',    name: 'Gas furnace blower',        cat: 'Comfort',  runW: 600,  surgeW: 1200, dailyKwh: 1.5, defaultStrategy: ['essentials','whole'] },
+  { id: 'minisplit',  name: 'Mini-split (12k BTU)',      cat: 'Comfort',  runW: 1000, surgeW: 2000, dailyKwh: 8,   defaultStrategy: ['essentials','whole'] },
+  { id: 'centralac',  name: 'Central AC (3 ton)',        cat: 'Comfort',  runW: 3500, surgeW: 9000, dailyKwh: 20,  defaultStrategy: ['whole'] },
+  { id: 'heatpump',   name: 'Heat pump (3 ton)',         cat: 'Comfort',  runW: 4500, surgeW: 11000, dailyKwh: 25, defaultStrategy: ['whole'] },
+  { id: 'windowac',   name: 'Window AC (12k BTU)',       cat: 'Comfort',  runW: 1100, surgeW: 2200, dailyKwh: 8,   defaultStrategy: ['essentials','whole'] },
+  // Kitchen
+  { id: 'microwave',  name: 'Microwave (countertop)',    cat: 'Kitchen',  runW: 1000, surgeW: 1500, dailyKwh: 0.3, defaultStrategy: ['essentials','whole'] },
+  { id: 'coffee',     name: 'Coffee maker',              cat: 'Kitchen',  runW: 1000, surgeW: 1000, dailyKwh: 0.2, defaultStrategy: ['essentials','whole'] },
+  { id: 'cooktop',    name: 'Electric cooktop',          cat: 'Kitchen',  runW: 3500, surgeW: 3500, dailyKwh: 1.0, defaultStrategy: ['whole'] },
+  { id: 'oven',       name: 'Electric oven',             cat: 'Kitchen',  runW: 3000, surgeW: 3500, dailyKwh: 1.5, defaultStrategy: ['whole'] },
+  { id: 'dishwasher', name: 'Dishwasher',                cat: 'Kitchen',  runW: 1500, surgeW: 1800, dailyKwh: 1.5, defaultStrategy: ['whole'] },
+  // Laundry
+  { id: 'washer',     name: 'Washing machine',           cat: 'Laundry',  runW: 500,  surgeW: 1300, dailyKwh: 0.5, defaultStrategy: ['whole'] },
+  { id: 'gasdryer',   name: 'Gas dryer',                 cat: 'Laundry',  runW: 700,  surgeW: 1500, dailyKwh: 0.5, defaultStrategy: ['whole'] },
+  { id: 'edryer',     name: 'Electric dryer',            cat: 'Laundry',  runW: 5500, surgeW: 6000, dailyKwh: 3.0, defaultStrategy: ['whole'] },
+  // Water
+  { id: 'ewh',        name: 'Electric water heater',     cat: 'Water',    runW: 4500, surgeW: 4500, dailyKwh: 12,  defaultStrategy: ['whole'] },
+  { id: 'twh',        name: 'Tankless electric WH',      cat: 'Water',    runW: 18000, surgeW: 18000, dailyKwh: 5,  defaultStrategy: ['whole'] },
+  // Convenience
+  { id: 'tv',         name: 'TV (55" LED)',              cat: 'Convenience', runW: 100, surgeW: 200, dailyKwh: 0.4, defaultStrategy: ['essentials','whole'] },
+  { id: 'office',     name: 'Home office',               cat: 'Convenience', runW: 250, surgeW: 400, dailyKwh: 1.0, defaultStrategy: ['essentials','whole'] },
+  { id: 'garagedoor', name: 'Garage door opener',        cat: 'Convenience', runW: 350, surgeW: 1100, dailyKwh: 0.05, defaultStrategy: ['essentials','whole'] }
+];
+
+// Backup duration → days multiplier
+const BATTERY_DURATIONS = { '4h': 4/24, '8h': 8/24, '1d': 1, '3d': 3 };
+
+// V2H-capable EVs (production-shipping bidirectional vehicles in the US).
+// Match against EV_DB by brand+model substring.
+const V2H_CAPABLE_EVS = [
+  { match: 'F-150 Lightning', kWcapable: 9.6,  pack: 131, charger: 'Ford Charge Station Pro + Home Integration System' },
+  { match: 'Cybertruck',      kWcapable: 11.5, pack: 123, charger: 'Tesla Wall Connector + Powerwall 3 (Powershare)' },
+  { match: 'Silverado EV',    kWcapable: 10.2, pack: 200, charger: 'GM Energy PowerShift Charger + V2H Bundle' },
+  { match: 'Hummer EV',       kWcapable: 10.2, pack: 212, charger: 'GM Energy PowerShift Charger + V2H Bundle' },
+  { match: 'Leaf',            kWcapable: 6.0,  pack:  62, charger: 'Wallbox Quasar 2 (CHAdeMO bidirectional)' }
+];
+
+// ─── Battery state ─────────────────────────────────────
+DS_STATE.batterySelection = null;            // BATTERY_DB entry or null
+DS_STATE.batteryStrategy  = 'critical';      // 'critical' | 'essentials' | 'whole'
+DS_STATE.batteryDuration  = '1d';            // '4h' | '8h' | '1d' | '3d'
+DS_STATE.essentialLoads   = new Set();       // Set of load ids
+DS_STATE.batterySizing    = null;            // computed result
+
+// Populate the battery dropdown grouped by family (Enphase / SolarEdge / 3rd party)
+function populateBatteryDropdown() {
+  const sel = document.getElementById('ds-bat-model');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— No Battery —</option>';
+
+  const groups = [
+    { label: 'Enphase Ensemble', filter: b => b.family === 'enphase' },
+    { label: 'SolarEdge Energy Hub', filter: b => b.family === 'solaredge' },
+    { label: 'Third-Party (any inverter)', filter: b => b.family === 'thirdparty' }
+  ];
+  groups.forEach(g => {
+    const header = document.createElement('option');
+    header.disabled = true;
+    header.textContent = `── ${g.label} ──`;
+    sel.appendChild(header);
+    BATTERY_DB.forEach(b => {
+      if (!g.filter(b)) return;
+      const opt = document.createElement('option');
+      opt.value = b.key;
+      opt.textContent = `${b.brand} ${b.model} — ${b.usableKwh} kWh @ ${b.continuousKw} kW`;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+// Auto-pick a battery to match the current inverter brand. Called from
+// setInverterBrand() and from initBatterySection() on page load.
+function autoSelectBatteryForInverter() {
+  const want = DS_STATE.inverterBrand === 'enphase' ? 'enphase-iq5p' : 'se-energybank';
+  // Don't override an existing user selection
+  if (DS_STATE.batterySelection && DS_STATE.batterySelection.key !== want) {
+    // Only override if the existing selection is from the OPPOSITE family
+    // (e.g. user had SE Energy Bank but switched inverter to Enphase)
+    const cur = DS_STATE.batterySelection;
+    if ((DS_STATE.inverterBrand === 'enphase' && cur.family === 'solaredge') ||
+        (DS_STATE.inverterBrand === 'solaredge' && cur.family === 'enphase')) {
+      // override
+    } else {
+      return;
+    }
+  }
+  // Just update the dropdown — don't actually enable the battery section
+  // unless the user clicked it. Setting the value visually only.
+  const sel = document.getElementById('ds-bat-model');
+  if (sel && DS_STATE.batterySelection) {
+    sel.value = want;
+    onBatteryChange();
+  } else if (sel) {
+    sel.value = '';
+  }
+}
+
+function onBatteryChange() {
+  const sel = document.getElementById('ds-bat-model');
+  const val = sel ? sel.value : '';
+  if (!val) {
+    DS_STATE.batterySelection = null;
+    DS_STATE.batterySizing = null;
+    document.getElementById('ds-bat-strategy-field').style.display = 'none';
+    document.getElementById('ds-bat-loads-field').style.display = 'none';
+    document.getElementById('ds-bat-duration-field').style.display = 'none';
+    document.getElementById('ds-bat-controller-meta').style.display = 'none';
+    document.getElementById('ds-bat-v2h-callout').classList.remove('show');
+    document.getElementById('ds-bat-result-card').classList.add('empty');
+    document.getElementById('ds-bat-rec-count').textContent = '0';
+    document.getElementById('ds-bat-meta').textContent = 'Choose a battery to size your backup. Auto-defaults to match your inverter brand.';
+    renderBOM();
+    return;
+  }
+  const battery = BATTERY_DB.find(b => b.key === val);
+  if (!battery) return;
+  DS_STATE.batterySelection = battery;
+
+  // Reveal the rest of the section
+  document.getElementById('ds-bat-strategy-field').style.display = '';
+  document.getElementById('ds-bat-loads-field').style.display = '';
+  document.getElementById('ds-bat-duration-field').style.display = '';
+
+  document.getElementById('ds-bat-meta').innerHTML =
+    `<strong>${battery.brand} ${battery.model}</strong> — ${battery.usableKwh} kWh usable · ${battery.continuousKw} kW continuous · ${battery.peakKw} kW peak · ${battery.chemistry} · ${battery.warranty}`;
+
+  // Render loads picker if not already
+  renderEssentialLoadsPicker();
+  // Default-select loads for the current strategy
+  applyDefaultLoadsForStrategy();
+  // Show controller hardware info
+  showBatteryControllerInfo();
+  // Check V2H availability
+  updateV2hCallout();
+  // Run sizing
+  recalcBatterySizing();
+}
+
+function setBatteryStrategy(strategy) {
+  DS_STATE.batteryStrategy = strategy;
+  document.querySelectorAll('#ds-bat-strategy .ds-bat-strat-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.strategy === strategy);
+  });
+  applyDefaultLoadsForStrategy();
+  recalcBatterySizing();
+}
+
+function setBatteryDuration(duration) {
+  DS_STATE.batteryDuration = duration;
+  document.querySelectorAll('#ds-bat-duration-tabs .ds-ev-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.duration === duration);
+  });
+  recalcBatterySizing();
+}
+
+// Pre-select sensible loads for the chosen strategy
+function applyDefaultLoadsForStrategy() {
+  DS_STATE.essentialLoads.clear();
+  for (const load of ESSENTIAL_LOADS) {
+    if (load.defaultStrategy && load.defaultStrategy.includes(DS_STATE.batteryStrategy)) {
+      DS_STATE.essentialLoads.add(load.id);
+    }
+  }
+  // Re-paint checkboxes
+  document.querySelectorAll('#ds-bat-loads input[type=checkbox]').forEach(cb => {
+    cb.checked = DS_STATE.essentialLoads.has(cb.value);
+  });
+}
+
+function toggleEssentialLoad(id, on) {
+  if (on) DS_STATE.essentialLoads.add(id);
+  else DS_STATE.essentialLoads.delete(id);
+  recalcBatterySizing();
+}
+
+function renderEssentialLoadsPicker() {
+  const wrap = document.getElementById('ds-bat-loads');
+  if (!wrap || wrap.dataset.rendered === '1') return;
+  // Group by category
+  const byCat = {};
+  for (const l of ESSENTIAL_LOADS) {
+    if (!byCat[l.cat]) byCat[l.cat] = [];
+    byCat[l.cat].push(l);
+  }
+  let html = '';
+  for (const cat of Object.keys(byCat)) {
+    html += `<div class="ds-bat-load-cat">${cat}</div>`;
+    for (const l of byCat[cat]) {
+      html += `
+      <label class="ds-bat-load-row">
+        <input type="checkbox" value="${l.id}" onchange="toggleEssentialLoad('${l.id}', this.checked)">
+        <span class="ds-bat-load-name">${l.name}</span>
+        <span class="ds-bat-load-spec"><strong>${l.runW.toLocaleString()} W</strong>${l.surgeW > l.runW ? ' · ' + l.surgeW.toLocaleString() + ' surge' : ''}<br>${l.dailyKwh} kWh/day</span>
+      </label>`;
+    }
+  }
+  wrap.innerHTML = html;
+  wrap.dataset.rendered = '1';
+}
+
+// Core sizing engine — applies all three constraints (energy, continuous, surge)
+// and picks the largest count required.
+function recalcBatterySizing() {
+  const battery = DS_STATE.batterySelection;
+  if (!battery) {
+    DS_STATE.batterySizing = null;
+    return;
+  }
+  const selected = ESSENTIAL_LOADS.filter(l => DS_STATE.essentialLoads.has(l.id));
+  const totalRunW   = selected.reduce((s, l) => s + l.runW, 0);
+  const totalSurgeW = selected.length ? Math.max(...selected.map(l => l.surgeW)) : 0;
+  const totalDailyKwh = selected.reduce((s, l) => s + l.dailyKwh, 0);
+
+  const dur = BATTERY_DURATIONS[DS_STATE.batteryDuration] || 1;
+  const targetKwh = totalDailyKwh * dur;
+
+  // Three independent count requirements — take the max
+  const countByEnergy = totalDailyKwh > 0 ? Math.max(1, Math.ceil(targetKwh / battery.usableKwh)) : 1;
+  const countByPower  = totalRunW > 0 ? Math.max(1, Math.ceil((totalRunW / 1000) / battery.continuousKw)) : 1;
+  const countBySurge  = totalSurgeW > 0 ? Math.max(1, Math.ceil((totalSurgeW / 1000) / battery.peakKw)) : 1;
+
+  let recommendedCount = Math.max(countByEnergy, countByPower, countBySurge);
+  // Cap at the battery's max stack size; if we exceed, flag it.
+  let exceedsMax = false;
+  if (recommendedCount > battery.maxStack) {
+    exceedsMax = true;
+    recommendedCount = battery.maxStack;
+  }
+
+  // Identify the bottleneck for the installer
+  let bottleneck = 'Energy';
+  if (countBySurge >= countByEnergy && countBySurge >= countByPower) bottleneck = 'Surge / LRA';
+  else if (countByPower >= countByEnergy) bottleneck = 'Continuous Power';
+
+  DS_STATE.batterySizing = {
+    count: recommendedCount,
+    countByEnergy, countByPower, countBySurge,
+    targetKwh, totalRunW, totalSurgeW, totalDailyKwh,
+    totalUsable:     recommendedCount * battery.usableKwh,
+    totalContinuous: recommendedCount * battery.continuousKw,
+    totalPeak:       recommendedCount * battery.peakKw,
+    bottleneck, exceedsMax,
+    selected
+  };
+  updateBatterySizingCard();
+  renderBOM();
+}
+
+function updateBatterySizingCard() {
+  const card = document.getElementById('ds-bat-result-card');
+  if (!card) return;
+  const s = DS_STATE.batterySizing;
+  if (!s || s.count === 0 || s.selected.length === 0) {
+    card.classList.add('empty');
+    document.getElementById('ds-bat-rec-count').textContent = '0';
+    document.getElementById('ds-bat-total-kwh').textContent = '0';
+    document.getElementById('ds-bat-total-kw').textContent = '0';
+    document.getElementById('ds-bat-total-peak').textContent = '0';
+    document.getElementById('ds-bat-bottleneck').textContent = '—';
+    return;
+  }
+  card.classList.remove('empty');
+  document.getElementById('ds-bat-rec-count').textContent = String(s.count);
+  document.getElementById('ds-bat-total-kwh').textContent = s.totalUsable.toFixed(1);
+  document.getElementById('ds-bat-total-kw').textContent  = s.totalContinuous.toFixed(2);
+  document.getElementById('ds-bat-total-peak').textContent = s.totalPeak.toFixed(1);
+  const b = document.getElementById('ds-bat-bottleneck');
+  b.textContent = s.bottleneck + (s.exceedsMax ? ' · MAX STACK!' : '');
+}
+
+function showBatteryControllerInfo() {
+  const meta = document.getElementById('ds-bat-controller-meta');
+  if (!meta) return;
+  const battery = DS_STATE.batterySelection;
+  if (!battery) { meta.style.display = 'none'; return; }
+  const ctrl = BATTERY_CONTROLLERS[battery.key];
+  if (!ctrl) { meta.style.display = 'none'; return; }
+  meta.style.display = '';
+  meta.innerHTML = `
+    <strong>System Controller (required for backup):</strong> ${ctrl.name}<br>
+    <span style="color:#64748B">${ctrl.meta}</span><br>
+    <span style="color:#64748B;font-size:.55rem">Warranty: ${ctrl.warranty} (parts only, labor not included)</span>
+  `;
+}
+
+// Show the V2H callout if the currently-selected EV is on the bidirectional list.
+// Tries to match by brand+model substring against EV_DB[evIndex].
+function updateV2hCallout() {
+  const cb = document.getElementById('ds-bat-v2h-callout');
+  const txt = document.getElementById('ds-bat-v2h-text');
+  if (!cb || !txt) return;
+  const evLoad = DS_STATE.evLoad;
+  if (!evLoad || evLoad.evIndex == null || evLoad.evIndex < 0) {
+    cb.classList.remove('show');
+    return;
+  }
+  const ev = EV_DB[evLoad.evIndex];
+  if (!ev) { cb.classList.remove('show'); return; }
+  const evLabel = `${ev.brand} ${ev.model}`;
+  const v2h = V2H_CAPABLE_EVS.find(v => evLabel.toLowerCase().includes(v.match.toLowerCase()));
+  if (!v2h) { cb.classList.remove('show'); return; }
+  cb.classList.add('show');
+  txt.innerHTML = `Your <strong>${ev.brand} ${ev.model}</strong> supports bidirectional charging — its <strong>~${v2h.pack} kWh battery</strong> can power your home during an outage at up to <strong>${v2h.kWcapable} kW</strong>. That's roughly <strong>${(v2h.pack / (DS_STATE.batterySizing?.totalDailyKwh || 30)).toFixed(1)} days</strong> of your essential loads with no additional Powerwalls. Required hardware: ${v2h.charger}.`;
+}
+
+function initBatterySection() {
+  populateBatteryDropdown();
+  document.querySelectorAll('#ds-bat-duration-tabs .ds-ev-tab').forEach(b => {
+    b.addEventListener('click', () => setBatteryDuration(b.dataset.duration));
+  });
+  // Don't auto-select on load — battery is optional. The user opts in by
+  // touching the dropdown. setInverterBrand() will hint at the right brand
+  // when they do open it via the meta line.
 }
 
 // ------- Panel picker UI wiring -------
@@ -10003,6 +10584,10 @@ function setInverterBrand(brand) {
   document.getElementById('ds-inv-enphase').style.display = (brand === 'enphase') ? 'block' : 'none';
   document.getElementById('ds-inv-solaredge').style.display = (brand === 'solaredge') ? 'block' : 'none';
   refreshInverterRecommendations();
+  // If a battery is selected and it's from the OPPOSITE family, swap it to
+  // the matching brand (Enphase ↔ SolarEdge). Third-party batteries (Tesla,
+  // FranklinWH, Generac) are inverter-agnostic and stay put.
+  if (typeof autoSelectBatteryForInverter === 'function') autoSelectBatteryForInverter();
 }
 
 function refreshInverterRecommendations() {
@@ -10407,7 +10992,40 @@ function computeBOM() {
     }
   }
 
-  // 5. Balance of System (BOS)
+  // 5. Battery Backup (battery + system controller hardware)
+  // Only emitted when the user has picked a battery and the sizer has run.
+  if (DS_STATE.batterySelection && DS_STATE.batterySizing && DS_STATE.batterySizing.count > 0) {
+    const b = DS_STATE.batterySelection;
+    const s = DS_STATE.batterySizing;
+    items.push({
+      category: 'Battery · Storage',
+      name: `${b.brand} ${b.model}`,
+      meta: withWarranty(
+        `${b.usableKwh} kWh usable · ${b.continuousKw} kW continuous · ${b.peakKw} kW peak · ${b.chemistry} · ${b.notes} · sized for ${s.bottleneck.toLowerCase()} bottleneck`,
+        b.warranty
+      ),
+      qty: s.count
+    });
+    // System controller is non-optional for backup operation
+    const ctrl = BATTERY_CONTROLLERS[b.key];
+    if (ctrl) {
+      items.push({
+        category: 'Battery · Controller',
+        name: ctrl.name,
+        meta: withWarranty(ctrl.meta, ctrl.warranty),
+        qty: 1
+      });
+    }
+    // Battery DC disconnect / overcurrent (NEC 706.7)
+    items.push({
+      category: 'Battery · Disconnect',
+      name: 'Battery DC Disconnect (NEMA 3R)',
+      meta: `Per NEC 706.7 — disconnecting means within sight of the battery system · sized to ${b.continuousKw} kW continuous output · Warranty: passed through from disconnect manufacturer ${WARRANTY_PARTS_ONLY}`,
+      qty: s.count
+    });
+  }
+
+  // 6. Balance of System (BOS)
   items.push({
     category: 'BOS',
     name: 'PV Wire, Conduit, Connectors',
@@ -10553,6 +11171,7 @@ renderIncentives();
 setInverterBrand('enphase');          // Initial brand → populates the Enphase dropdown
 refreshInverterRecommendations();
 initEvSection();                      // Populate EV + charger dropdowns, wire period tabs
+initBatterySection();                 // Populate battery dropdown, wire duration tabs
 
 // Tools overlay collapse/expand
 function toggleToolsOverlay() {
