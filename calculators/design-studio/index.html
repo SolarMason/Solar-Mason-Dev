@@ -11078,35 +11078,98 @@ function onMpuChange() {
 
 // Compute the inverter AC output current for the current system.
 // Returns amps, or 0 if no system yet.
+// Compute the selected inverter's actual continuous AC output current.
+// The old version used totalDC × 0.97 / voltage which vastly overstates
+// inverter output (real DC-AC ratios are 1.15–1.25, not 1.03). This
+// version uses the CEC-rated AC continuous output from the selected
+// inverter in INVERTER_DB, which is what NEC 690.8(A)(1)(1) actually
+// requires: "the sum of the continuous output current ratings of the
+// inverters shall be used as the inverter output circuit current".
 function computeInverterAcAmps() {
   const activeCount = (typeof activeCountForMode === 'function') ? activeCountForMode() : 0;
   if (activeCount === 0) return 0;
-  const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
-  const totalAcW = activeCount * panelW * 0.97;  // ~97% DC→AC conversion is a fair planning number
 
+  // Resolve the selected inverter's continuous AC output in watts.
+  let inverterAcW = 0;
+
+  if (DS_STATE.inverterBrand === 'enphase') {
+    // Enphase: each panel has one micro. peakAC in the DB is the
+    // manufacturer's rated AC output per micro in watts.
+    const modelName = DS_STATE.inverterSelection?.micro;
+    const micro = INVERTER_DB.enphase.micro.find(m => m.model === modelName);
+    if (micro) {
+      inverterAcW = micro.peakAC * activeCount;
+    }
+  } else {
+    // SolarEdge: use the multi-inverter sizing result if the Calculate
+    // engine has run, otherwise look up the currently-selected model.
+    const sized = DS_STATE.sizedSE;
+    if (sized && sized.inverter && sized.count) {
+      inverterAcW = sized.inverter.ratedAC * 1000 * sized.count;
+    } else {
+      const modelName = DS_STATE.inverterSelection?.stringInverter;
+      const inv = INVERTER_DB.solaredge.stringInverter.find(i => i.model === modelName);
+      if (inv) inverterAcW = inv.ratedAC * 1000;
+    }
+  }
+
+  // Fallback: no inverter resolved yet (page just loaded, nothing clicked).
+  // Use a realistic 1.20 DC-to-AC ratio which matches typical residential
+  // design practice. This is intentionally conservative (slightly higher
+  // AC output) so the MPU check doesn't silently under-report a real
+  // problem if the user hasn't touched the inverter picker yet.
+  if (inverterAcW === 0) {
+    const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
+    const totalDcW = activeCount * panelW;
+    inverterAcW = totalDcW / 1.20;
+  }
+
+  // Compute line current from AC power and service voltage.
+  // Single-phase:  I = P / V_LL
+  // Three-phase:   I = P / (V_LL × √3)
   const v = DS_STATE.mpu.voltage || '120/240';
-  // System voltage for amps = AC line-to-line nominal
   const voltageMap = {
-    '120/240': 240,                       // single-phase split
-    '120/208': 208 * Math.sqrt(3),        // 3-phase wye line current = P / (V_LL × √3)
+    '120/240': 240,
+    '120/208': 208 * Math.sqrt(3),   // 3Φ wye line current denominator
     '277/480': 480 * Math.sqrt(3),
     '240/480': 480 * Math.sqrt(3)
   };
   const voltageDenom = voltageMap[v] || 240;
-  return totalAcW / voltageDenom;
+  return inverterAcW / voltageDenom;
 }
 
-// NEC 705.12(B)(2) 120% rule check
+// NEC 705.12(B)(2) 120% rule check with realistic solution paths.
+// Real-world PV interconnection has THREE solution ladders, not just "upgrade":
+//
+//   1. DERATE    — swap main breaker for a smaller one (NEC 705.12(B)(2)(3)(b)).
+//                  Cheapest fix. No panel upgrade, no utility coordination.
+//                  Only possible if the derated main is still practical
+//                  for the home's peak grid draw (we default the floor to 100A).
+//
+//   2. UPGRADE   — full main panel upgrade to a larger residential service
+//                  (225A, 320A, 400A). Residential upgrades cap at 400A;
+//                  anything above is line-side tap territory.
+//                  Commercial projects can go to 600/800/1200 A.
+//
+//   3. LINE-SIDE — supply-side tap per NEC 705.11, interconnecting between
+//                  the utility meter and the main breaker. Bypasses the
+//                  120% rule entirely. Standard practice for large
+//                  residential PV systems where derate + upgrade both fail.
+//
+// The old code walked to 800A residential service, which nobody installs.
 function recalcMpu() {
   const existing = DS_STATE.mpu.existingAmps || 200;
   const acAmps = computeInverterAcAmps();
-  const pvBreakerAmps = Math.ceil((acAmps * 1.25) / 5) * 5;  // 125% of inverter, rounded up to nearest 5A
-  const allowedFeed = existing * 1.20;  // 120% of busbar rating
-  const totalLoad = existing + pvBreakerAmps;  // main breaker + PV backfeed
+  const pvBreakerAmps = Math.ceil((acAmps * 1.25) / 5) * 5;  // NEC 690.8/690.9: 125% rounded to nearest 5A
+  const allowedFeed = existing * 1.20;                        // NEC 705.12 120% rule
+  const totalLoad = existing + pvBreakerAmps;                 // main + PV backfeed
   const headroomAmps = allowedFeed - totalLoad;
   const passes = totalLoad <= allowedFeed && acAmps > 0;
-  let mpuRequired = false;
+
+  let solution = null;             // 'ok' | 'derate' | 'upgrade' | 'lineside'
+  let mpuRequired = false;          // only true for full panel upgrades
   let recommendedNewService = existing;
+  let deratedMain = null;
 
   if (acAmps === 0) {
     DS_STATE.mpu.result = null;
@@ -11114,19 +11177,53 @@ function recalcMpu() {
     if (typeof renderBOM === 'function') renderBOM();
     return;
   }
-  if (!passes) {
-    mpuRequired = true;
-    // Recommend the next standard service rating that satisfies the rule
-    const standards = [200, 225, 320, 400, 600, 800, 1200];
+
+  if (passes) {
+    solution = 'ok';
+  } else {
+    // Path 1: try main breaker derate. The maximum main breaker that
+    // still satisfies main + PV ≤ 1.20 × busbar is (allowance − PV).
+    // Floor it to a practical minimum of 100A (below that is usually
+    // impractical for a modern home).
+    const maxDerate = Math.floor((allowedFeed - pvBreakerAmps) / 5) * 5;
+    if (maxDerate >= 100) {
+      solution = 'derate';
+      deratedMain = maxDerate;
+      // No service upgrade, no new panel — just a breaker swap
+    }
+
+    // Path 2: residential service upgrade (capped at 400A) that satisfies
+    // the 120% rule without any derate. Commercial can go higher.
+    const standards = (DS_STATE.customerClass === 'commercial')
+      ? [225, 320, 400, 600, 800, 1200]
+      : [225, 320, 400];
+    let upgradeThatPasses = null;
     for (const s of standards) {
       if (s <= existing) continue;
-      if ((s + pvBreakerAmps) <= s * 1.20) { recommendedNewService = s; break; }
+      if ((s + pvBreakerAmps) <= s * 1.20) {
+        upgradeThatPasses = s;
+        break;
+      }
     }
-    if (recommendedNewService === existing) recommendedNewService = Math.max(...standards);
+
+    // Prefer derate over upgrade (cheaper, faster, no utility coordination)
+    if (!solution && upgradeThatPasses) {
+      solution = 'upgrade';
+      mpuRequired = true;
+      recommendedNewService = upgradeThatPasses;
+    }
+
+    // Path 3: fall back to line-side tap. Standard practice for large PV
+    // systems where derate + upgrade both fail.
+    if (!solution) {
+      solution = 'lineside';
+      // Not a panel upgrade — no mpuRequired, but still emits a BOM line
+    }
   }
+
   DS_STATE.mpu.result = {
     acAmps, pvBreakerAmps, allowedFeed, totalLoad, headroomAmps,
-    passes, mpuRequired, recommendedNewService, existing
+    passes, mpuRequired, recommendedNewService, existing, solution, deratedMain
   };
   updateMpuCard();
   if (typeof renderBOM === 'function') renderBOM();
@@ -11142,26 +11239,49 @@ function updateMpuCard() {
     txt.textContent = 'Add panels to evaluate the service.';
     return;
   }
-  if (r.mpuRequired) {
-    card.classList.add('danger');
-    txt.innerHTML = `
-      <strong>Service upgrade REQUIRED.</strong><br>
-      Inverter AC output: <strong>${r.acAmps.toFixed(1)} A</strong> · PV breaker (125%): <strong>${r.pvBreakerAmps} A</strong><br>
-      Existing ${r.existing} A bus allows up to <strong>${r.allowedFeed.toFixed(0)} A</strong> total (NEC 705.12 120% rule), but main + PV would total <strong>${r.totalLoad.toFixed(0)} A</strong>.<br>
-      Recommended new service: <strong>${r.recommendedNewService} A</strong>.
-    `;
-  } else if (r.headroomAmps < (r.existing * 0.10)) {
+
+  // Shared line printed at the top of every state — shows the inputs
+  const inputs = `Inverter AC: <strong>${r.acAmps.toFixed(1)} A</strong> · PV breaker (125%): <strong>${r.pvBreakerAmps} A</strong> · Existing ${r.existing} A bus allowance: <strong>${r.allowedFeed.toFixed(0)} A</strong> (NEC 705.12 120% rule)`;
+
+  if (r.solution === 'ok') {
+    if (r.headroomAmps < (r.existing * 0.10)) {
+      // Passes but tight — amber warning for future load growth
+      card.classList.add('warn');
+      txt.innerHTML = `
+        <strong>Passes the 120% rule, but headroom is tight (${r.headroomAmps.toFixed(0)} A).</strong><br>
+        ${inputs}<br>
+        Future EV / heat pump / load additions may push over the limit. Consider proactive upgrade or plan for it when adding loads.
+      `;
+    } else {
+      card.classList.add('ok');
+      txt.innerHTML = `
+        <strong>Existing ${r.existing} A service is adequate.</strong><br>
+        ${inputs}<br>
+        Main + PV total: ${r.totalLoad.toFixed(0)} A · Headroom: <strong>${r.headroomAmps.toFixed(0)} A</strong>.
+      `;
+    }
+  } else if (r.solution === 'derate') {
     card.classList.add('warn');
     txt.innerHTML = `
-      <strong>Service passes the 120% rule</strong>, but headroom is tight (${r.headroomAmps.toFixed(0)} A).<br>
-      Inverter AC: ${r.acAmps.toFixed(1)} A · PV breaker (125%): ${r.pvBreakerAmps} A · Bus allowance: ${r.allowedFeed.toFixed(0)} A.<br>
-      Future EV / load additions may require an upgrade — consider proactive MPU.
+      <strong>Main breaker derate — no panel upgrade needed.</strong><br>
+      ${inputs}<br>
+      Swap the existing ${r.existing} A main for a <strong>${r.deratedMain} A main breaker</strong>, keeping the existing service panel. Per NEC 705.12(B)(2)(3)(b): ${r.deratedMain} + ${r.pvBreakerAmps} = ${r.deratedMain + r.pvBreakerAmps} A ≤ ${r.allowedFeed.toFixed(0)} A allowance.<br>
+      <em>Verify ${r.deratedMain} A is adequate for the home's peak grid draw after PV offset.</em>
     `;
-  } else {
-    card.classList.add('ok');
+  } else if (r.solution === 'upgrade') {
+    card.classList.add('warn');
     txt.innerHTML = `
-      <strong>Existing ${r.existing} A service is adequate.</strong><br>
-      Inverter AC: ${r.acAmps.toFixed(1)} A · PV breaker (125%): ${r.pvBreakerAmps} A · Bus allowance: ${r.allowedFeed.toFixed(0)} A · Headroom: ${r.headroomAmps.toFixed(0)} A.
+      <strong>Service upgrade to ${r.recommendedNewService} A.</strong><br>
+      ${inputs}<br>
+      Main + PV (${r.totalLoad.toFixed(0)} A) exceeds the ${r.allowedFeed.toFixed(0)} A allowance. A ${r.recommendedNewService} A service provides ${(r.recommendedNewService * 1.20).toFixed(0)} A allowance, comfortably accommodating the ${r.pvBreakerAmps} A PV backfeed.
+    `;
+  } else if (r.solution === 'lineside') {
+    card.classList.add('danger');
+    txt.innerHTML = `
+      <strong>Line-side tap recommended (NEC 705.11).</strong><br>
+      ${inputs}<br>
+      PV backfeed (${r.pvBreakerAmps} A) is too large for any reasonable residential service upgrade under the 120% rule. <strong>Industry-standard solution:</strong> supply-side connection between the utility meter and the main breaker. This bypasses NEC 705.12 entirely — no service upgrade, no main breaker swap.<br>
+      <em>Line-side tap requires utility coordination + dedicated PV disconnect.</em>
     `;
   }
 }
@@ -12135,31 +12255,71 @@ function computeBOM() {
   }
 
   // 5b. Main Panel Upgrade & Service Equipment (Step 10)
-  // Auto-emits when NEC 705.12(B)(2) 120% rule fails OR when the user
-  // force-includes the upgrade for headroom. Both meter and load-center
-  // toggles emit independently.
+  // Emits different BOM lines depending on which NEC 705.12 solution
+  // path the engine picked: breaker derate, service upgrade, or
+  // line-side tap. Force-include override always emits a full upgrade
+  // regardless of what the engine picked.
   if (DS_STATE.mpu) {
     const mpuRes = DS_STATE.mpu.result;
     const forceMpu = DS_STATE.mpu.forceUpgrade;
-    const mpuRequired = mpuRes && mpuRes.mpuRequired;
-    if (mpuRes && (mpuRequired || forceMpu)) {
-      const newAmps = mpuRequired ? mpuRes.recommendedNewService : Math.max(mpuRes.existing, 200);
-      const triggerNote = mpuRequired
-        ? `NEC 705.12(B)(2) 120% rule failed (existing ${mpuRes.existing}A bus + ${mpuRes.pvBreakerAmps}A PV breaker = ${mpuRes.totalLoad.toFixed(0)}A vs allowed ${mpuRes.allowedFeed.toFixed(0)}A)`
-        : `Customer-elected upgrade for headroom (existing ${mpuRes.existing}A passes but headroom is tight or future EV/load growth expected)`;
-      items.push({
-        category: 'Service · Main Panel',
-        name: `Main Panel Upgrade — ${mpuRes.existing}A → ${newAmps}A`,
-        meta: withWarranty(`${triggerNote} · ${DS_STATE.mpu.voltage}V service · includes meter base, main breaker, ground bar, and listed-for-PV-backfeed busbar`, '10-year limited (panel manufacturer)'),
-        qty: 1
-      });
-      items.push({
-        category: 'Service · Permits',
-        name: 'Utility Service Coordination',
-        meta: 'Disconnect/reconnect coordination with serving utility (PPL/PennPower/UGI/etc.) · meter pull permit · re-energize after install · responsibility tracked even when utility-side',
-        qty: 1
-      });
+
+    if (mpuRes && mpuRes.solution && mpuRes.solution !== 'ok') {
+      // Path 1: DERATE — main breaker swap only, no panel upgrade
+      if (mpuRes.solution === 'derate' && !forceMpu) {
+        items.push({
+          category: 'Service · Main Breaker',
+          name: `Main Breaker Derate — ${mpuRes.existing}A → ${mpuRes.deratedMain}A`,
+          meta: withWarranty(
+            `NEC 705.12(B)(2)(3)(b) compliance · swap existing main for ${mpuRes.deratedMain}A breaker to satisfy the 120% rule without a full service upgrade · ${mpuRes.deratedMain}A + ${mpuRes.pvBreakerAmps}A PV = ${mpuRes.deratedMain + mpuRes.pvBreakerAmps}A ≤ ${mpuRes.allowedFeed.toFixed(0)}A allowance · verify adequate for post-PV peak grid draw`,
+            '10-year limited (breaker manufacturer)'
+          ),
+          qty: 1
+        });
+      }
+      // Path 2: UPGRADE — full main panel upgrade (or force-include override)
+      else if (mpuRes.solution === 'upgrade' || forceMpu) {
+        const newAmps = mpuRes.solution === 'upgrade'
+          ? mpuRes.recommendedNewService
+          : Math.max(mpuRes.existing, 200);
+        const triggerNote = mpuRes.solution === 'upgrade'
+          ? `NEC 705.12(B)(2) 120% rule · existing ${mpuRes.existing}A + ${mpuRes.pvBreakerAmps}A PV = ${mpuRes.totalLoad.toFixed(0)}A exceeds ${mpuRes.allowedFeed.toFixed(0)}A allowance`
+          : `Customer-elected upgrade for headroom (existing ${mpuRes.existing}A passes but headroom is tight or future EV/load growth expected)`;
+        items.push({
+          category: 'Service · Main Panel',
+          name: `Main Panel Upgrade — ${mpuRes.existing}A → ${newAmps}A`,
+          meta: withWarranty(
+            `${triggerNote} · ${DS_STATE.mpu.voltage}V service · includes meter base, main breaker, ground bar, and busbar listed for PV backfeed`,
+            '10-year limited (panel manufacturer)'
+          ),
+          qty: 1
+        });
+        items.push({
+          category: 'Service · Permits',
+          name: 'Utility Service Coordination',
+          meta: 'Disconnect/reconnect coordination with serving utility (PPL/PennPower/UGI/etc.) · meter pull permit · re-energize after install · responsibility tracked even when utility-side',
+          qty: 1
+        });
+      }
+      // Path 3: LINE-SIDE TAP — no panel upgrade, tap between meter and main
+      else if (mpuRes.solution === 'lineside') {
+        items.push({
+          category: 'Service · Line-Side Tap',
+          name: 'Supply-Side Tap (NEC 705.11)',
+          meta: withWarranty(
+            `PV interconnection between the utility meter and main breaker · bypasses NEC 705.12 120% rule entirely · standard practice when PV backfeed (${mpuRes.pvBreakerAmps}A) exceeds what a reasonable residential service upgrade can accommodate · includes fused line-side disconnect, wire trough, and all tap hardware`,
+            '10-year limited'
+          ),
+          qty: 1
+        });
+        items.push({
+          category: 'Service · Permits',
+          name: 'Utility Line-Side Tap Coordination',
+          meta: 'Utility approval for supply-side interconnection · meter pull · dedicated PV disconnect between meter and main · typically requires a separate permit and inspection from a standard PV install',
+          qty: 1
+        });
+      }
     }
+
     if (DS_STATE.mpu.includeMeter) {
       items.push({
         category: 'Service · Metering',
