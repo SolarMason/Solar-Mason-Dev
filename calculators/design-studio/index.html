@@ -8875,68 +8875,124 @@ const IRONRIDGE_SERIES = {
   XR100:  { label: 'XR100',  maxSpanIn:  96, description: 'Standard rail · residential · ≤ 8 ft spans · standard residential PA loads' },
   XR1000: { label: 'XR1000', maxSpanIn: 144, description: 'Heavy rail · commercial · ≤ 12 ft spans · high wind/snow zones' }
 };
-const IRONRIDGE_RAIL_LENGTHS_IN = [132, 168, 204];
+// Solar Mason uses 14' (168") IronRidge rails exclusively for standard stock —
+// simplifies procurement and field cuts. Splice kits handle any run > 168".
+const IRONRIDGE_RAIL_LEN_IN = 168;  // 14 ft
 
-// Compute an IronRidge BOM for a roof-mount install given panel specs, total panel count, segments, and rail series.
-// If roof segments are present (from Google Solar API), each segment becomes its own row. Otherwise a fallback
-// partitioning into rows of ~10 panels is used so the estimate is still meaningful.
+// Compute a FULL IronRidge BOM for a LANDSCAPE flush-mount roof install.
+//
+// Assumptions (per Solar Mason SOP + IronRidge install manual):
+//   • All modules are landscape — the module's LONG edge (length_mm) runs
+//     parallel to the rails, the SHORT edge (width_mm) is between the upper
+//     and lower rail. Row length therefore scales with length_mm.
+//   • 2 rails per row of panels (one upper, one lower).
+//   • Stock rail length = 14 ft (168") only. Rows longer than 168" are
+//     carried by multiple 14' rails joined with bonded splices.
+//   • Panels are butted tight with a ~10mm gap so adjacent panels in the
+//     same row SHARE UFO clamps along the shared rail lines. For a row of n
+//     landscape panels:
+//         mid clamps = (n − 1) × 2   (two rails, one shared clamp per junction)
+//         end clamps = 4             (two per outer panel end, top + bottom)
+//     A Stopper Sleeve is required per END clamp only.
+//   • Attachments (FlashFoot2) spaced per series cap: XR10=6', XR100=8',
+//     XR1000=12'. Per course: ceil(rowLen / maxSpan) + 1 (endpoints + interior).
+//   • One grounding lug per continuous row (UFO clamps + bonded splices
+//     maintain electrical continuity across spliced rails).
+//   • Rail end caps: 4 per row (both ends of both courses).
+//   • Wire management clips: 1 per 4 ft of linear rail run.
+//
+// `segments` is an optional array of {panelCount} — one row per roof segment
+// when the Google Solar API has pre-partitioned the roof. If absent, we fall
+// back to rows of ~10 panels so the estimate stays sane without roof data.
 function computeIronRidgeBOM(panel, totalPanels, segments, series) {
   const seriesSpec = IRONRIDGE_SERIES[series] || IRONRIDGE_SERIES.XR100;
   const maxSpanIn = seriesSpec.maxSpanIn;
+  const RAIL_IN = IRONRIDGE_RAIL_LEN_IN;
 
-  const panelWidthIn = ((panel?.width_mm  || 1134) / 25.4);
-  const gapIn        = 10 / 25.4; // 10 mm gap between modules
-  const overhangIn   = 6;          // 6" rail overhang on each end of a row
+  // Landscape: long edge runs along the rail. Default to a 1722mm panel
+  // (typical 108-cell residential) if we somehow don't have spec data.
+  const panelLongIn  = ((panel?.length_mm || 1722) / 25.4);
+  const gapIn        = 10 / 25.4;  // 10 mm between modules
+  const overhangIn   = 4;          // 4" rail overhang on each end of a row (per IronRidge guide)
 
-  // Partition the total panel count into rows
+  // Partition into rows. Prefer actual roof segments; else rows of ~10.
   let rows = [];
   if (segments && segments.length > 0) {
     rows = segments.map(s => s.panelCount || s.count || 0).filter(n => n > 0);
   } else {
-    // Fallback: rows of roughly 10 panels
     const rowCount = Math.max(1, Math.ceil(totalPanels / 10));
     const base = Math.floor(totalPanels / rowCount);
     const remainder = totalPanels % rowCount;
     for (let i = 0; i < rowCount; i++) rows.push(base + (i < remainder ? 1 : 0));
   }
 
-  const railCounts = { 132: 0, 168: 0, 204: 0 };
-  let splices = 0;
-  let attachments = 0;
-  let midClamps = 0;
-  let endClamps = 0;
-  let groundingLugs = 0;
-
-  for (const n of rows) {
-    if (n <= 0) continue;
-    // Row length in inches (portrait orientation assumed — panel width = shorter dimension in mm)
-    const rowLenIn = (n * panelWidthIn) + ((n - 1) * gapIn) + (2 * overhangIn);
-
-    // Pick smallest stock rail length that covers this row; splice if needed
-    let railLen = IRONRIDGE_RAIL_LENGTHS_IN.find(L => L >= rowLenIn);
-    let spliced = false;
-    if (!railLen) {
-      railLen = 204;
-      spliced = true;
-    }
-
-    // Two rails per row (upper + lower)
-    railCounts[railLen] += 2;
-    if (spliced) splices += 2;
-
-    // Attachments per rail: ceil(railLen / maxSpan) + 1 (start + end + interior supports)
-    const attachmentsPerRail = Math.ceil(railLen / maxSpanIn) + 1;
-    attachments += attachmentsPerRail * 2;
-
-    // UFO Mid Clamps: (n-1) inter-panel clamps per rail × 2 rails
-    midClamps += (n - 1) * 2;
-    // End clamps: 2 ends per rail × 2 rails
-    endClamps += 4;
-    // Grounding lug: 1 per row (continuous bonding via UFO clamps + WEEB washers)
-    groundingLugs += 1;
+  // Drop empty rows but make sure we still have SOMETHING to report.
+  rows = rows.filter(n => n > 0);
+  if (!rows.length) {
+    return {
+      series, seriesSpec,
+      railCount: 0, splices: 0, attachments: 0,
+      ufoClamps: 0, stopperSleeves: 0, midClamps: 0, endClamps: 0,
+      groundingLugs: 0, endCaps: 0, wireClips: 0,
+      rows: [], totalRailLenIn: 0
+    };
   }
 
-  return { series, seriesSpec, railCounts, splices, attachments, midClamps, endClamps, groundingLugs, rows };
+  let railCount = 0;          // total 14' rails (both courses, all rows)
+  let splices = 0;            // bonded splice kits (one per rail joint)
+  let attachments = 0;        // FlashFoot2 roof attachments
+  let midClamps = 0;          // shared clamps between adjacent panels
+  let endClamps = 0;          // clamps terminating row ends
+  let groundingLugs = 0;      // system bonding lugs (1 per row)
+  let endCaps = 0;            // rail end caps (4 per row)
+  let totalRailLenIn = 0;     // linear inches of rail used — drives wire clips
+
+  for (const n of rows) {
+    // Row length in inches (landscape → long dim × count + gaps + overhang)
+    const rowLenIn = (n * panelLongIn) + ((n - 1) * gapIn) + (2 * overhangIn);
+
+    // Rails per course: how many 14' sticks to cover rowLenIn
+    const railsPerCourse  = Math.max(1, Math.ceil(rowLenIn / RAIL_IN));
+    // 2 courses per row (upper + lower)
+    const rowRails        = railsPerCourse * 2;
+    // Splices: one bonded splice per rail-to-rail joint within a course
+    const rowSplices      = Math.max(0, railsPerCourse - 1) * 2;
+
+    railCount     += rowRails;
+    splices       += rowSplices;
+    totalRailLenIn += rowLenIn * 2;  // both courses
+
+    // Attachments per course: supports at start, end, and every maxSpan between
+    const attachPerCourse = Math.ceil(rowLenIn / maxSpanIn) + 1;
+    attachments  += attachPerCourse * 2;
+
+    // UFO clamps (butted-tight sharing: adjacent panels share one mid clamp per rail)
+    midClamps    += Math.max(0, (n - 1)) * 2;   // 2 rails × (n-1) inter-panel junctions
+    endClamps    += 4;                          // 2 ends × 2 rails
+
+    // One bonding lug per continuously bonded row
+    groundingLugs += 1;
+
+    // 4 end caps per row (2 courses × 2 outer ends). Spliced joints inside the
+    // course are not capped — only the exterior ends of each continuous run.
+    endCaps      += 4;
+  }
+
+  // Wire management: ~1 clip per 4 ft of rail run (per IronRidge wire-mgmt guide)
+  const wireClips = Math.max(0, Math.ceil(totalRailLenIn / 48));
+
+  // UFO clamps are ONE physical part used for both mid and end positions.
+  // Stopper sleeves are an accessory required only at end positions.
+  const ufoClamps      = midClamps + endClamps;
+  const stopperSleeves = endClamps;
+
+  return {
+    series, seriesSpec,
+    railCount, splices, attachments,
+    ufoClamps, stopperSleeves, midClamps, endClamps,
+    groundingLugs, endCaps, wireClips,
+    rows, totalRailLenIn
+  };
 }
 
 // Default IronRidge series — stored on DS_STATE so switching it re-renders the BOM live
@@ -9521,56 +9577,77 @@ function computeBOM() {
   } else if (DS_STATE.mountMode === 'roof') {
     // Full IronRidge BOM — rail count/length, attachments, clamps, grounding — computed
     // from the ACTUAL selected panel dimensions + the chosen XR rail series.
+    // 14' (168") rails only, landscape layout, UFO clamps with butted-row sharing.
     const panel = findPanelByKey(DS_STATE.selectedPanelKey);
     const segments = DS_STATE.roofSegments && DS_STATE.roofSegments.length > 0
       ? DS_STATE.roofSegments.map(s => ({ panelCount: (s.activePanelCount || s.panelCount || 0) }))
       : null;
     const ir = computeIronRidgeBOM(panel, activeCount, segments, DS_STATE.ironRidgeSeries);
 
-    // Rails — emit one BOM line per stock length that's actually used
-    for (const len of IRONRIDGE_RAIL_LENGTHS_IN) {
-      if (ir.railCounts[len] > 0) {
-        const lenFt = len / 12;
-        items.push({
-          category: 'Racking · Rail',
-          name: `IronRidge ${ir.series} Rail — ${lenFt.toFixed(0)}' (${len}")`,
-          meta: `${ir.seriesSpec.description} · clear-anodized aluminum · ${ir.rows.length} row${ir.rows.length > 1 ? 's' : ''}`,
-          qty: ir.railCounts[len]
-        });
-      }
+    if (ir.railCount > 0) {
+      items.push({
+        category: 'Racking · Rail',
+        name: `IronRidge ${ir.series} Rail — 14' (168")`,
+        meta: `${ir.seriesSpec.description} · clear-anodized aluminum · ${ir.rows.length} row${ir.rows.length > 1 ? 's' : ''} · ${(ir.totalRailLenIn / 12).toFixed(0)} linear ft total`,
+        qty: ir.railCount
+      });
     }
     if (ir.splices > 0) {
       items.push({
         category: 'Racking · Splice',
         name: `IronRidge ${ir.series} Bonded Splice`,
-        meta: 'Joins rail sections longer than 17 ft with integral bonding',
+        meta: 'Joins 14\' rail sections within a continuous row · integral electrical bonding',
         qty: ir.splices
       });
     }
-    items.push({
-      category: 'Racking · Attachment',
-      name: 'IronRidge FlashFoot 2 (composition shingle)',
-      meta: `Microflashing + L-foot · max span ${ir.seriesSpec.maxSpanIn}" per ${ir.series}`,
-      qty: ir.attachments
-    });
-    items.push({
-      category: 'Racking · Mid Clamp',
-      name: 'IronRidge UFO Mid Clamp + Stopper Sleeve',
-      meta: `Universal fastening object · fits ${panel?.thick_mm || 30}-35 mm module frames · integral bonding`,
-      qty: ir.midClamps
-    });
-    items.push({
-      category: 'Racking · End Clamp',
-      name: 'IronRidge UFO End Clamp',
-      meta: 'Terminates each row end · integral bonding',
-      qty: ir.endClamps
-    });
-    items.push({
-      category: 'Racking · Grounding',
-      name: 'IronRidge Grounding Lug (Ilsco GBL-4DBT)',
-      meta: '#6–10 AWG ground wire · one per continuous row',
-      qty: ir.groundingLugs
-    });
+    if (ir.attachments > 0) {
+      items.push({
+        category: 'Racking · Attachment',
+        name: 'IronRidge FlashFoot 2 (composition shingle)',
+        meta: `Microflashing + L-foot · max ${ir.seriesSpec.maxSpanIn}" span for ${ir.series} · lag into rafter`,
+        qty: ir.attachments
+      });
+    }
+    if (ir.ufoClamps > 0) {
+      items.push({
+        category: 'Racking · Clamp',
+        name: 'IronRidge UFO Universal Clamp',
+        meta: `Fits ${panel?.thick_mm || 30}–35 mm module frames · integral bonding · ${ir.midClamps} mid + ${ir.endClamps} end positions`,
+        qty: ir.ufoClamps
+      });
+    }
+    if (ir.stopperSleeves > 0) {
+      items.push({
+        category: 'Racking · Clamp',
+        name: 'IronRidge UFO Stopper Sleeve',
+        meta: 'Required at each end-clamp position to cap the unsupported rail side',
+        qty: ir.stopperSleeves
+      });
+    }
+    if (ir.endCaps > 0) {
+      items.push({
+        category: 'Racking · End Cap',
+        name: 'IronRidge XR Rail End Cap',
+        meta: '4 per row (both ends of both courses) · snap-on, clear-anodized',
+        qty: ir.endCaps
+      });
+    }
+    if (ir.wireClips > 0) {
+      items.push({
+        category: 'Racking · Wire Mgmt',
+        name: 'IronRidge Wire Clip / Cable Clamp',
+        meta: '~1 clip per 4 ft of rail run · routes module leads along rail',
+        qty: ir.wireClips
+      });
+    }
+    if (ir.groundingLugs > 0) {
+      items.push({
+        category: 'Racking · Grounding',
+        name: 'IronRidge Grounding Lug (Ilsco GBL-4DBT)',
+        meta: '#6–10 AWG bare copper EGC · one per continuously bonded row',
+        qty: ir.groundingLugs
+      });
+    }
   }
 
   // 4. Balance of System (BOS)
