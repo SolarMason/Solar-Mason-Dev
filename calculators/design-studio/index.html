@@ -4028,6 +4028,14 @@ html { scroll-behavior: smooth; }
 @media(max-width:768px){
   .ds-studio-fullscreen{height:calc(100svh - 60px);touch-action:none}
 
+  /* Hide the 'Ready to Go Solar?' CTA banner on mobile — it sits in the
+     normal document flow below the studio, but on small screens with the
+     fixed bottom-sheet tools overlay it visually floats above the design
+     area and gets in the way of the workflow. The same CTA exists in the
+     site nav and in the main bill-analyzer entry point, so removing it
+     here doesn't lose any conversion path. */
+  .cta-banner{display:none !important}
+
   /* ═══ TOOLS OVERLAY → BOTTOM SHEET ═══ */
   .ds-tools-overlay{
     position:fixed;top:auto;left:0;right:0;bottom:0;
