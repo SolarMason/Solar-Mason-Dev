@@ -4945,9 +4945,9 @@ body.ds-mode-ground .ds-ground-only{display:block}
       </div>
     </details>
 
-    <!-- System Config -->
+    <!-- Step 7: Panel Model — module selection, orientation, losses -->
     <details class="ds-panel">
-      <summary><h3><span class="step">7</span> System Configuration</h3></summary>
+      <summary><h3><span class="step">7</span> Panel Model</h3></summary>
       <div class="ds-panel-body">
       <!-- Panel Model picker — populated from PANEL_DB on boot, grouped by brand -->
       <div class="ds-field">
@@ -4976,26 +4976,45 @@ body.ds-mode-ground .ds-ground-only{display:block}
         <div class="ds-field" style="visibility:hidden"><label>—</label><input type="number" disabled></div>
       </div>
 
-      <!-- IronRidge racking series (roof mode only — ground uses AVANS) -->
-      <div class="ds-ir-section ds-roof-only" id="ds-ir-section">
-        <div class="ds-inv-label">IronRidge Racking Series</div>
-        <div class="ds-ir-row">
-          <button type="button" class="ds-ir-btn" data-series="XR10" onclick="setIronRidgeSeries('XR10')">
-            <span class="ds-ir-name">XR10</span>
-            <span class="ds-ir-sub">Light · ≤ 6 ft spans</span>
-          </button>
-          <button type="button" class="ds-ir-btn active" data-series="XR100" onclick="setIronRidgeSeries('XR100')">
-            <span class="ds-ir-name">XR100</span>
-            <span class="ds-ir-sub">Standard · ≤ 8 ft spans</span>
-          </button>
-          <button type="button" class="ds-ir-btn" data-series="XR1000" onclick="setIronRidgeSeries('XR1000')">
-            <span class="ds-ir-name">XR1000</span>
-            <span class="ds-ir-sub">Heavy · ≤ 12 ft spans</span>
-          </button>
-        </div>
-        <div class="ds-inv-hint" id="ds-ir-auto-hint" style="margin-top:.4rem;font-size:.62rem;color:#64748B;line-height:1.4">Auto-selects based on site location (wind / snow load)</div>
+      <div class="ds-stats">
+        <div class="ds-stat"><div class="ds-stat-label">System Size</div><div class="ds-stat-value" id="ds-kw">0.00<span class="ds-stat-unit">kW DC</span></div></div>
+        <div class="ds-stat"><div class="ds-stat-label">Active Panels</div><div class="ds-stat-value" id="ds-active-count">0<span class="ds-stat-unit">panels</span></div></div>
       </div>
+      </div>
+    </details>
 
+    <!-- Step 8: Racking System — roof (IronRidge XR) or ground (AVANS, auto) -->
+    <details class="ds-panel">
+      <summary><h3><span class="step">8</span> Racking System</h3></summary>
+      <div class="ds-panel-body">
+        <!-- IronRidge racking series (roof mode only — ground uses AVANS) -->
+        <div class="ds-ir-section ds-roof-only" id="ds-ir-section">
+          <div class="ds-inv-label">IronRidge Racking Series</div>
+          <div class="ds-ir-row">
+            <button type="button" class="ds-ir-btn" data-series="XR10" onclick="setIronRidgeSeries('XR10')">
+              <span class="ds-ir-name">XR10</span>
+              <span class="ds-ir-sub">Light · ≤ 6 ft spans</span>
+            </button>
+            <button type="button" class="ds-ir-btn active" data-series="XR100" onclick="setIronRidgeSeries('XR100')">
+              <span class="ds-ir-name">XR100</span>
+              <span class="ds-ir-sub">Standard · ≤ 8 ft spans</span>
+            </button>
+            <button type="button" class="ds-ir-btn" data-series="XR1000" onclick="setIronRidgeSeries('XR1000')">
+              <span class="ds-ir-name">XR1000</span>
+              <span class="ds-ir-sub">Heavy · ≤ 12 ft spans</span>
+            </button>
+          </div>
+          <div class="ds-inv-hint" id="ds-ir-auto-hint" style="margin-top:.4rem;font-size:.62rem;color:#64748B;line-height:1.4">Auto-selects based on site location (wind / snow load)</div>
+        </div>
+        <!-- Ground-mount note — shown only when mount mode is ground -->
+        <div style="display:none;font-size:.7rem;color:#64748B;line-height:1.5" id="ds-racking-ground-note">Ground-mount projects use the <strong>SEMS AVANS</strong> racking system, sized automatically from your array dimensions. No manual picker needed.</div>
+      </div>
+    </details>
+
+    <!-- Step 9: Inverter Technology — Enphase micros vs SolarEdge string + optimizers -->
+    <details class="ds-panel">
+      <summary><h3><span class="step">9</span> Inverter Technology</h3></summary>
+      <div class="ds-panel-body">
       <!-- Inverter selection — brand switches the compatibility model below -->
       <div class="ds-inv-section">
         <div class="ds-inv-label">Inverter Brand</div>
@@ -5054,17 +5073,12 @@ body.ds-mode-ground .ds-ground-only{display:block}
         <option value="residential">Residential</option>
         <option value="commercial">Commercial</option>
       </select>
-
-      <div class="ds-stats">
-        <div class="ds-stat"><div class="ds-stat-label">System Size</div><div class="ds-stat-value" id="ds-kw">0.00<span class="ds-stat-unit">kW DC</span></div></div>
-        <div class="ds-stat"><div class="ds-stat-label">Active Panels</div><div class="ds-stat-value" id="ds-active-count">0<span class="ds-stat-unit">panels</span></div></div>
-      </div>
       </div>
     </details>
 
     <!-- EV Charging (optional) — adds EV load to annual kWh target + emits charger hardware in BOM -->
     <details class="ds-panel">
-      <summary><h3><span class="step">8</span> EV Charging <em style="font-weight:500;color:#94a3b8;font-size:.7rem;margin-left:.3rem">(optional)</em></h3></summary>
+      <summary><h3><span class="step">10</span> EV Charging <em style="font-weight:500;color:#94a3b8;font-size:.7rem;margin-left:.3rem">(optional)</em></h3></summary>
       <div class="ds-panel-body">
         <!-- EV Model -->
         <div class="ds-field">
@@ -5144,7 +5158,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Battery Backup (optional) — essential loads picker, auto-sizing, system controller hardware -->
     <details class="ds-panel">
-      <summary><h3><span class="step">9</span> Battery Backup <em style="font-weight:500;color:#94a3b8;font-size:.7rem;margin-left:.3rem">(optional)</em></h3></summary>
+      <summary><h3><span class="step">11</span> Battery Backup <em style="font-weight:500;color:#94a3b8;font-size:.7rem;margin-left:.3rem">(optional)</em></h3></summary>
       <div class="ds-panel-body">
 
         <!-- Battery brand + model -->
@@ -5240,7 +5254,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Main Panel Upgrade & Service Equipment — Step 10 -->
     <details class="ds-panel">
-      <summary><h3><span class="step">10</span> Main Panel &amp; Service</h3></summary>
+      <summary><h3><span class="step">12</span> Main Panel &amp; Service</h3></summary>
       <div class="ds-panel-body">
         <!-- Existing service capacity -->
         <div class="ds-row">
@@ -5294,7 +5308,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Financials -->
     <details class="ds-panel">
-      <summary><h3><span class="step">11</span> Financial Inputs</h3></summary>
+      <summary><h3><span class="step">13</span> Financial Inputs</h3></summary>
       <div class="ds-panel-body">
 
       <!-- Residential vs Commercial toggle -->
@@ -5371,7 +5385,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Auto-Detected Incentives -->
     <details class="ds-panel" open>
-      <summary><h3><span class="step">12</span> Incentives &amp; Credits</h3></summary>
+      <summary><h3><span class="step">14</span> Incentives &amp; Credits</h3></summary>
       <div class="ds-panel-body">
       <p class="ds-incent-intro">Auto-detected based on your project's <strong>state</strong> and <strong>utility</strong>. Toggle any line on/off — values flow into the 25-year financial model. Hover or tap a type badge for a plain-English explanation.</p>
 
@@ -6739,6 +6753,11 @@ function setMountMode(mode) {
   } else {
     hint.textContent = 'Ground mode: drop AVANS 8.0 or AVANS 10.0 arrays. All panels portrait, 30° tilt, 6 ft above ground. Drag any panel to move the entire array.';
   }
+
+  // Step 8 Racking — show the ground-mount note when not in roof mode.
+  // The IronRidge picker itself is handled by the .ds-roof-only CSS rule.
+  const rackGround = document.getElementById('ds-racking-ground-note');
+  if (rackGround) rackGround.style.display = (mode === 'ground') ? 'block' : 'none';
 
   // Ground mode requires the 2D map for placement clicks/taps. If we're currently
   // in 3D, drop back to 2D first — but DON'T touch userViewPreference, so 3D will
