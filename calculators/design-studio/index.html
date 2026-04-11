@@ -4842,7 +4842,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- EV Charging (optional) — adds EV load to annual kWh target + emits charger hardware in BOM -->
     <details class="ds-panel">
-      <summary><h3><svg class="gc-ico" viewBox="0 0 20 20" fill="none" style="width:1.1rem;height:1.1rem"><path d="M4 4h8v13H4zM12 8h2l2 2v5a1 1 0 01-2 0v-2h-2" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 8l-1 4h3l-1 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> EV Charging <em style="font-weight:500;color:#94a3b8;font-size:.7rem;margin-left:.3rem">(optional)</em></h3></summary>
+      <summary><h3><span class="step">7</span> EV Charging <em style="font-weight:500;color:#94a3b8;font-size:.7rem;margin-left:.3rem">(optional)</em></h3></summary>
       <div class="ds-panel-body">
         <!-- EV Model -->
         <div class="ds-field">
@@ -4897,7 +4897,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Financials -->
     <details class="ds-panel">
-      <summary><h3><span class="step">7</span> Financial Inputs</h3></summary>
+      <summary><h3><span class="step">8</span> Financial Inputs</h3></summary>
       <div class="ds-panel-body">
 
       <!-- Residential vs Commercial toggle -->
@@ -4974,7 +4974,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Auto-Detected Incentives -->
     <details class="ds-panel" open>
-      <summary><h3><span class="step">8</span> Incentives &amp; Credits</h3></summary>
+      <summary><h3><span class="step">9</span> Incentives &amp; Credits</h3></summary>
       <div class="ds-panel-body">
       <p class="ds-incent-intro">Auto-detected based on your project's <strong>state</strong> and <strong>utility</strong>. Toggle any line on/off — values flow into the 25-year financial model. Hover or tap a type badge for a plain-English explanation.</p>
 
@@ -9023,7 +9023,7 @@ function computeIronRidgeBOM(panel, totalPanels, segments, series) {
     return {
       series, seriesSpec,
       railCount: 0, splices: 0, attachments: 0,
-      ufoClamps: 0, stopperSleeves: 0, midClamps: 0, endClamps: 0,
+      midClamps: 0, endClamps: 0,
       groundingLugs: 0, endCaps: 0, wireClips: 0,
       rows: [], totalRailLenIn: 0
     };
@@ -9072,15 +9072,10 @@ function computeIronRidgeBOM(panel, totalPanels, segments, series) {
   // Wire management: ~1 clip per 4 ft of rail run (per IronRidge wire-mgmt guide)
   const wireClips = Math.max(0, Math.ceil(totalRailLenIn / 48));
 
-  // UFO clamps are ONE physical part used for both mid and end positions.
-  // Stopper sleeves are an accessory required only at end positions.
-  const ufoClamps      = midClamps + endClamps;
-  const stopperSleeves = endClamps;
-
   return {
     series, seriesSpec,
     railCount, splices, attachments,
-    ufoClamps, stopperSleeves, midClamps, endClamps,
+    midClamps, endClamps,
     groundingLugs, endCaps, wireClips,
     rows, totalRailLenIn
   };
@@ -9931,9 +9926,31 @@ function computeBOM() {
     // from the ACTUAL selected panel dimensions + the chosen XR rail series.
     // 14' (168") rails only, landscape layout, UFO clamps with butted-row sharing.
     const panel = findPanelByKey(DS_STATE.selectedPanelKey);
-    const segments = DS_STATE.roofSegments && DS_STATE.roofSegments.length > 0
-      ? DS_STATE.roofSegments.map(s => ({ panelCount: (s.activePanelCount || s.panelCount || 0) }))
-      : null;
+
+    // Build per-segment active-panel counts by walking allPanels. roofSegments
+    // itself doesn't carry panelCount (it's just pitch/azimuth/sunshine data
+    // from Google Solar API), so we bucket active roof panels by segmentIndex.
+    // Without this, the BOM was reading s.panelCount || 0 on every segment and
+    // silently emitting zero racking lines — which is why the BOM showed
+    // modules + inverters + EV but no rails/clamps/attachments.
+    const segPanelCounts = {};
+    let segTotalActive = 0;
+    for (const p of DS_STATE.allPanels) {
+      if (p.isGround) continue;
+      if (!DS_STATE.activePanels.has(p.idx)) continue;
+      if (DS_STATE.disabledPanels.has(p.idx)) continue;
+      const si = p.segmentIndex || 0;
+      segPanelCounts[si] = (segPanelCounts[si] || 0) + 1;
+      segTotalActive++;
+    }
+    let segments = null;
+    if (DS_STATE.roofSegments && DS_STATE.roofSegments.length > 0 && segTotalActive > 0) {
+      segments = DS_STATE.roofSegments
+        .map((_, i) => ({ panelCount: segPanelCounts[i] || 0 }))
+        .filter(s => s.panelCount > 0);
+    }
+    // If no Google Solar segments (manual ground-mount-to-roof toggle, or
+    // offline), computeIronRidgeBOM falls back to rows of ~10 panels.
     const ir = computeIronRidgeBOM(panel, activeCount, segments, DS_STATE.ironRidgeSeries);
 
     if (ir.railCount > 0) {
@@ -9960,20 +9977,20 @@ function computeBOM() {
         qty: ir.attachments
       });
     }
-    if (ir.ufoClamps > 0) {
+    if (ir.midClamps > 0) {
       items.push({
         category: 'Racking · Clamp',
-        name: 'IronRidge UFO Universal Clamp',
-        meta: `Fits ${panel?.thick_mm || 30}–35 mm module frames · integral bonding · ${ir.midClamps} mid + ${ir.endClamps} end positions`,
-        qty: ir.ufoClamps
+        name: 'IronRidge UFO Mid Clamp (UFO-CL-01)',
+        meta: `Universal fastening object · fits ${panel?.thick_mm || 30}–46 mm frames · integral UL 2703 bonding · 80 in-lb torque`,
+        qty: ir.midClamps
       });
     }
-    if (ir.stopperSleeves > 0) {
+    if (ir.endClamps > 0) {
       items.push({
         category: 'Racking · Clamp',
-        name: 'IronRidge UFO Stopper Sleeve',
-        meta: 'Required at each end-clamp position to cap the unsupported rail side',
-        qty: ir.stopperSleeves
+        name: 'IronRidge EFO End Clamp (UFO-END-01)',
+        meta: `Single-piece end fastening object · fits ${panel?.thick_mm || 30}–40 mm frames · replaces legacy UFO + Stopper Sleeve combo · integral bonding`,
+        qty: ir.endClamps
       });
     }
     if (ir.endCaps > 0) {
