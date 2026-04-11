@@ -4264,6 +4264,19 @@ html { scroll-behavior: smooth; }
 .ds-preset-btn.active .ds-preset-pct{color:#2D82BE}
 .ds-preset-meta{font-size:.65rem;font-weight:700;color:#64748B;line-height:1.2}
 
+/* Custom offset input — under the 80/100/120 presets */
+.ds-custom-offset-row{display:flex;align-items:center;gap:.5rem;margin-top:.65rem;padding-top:.6rem;border-top:1px solid rgba(45,130,190,.12)}
+.ds-custom-offset-row label{font-size:.65rem;font-weight:800;color:#0B2545;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+.ds-custom-offset-input-wrap{position:relative;flex:1}
+.ds-custom-offset-input-wrap input{width:100%;padding:.5rem .55rem;padding-right:1.6rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.85rem;font-weight:800;color:#0B2545;font-family:inherit;text-align:right;-moz-appearance:textfield}
+.ds-custom-offset-input-wrap input::-webkit-outer-spin-button,.ds-custom-offset-input-wrap input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ds-custom-offset-input-wrap input:focus{outline:none;border-color:#2D82BE;box-shadow:0 0 0 3px rgba(45,130,190,.15)}
+.ds-custom-offset-suffix{position:absolute;right:.55rem;top:50%;transform:translateY(-50%);font-size:.75rem;font-weight:800;color:#64748B;pointer-events:none}
+.ds-custom-offset-go{padding:.5rem .85rem;background:#2D82BE;color:#fff;border:none;border-radius:8px;font-size:.7rem;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;transition:background .15s}
+.ds-custom-offset-go:hover{background:#1B5E8A}
+.ds-custom-offset-meta{margin-top:.4rem;font-size:.6rem;color:#64748B;line-height:1.4;min-height:.85rem}
+.ds-custom-offset-meta strong{color:#0B2545;font-weight:800}
+
 /* Customer class toggle (residential/commercial) */
 .ds-class-toggle{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;background:#f1f5f9;border-radius:10px;padding:.3rem}
 .ds-class-btn{background:transparent;border:none;border-radius:8px;padding:.7rem .5rem;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:800;color:#64748B;transition:all .2s}
@@ -4744,6 +4757,16 @@ body.ds-mode-ground .ds-ground-only{display:block}
             <div class="ds-preset-meta" id="ds-preset-120">—</div>
           </button>
         </div>
+        <!-- Custom offset input — type any whole number, e.g. 95% or 150% -->
+        <div class="ds-custom-offset-row">
+          <label for="ds-custom-offset">Custom offset:</label>
+          <div class="ds-custom-offset-input-wrap">
+            <input type="number" id="ds-custom-offset" min="1" max="500" step="1" placeholder="e.g. 95" oninput="onCustomOffsetInput()" onkeydown="if(event.key==='Enter')applyCustomOffset()">
+            <span class="ds-custom-offset-suffix">%</span>
+          </div>
+          <button class="ds-custom-offset-go" type="button" onclick="applyCustomOffset()">Apply</button>
+        </div>
+        <div class="ds-custom-offset-meta" id="ds-custom-offset-meta"></div>
       </div>
 
       <div class="ds-slider-wrap ds-roof-only">
@@ -7901,12 +7924,60 @@ function selectOffsetPreset(offsetPct) {
     applyTopNPanels(count);
   }
 
-  // Highlight the active preset button
+  // Highlight the active preset button (only if it's one of the standard
+  // preset percentages — custom offsets clear all preset highlights)
   document.querySelectorAll('.ds-preset-btn').forEach(b => {
     b.classList.toggle('active', parseInt(b.dataset.pct) === offsetPct);
   });
   updateSystemStats();
   refresh3DIfActive();
+}
+
+// Live preview as the user types into the custom offset field — shows the
+// resulting panel count and kW size without actually applying the change yet.
+// Apply only happens when they press Enter or click the Apply button.
+function onCustomOffsetInput() {
+  const inp = document.getElementById('ds-custom-offset');
+  const meta = document.getElementById('ds-custom-offset-meta');
+  if (!inp || !meta) return;
+  const pct = parseFloat(inp.value);
+  if (!pct || pct <= 0) {
+    meta.innerHTML = '';
+    return;
+  }
+  if (pct > 500) {
+    meta.innerHTML = '<span style="color:#dc2626">Cap is 500%. Real world is rarely above 130%.</span>';
+    return;
+  }
+  const n = panelCountForOffset(pct);
+  if (n == null) {
+    meta.innerHTML = '<span style="color:#94a3b8">Upload a utility bill first.</span>';
+    return;
+  }
+  const panelKw = (DS_STATE.panelCapacityW || 400) / 1000;
+  meta.innerHTML = `Preview: <strong>${n} panels · ${(n * panelKw).toFixed(1)} kW</strong> — press Enter or Apply`;
+}
+
+// Apply the user-entered custom offset percentage. Uses the same plumbing
+// as the preset buttons so EV-load-aware sizing carries through automatically.
+function applyCustomOffset() {
+  const inp = document.getElementById('ds-custom-offset');
+  if (!inp) return;
+  const pct = parseFloat(inp.value);
+  if (!pct || pct <= 0 || pct > 500) {
+    inp.focus();
+    return;
+  }
+  selectOffsetPreset(pct);
+  // Custom offset wins — clear any active preset highlight
+  document.querySelectorAll('.ds-preset-btn').forEach(b => b.classList.remove('active'));
+  // Update meta to reflect the applied state
+  const meta = document.getElementById('ds-custom-offset-meta');
+  const panelKw = (DS_STATE.panelCapacityW || 400) / 1000;
+  const n = panelCountForOffset(pct);
+  if (meta && n != null) {
+    meta.innerHTML = `Applied: <strong>${pct}% offset · ${n} panels · ${(n * panelKw).toFixed(1)} kW</strong>`;
+  }
 }
 
 // Recalculate preset labels (panel count + kW size for each target)
