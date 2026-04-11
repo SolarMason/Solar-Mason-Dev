@@ -9184,31 +9184,27 @@ async function exportProposal() {
   <style>
     @page { size: letter; margin: 0.55in 0.6in; }
 
-    /* ─── PRINT-ONLY rules: page breaks, orphan/widow control, keep-together ─── */
+    /* ─── PRINT-ONLY rules: minimize wasted paper, keep blocks intact ─── */
     @media print {
       .no-print { display: none !important; }
 
-      /* Force a fresh page before any explicit .page-break div */
+      /* The cover is the ONLY guaranteed page break. Every other section
+         flows naturally and the browser fills each page top-to-bottom.
+         The keep-together rules below stop blocks from splitting mid-content,
+         which is what creates the appearance of "clean" layout without
+         wasting half a page per section. */
+      .cover { page-break-after: always !important; break-after: page !important; }
+
+      /* Explicit .page-break divs are honored (kept for the BOM section
+         since the BOM table is long enough to deserve its own page). */
       .page-break { page-break-before: always !important; break-before: page !important; }
 
-      /* Every h2 starts a new page, even if no .page-break div is present.
-         This is the safety net — as you add new sections, they get a fresh
-         page automatically without you having to remember the marker div. */
-      h2 { page-break-before: always !important; break-before: page !important; }
+      /* Keep section headers with at least the next block — never let an
+         h2 or h3 sit alone at the bottom of a page with content on the
+         next page. */
+      h2, h3 { page-break-after: avoid !important; break-after: avoid !important; }
 
-      /* The very first h2 (Executive Summary) should NOT page-break — it
-         already has an explicit .page-break div before it which handles
-         the cover→summary transition cleanly. We use :first-of-type on
-         a wrapper, but since h2s are siblings of divs the simplest fix
-         is to leave the explicit divs in place; the duplicate break is
-         coalesced by the print engine into a single page boundary. */
-
-      /* Keep h2 with its first paragraph — never let an h2 sit alone at
-         the bottom of a page. */
-      h2 { page-break-after: avoid !important; break-after: avoid !important; }
-      h3 { page-break-after: avoid !important; break-after: avoid !important; }
-
-      /* Keep these block elements together — never split mid-element */
+      /* Keep block elements together — never split mid-element */
       .box, .big-box, .callout, .warn,
       .grid, .grid-3, .grid-4 {
         page-break-inside: avoid !important;
@@ -9224,15 +9220,18 @@ async function exportProposal() {
       /* SVG charts and embedded images shouldn't split */
       svg, img { page-break-inside: avoid !important; break-inside: avoid !important; }
 
-      /* Cover page: make sure it's exactly one page, no overflow onto page 2 */
-      .cover { page-break-after: always !important; break-after: page !important; min-height: 9in; }
-
       /* Footer at the bottom of the doc — keep it on its own with the prior content */
       footer { page-break-inside: avoid !important; break-inside: avoid !important; }
 
-      /* Orphan and widow control — minimum 3 lines of a paragraph at the top
-         or bottom of a page. Prevents single-line orphans/widows. */
-      p, li { orphans: 3; widows: 3; }
+      /* Orphan and widow control — minimum 2 lines of a paragraph at the top
+         or bottom of a page. Tighter than the previous version (was 3) to
+         allow more content to flow per page. */
+      p, li { orphans: 2; widows: 2; }
+
+      /* Tighter top margins on h2/h3 in print so sections that DO flow into
+         the same page don't waste a quarter inch of vertical space. */
+      h2 { margin-top: .9rem !important; }
+      h3 { margin-top: .55rem !important; }
 
       /* Force background colors to print (Chrome/Edge/Safari) so the
          brand-blue cover meta box and big-box stat cards don't render as
@@ -9360,7 +9359,6 @@ async function exportProposal() {
   </ul>
 
   <!-- ========== SYSTEM DESIGN ========== -->
-  <div class="page-break"></div>
   <h2>System Design</h2>
 
   ${mapSnapshotUrlLarge ? `
@@ -9406,7 +9404,6 @@ async function exportProposal() {
 
   <!-- ========== SHADE ANALYSIS ========== -->
   ${shade ? `
-  <div class="page-break"></div>
   <h2>Shade Analysis</h2>
   <p style="font-size:.82rem">Per-panel shade modeling uses Google Solar API satellite-derived flux data, which captures trees, chimneys, vents, neighboring buildings, and self-shading at 15-minute resolution across the full solar year. Every panel in the design is scored against the best-performing panel on this roof, and the aggregate impact is reported below.</p>
 
@@ -9440,7 +9437,6 @@ async function exportProposal() {
   ` : ''}
 
   <!-- ========== FINANCIAL ANALYSIS ========== -->
-  <div class="page-break"></div>
   <h2>Financial Analysis</h2>
 
   <h3>Cost Summary</h3>
@@ -9474,7 +9470,6 @@ async function exportProposal() {
   </table>
 
   <!-- ========== UTILITY VS SOLAR COMPARISON ========== -->
-  <div class="page-break"></div>
   <h2>Utility vs. Solar Comparison</h2>
   <p>The table below compares <strong>doing nothing (paying the utility)</strong> against <strong>installing this solar system</strong> over 25 years. Assumes current utility rate of <strong>$${r.rate.toFixed(4)}/kWh</strong> with ${(r.esc*100).toFixed(1)}% annual escalation (typical PPL / PECO territory).</p>
 
