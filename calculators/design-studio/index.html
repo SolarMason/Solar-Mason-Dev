@@ -9242,7 +9242,11 @@ function updateInverterCompatDisplay() {
 
 function computeBOM() {
   const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
-  const panelLabel = document.getElementById('ds-panel-w')?.selectedOptions[0]?.textContent || `${panelW}W Module`;
+  // ds-panel-w is a hidden input (the real picker writes to DS_STATE.selectedPanelKey).
+  // Pull the label from the key "Brand|Model" so the BOM shows the actual module name.
+  const panelKey = DS_STATE.selectedPanelKey || '';
+  const [panelBrand, panelModel] = panelKey.split('|');
+  const panelLabel = (panelBrand && panelModel) ? `${panelBrand} ${panelModel}` : `${panelW}W Module`;
   const activeCount = activeCountForMode();
   if (activeCount === 0) return [];
 
