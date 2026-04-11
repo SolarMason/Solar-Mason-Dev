@@ -5049,6 +5049,11 @@ body.ds-mode-ground .ds-ground-only{display:block}
           <select id="ds-ev-charger" onchange="onEvChargerChange()">
             <option value="">— No charger — skip hardware BOM —</option>
           </select>
+          <div id="ds-ev-charger-qty-row" style="display:none;margin-top:.4rem;align-items:center;gap:.5rem">
+            <label style="font-size:.62rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.04em">Quantity:</label>
+            <input type="number" id="ds-ev-charger-qty" min="1" max="99" value="1" oninput="onEvChargerQtyChange()" style="width:64px;padding:.35rem .4rem;border:1.5px solid #e2e8f0;border-radius:6px;text-align:center;font-weight:800;color:#0B2545;font-family:inherit;-moz-appearance:textfield">
+            <span style="font-size:.6rem;color:#64748B;font-weight:600">Total dispensers / cabinets to install</span>
+          </div>
           <div class="ds-ev-charger-meta" id="ds-ev-charger-meta"></div>
         </div>
       </div>
@@ -8003,10 +8008,12 @@ function setCustomerClass(cls, auto = false) {
 
   // Fold in everything that depends on customer class:
   //  - Repopulate EV dropdown to include commercial fleet vehicles
+  //  - Repopulate charger dropdown (residential L2 only vs full L2 + DCFC)
   //  - Re-render fleet list (cap label changes)
   //  - Default MPU service to 3-phase 120/208V for commercial
   //  - Re-evaluate inverter recommendations (commercial scope)
   if (typeof repopulateEvDropdownForClass === 'function') repopulateEvDropdownForClass();
+  if (typeof populateEvChargerDropdown === 'function') populateEvChargerDropdown();
   if (typeof renderFleetList === 'function') renderFleetList();
   if (!auto && typeof setServicePhase === 'function') {
     // Auto-suggest the typical phase for the new class — user can override
@@ -9720,25 +9727,49 @@ const EV_DB = [
 // (60A→6AWG, 50A→8AWG, 40A→8AWG, 80A→3AWG, 100A→2AWG).
 const EV_CHARGER_DB = [
   // ─── Level 2 Residential ───
-  { brand: 'Tesla',       model: 'Wall Connector (Gen 3)', level: 'L2', amps: 48, kw: 11.5, plug: 'NACS',   cord: 24, breaker: 60,  wireAwg: '6 AWG Cu THHN', notes: 'NACS connector · J1772 adapter sold separately · hardwired' },
-  { brand: 'ChargePoint', model: 'Home Flex',              level: 'L2', amps: 50, kw: 12.0, plug: 'J1772',  cord: 23, breaker: 60,  wireAwg: '6 AWG Cu THHN', notes: 'Adjustable 16–50A · WiFi · ENERGY STAR' },
-  { brand: 'Enphase',     model: 'IQ EV Charger 40',       level: 'L2', amps: 40, kw:  9.6, plug: 'J1772',  cord: 25, breaker: 50,  wireAwg: '8 AWG Cu THHN', notes: 'Integrates with Enphase App · ENERGY STAR' },
-  { brand: 'Emporia',     model: 'EV Charger (48A)',       level: 'L2', amps: 48, kw: 11.5, plug: 'J1772',  cord: 24, breaker: 60,  wireAwg: '6 AWG Cu THHN', notes: 'Load balancing with Vue energy monitor · ENERGY STAR' },
-  { brand: 'Wallbox',     model: 'Pulsar Plus 40A',        level: 'L2', amps: 40, kw:  9.6, plug: 'J1772',  cord: 25, breaker: 50,  wireAwg: '8 AWG Cu THHN', notes: 'Compact indoor/outdoor · WiFi/Bluetooth' },
-  { brand: 'Grizzl-E',    model: 'Classic 40A',            level: 'L2', amps: 40, kw:  9.6, plug: 'J1772',  cord: 24, breaker: 50,  wireAwg: '8 AWG Cu THHN', notes: 'Rugged aluminum · no app · budget workhorse' },
-  { brand: 'JuiceBox',    model: '48 (Enel X)',            level: 'L2', amps: 48, kw: 11.5, plug: 'J1772',  cord: 25, breaker: 60,  wireAwg: '6 AWG Cu THHN', notes: 'Enel X · WiFi + scheduling · hardwired' },
-  { brand: 'Autel',       model: 'MaxiCharger AC Wallbox', level: 'L2', amps: 50, kw: 12.0, plug: 'J1772',  cord: 25, breaker: 60,  wireAwg: '6 AWG Cu THHN', notes: '50A hardwired · OCPP 1.6 · WiFi + Bluetooth' },
-  // ─── Commercial / Fleet Level 2 ───
-  { brand: 'ChargePoint', model: 'CT4000 (dual port)',     level: 'L2', amps: 32, kw:  7.2, plug: 'J1772',  cord: 18, breaker: 40,  wireAwg: '8 AWG Cu THHN', notes: 'Commercial single or dual port · OCPP · bollard or wall mount' },
-  { brand: 'Blink',       model: 'Series 7 IQ 200 (80A)',  level: 'L2', amps: 80, kw: 19.2, plug: 'J1772',  cord: 18, breaker: 100, wireAwg: '3 AWG Cu THHN', notes: 'Commercial 80A · OCPP 1.6 · fleet-grade' },
-  // ─── Commercial DCFC ───
-  { brand: 'ChargePoint', model: 'Express 250 (62.5 kW)',  level: 'DCFC', amps: null, kw: 62.5, plug: 'CCS+CHAdeMO', cord: 14, breaker: null, wireAwg: 'per utility service', notes: 'Commercial DCFC · requires 480V 3Φ service · single port' },
-  { brand: 'ABB',         model: 'Terra 54 (50 kW)',       level: 'DCFC', amps: null, kw: 50.0, plug: 'CCS+CHAdeMO', cord: 13, breaker: null, wireAwg: 'per utility service', notes: 'Commercial DCFC · requires 480V 3Φ service · dual connector' }
+  { brand: 'Tesla',       model: 'Wall Connector (Gen 3)', level: 'L2', amps: 48, kw: 11.5, plug: 'NACS',   cord: 24, breaker: 60,  wireAwg: '6 AWG Cu THHN', class: 'residential', notes: 'NACS connector · J1772 adapter sold separately · hardwired' },
+  { brand: 'ChargePoint', model: 'Home Flex',              level: 'L2', amps: 50, kw: 12.0, plug: 'J1772',  cord: 23, breaker: 60,  wireAwg: '6 AWG Cu THHN', class: 'residential', notes: 'Adjustable 16–50A · WiFi · ENERGY STAR' },
+  { brand: 'Enphase',     model: 'IQ EV Charger 40',       level: 'L2', amps: 40, kw:  9.6, plug: 'J1772',  cord: 25, breaker: 50,  wireAwg: '8 AWG Cu THHN', class: 'residential', notes: 'Integrates with Enphase App · ENERGY STAR' },
+  { brand: 'Emporia',     model: 'EV Charger (48A)',       level: 'L2', amps: 48, kw: 11.5, plug: 'J1772',  cord: 24, breaker: 60,  wireAwg: '6 AWG Cu THHN', class: 'residential', notes: 'Load balancing with Vue energy monitor · ENERGY STAR' },
+  { brand: 'Wallbox',     model: 'Pulsar Plus 40A',        level: 'L2', amps: 40, kw:  9.6, plug: 'J1772',  cord: 25, breaker: 50,  wireAwg: '8 AWG Cu THHN', class: 'residential', notes: 'Compact indoor/outdoor · WiFi/Bluetooth' },
+  { brand: 'Grizzl-E',    model: 'Classic 40A',            level: 'L2', amps: 40, kw:  9.6, plug: 'J1772',  cord: 24, breaker: 50,  wireAwg: '8 AWG Cu THHN', class: 'residential', notes: 'Rugged aluminum · no app · budget workhorse' },
+  { brand: 'JuiceBox',    model: '48 (Enel X)',            level: 'L2', amps: 48, kw: 11.5, plug: 'J1772',  cord: 25, breaker: 60,  wireAwg: '6 AWG Cu THHN', class: 'residential', notes: 'Enel X · WiFi + scheduling · hardwired' },
+  { brand: 'Autel',       model: 'MaxiCharger AC Wallbox', level: 'L2', amps: 50, kw: 12.0, plug: 'J1772',  cord: 25, breaker: 60,  wireAwg: '6 AWG Cu THHN', class: 'residential', notes: '50A hardwired · OCPP 1.6 · WiFi + Bluetooth' },
+
+  // ─── Commercial / Fleet Level 2 (workplace, multi-tenant, fleet depot trickle) ───
+  { brand: 'ChargePoint', model: 'CT4000 Dual Port',       level: 'L2', amps: 32, kw:  7.2, plug: 'J1772',  cord: 18, breaker: 40,  wireAwg: '8 AWG Cu THHN', class: 'commercial', ports: 2, notes: 'Commercial single or dual port · OCPP 1.6 · pedestal or wall mount · workplace charging' },
+  { brand: 'ChargePoint', model: 'CPF50 Dual Port',        level: 'L2', amps: 50, kw: 11.5, plug: 'J1772',  cord: 18, breaker: 60,  wireAwg: '6 AWG Cu THHN', class: 'commercial', ports: 2, notes: 'Commercial dual-port pedestal · ENERGY STAR · power-share between ports' },
+  { brand: 'Blink',       model: 'Series 7 IQ 200',        level: 'L2', amps: 80, kw: 19.2, plug: 'J1772',  cord: 18, breaker: 100, wireAwg: '3 AWG Cu THHN', class: 'commercial', ports: 1, notes: 'Commercial 80A · OCPP 1.6 · fleet-grade single-port' },
+  { brand: 'Wallbox',     model: 'Supernova 60kW',         level: 'L2', amps: 80, kw: 19.2, plug: 'J1772',  cord: 16, breaker: 100, wireAwg: '3 AWG Cu THHN', class: 'commercial', ports: 1, notes: 'Workplace fast-L2 · OCPP 2.0 · CE marked' },
+  { brand: 'EVBox',       model: 'BusinessLine Dual',      level: 'L2', amps: 32, kw: 22.0, plug: 'Type 2', cord: 16, breaker: 50,  wireAwg: '6 AWG Cu THHN', class: 'commercial', ports: 2, notes: 'Three-phase 22 kW · OCPP 1.6 · workplace / multi-tenant' },
+
+  // ─── Level 3 / DC Fast Charging (DCFC) — Commercial only ───
+  // Notes track: kW per port, dispenser/cabinet split (high-power chargers
+  // are usually a power cabinet feeding multiple dispensers), upstream
+  // service (typical 480V 3Φ), pedestal vs pad-mount form factor.
+  { brand: 'ABB',         model: 'Terra 54',               level: 'DCFC', amps: null, kw: 50,  plug: 'CCS+CHAdeMO',     cord: 13, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 2, transformerKva: 75,  notes: 'Entry DCFC · 480V 3Φ · dual connector (CCS1 + CHAdeMO) · single dispenser pad-mount' },
+  { brand: 'ABB',         model: 'Terra 184',              level: 'DCFC', amps: null, kw: 180, plug: 'CCS+CHAdeMO',     cord: 13, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 2, transformerKva: 250, notes: 'Mid-power DCFC · 480V 3Φ · liquid-cooled · 350A continuous · fleet depot' },
+  { brand: 'ABB',         model: 'Terra HP 350',           level: 'DCFC', amps: null, kw: 350, plug: 'CCS',             cord: 16, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 2, transformerKva: 500, notes: 'Ultra-fast DCFC · 480V 3Φ · power cabinet + 2 dispensers · liquid-cooled cable · highway corridor / fleet hub' },
+  { brand: 'ChargePoint', model: 'Express Plus 62.5kW',    level: 'DCFC', amps: null, kw: 62.5, plug: 'CCS+CHAdeMO',    cord: 14, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 1, transformerKva: 100, notes: 'Modular DCFC · 480V 3Φ · field-upgradable to 200/400 kW with extra power blocks' },
+  { brand: 'ChargePoint', model: 'Express Plus 200kW',     level: 'DCFC', amps: null, kw: 200, plug: 'CCS+CHAdeMO',     cord: 14, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 2, transformerKva: 300, notes: 'High-power DCFC · 480V 3Φ · power cabinet + dispensers · CHAdeMO + CCS1' },
+  { brand: 'ChargePoint', model: 'Express Plus 500kW',     level: 'DCFC', amps: null, kw: 500, plug: 'CCS+NACS',        cord: 14, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 4, transformerKva: 750, notes: 'Megawatt-class · 480V 3Φ · 1 power cabinet + up to 4 dispensers · NEVI-eligible · highway corridor' },
+  { brand: 'Tesla',       model: 'Supercharger V3 (250kW)',level: 'DCFC', amps: null, kw: 250, plug: 'NACS',            cord: 18, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 1, transformerKva: 350, notes: 'Tesla NACS native · 480V 3Φ · liquid-cooled · 1000V battery support · destination charging program' },
+  { brand: 'Tesla',       model: 'Supercharger V4 (350kW)',level: 'DCFC', amps: null, kw: 350, plug: 'NACS+CCS1',       cord: 24, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 1, transformerKva: 500, notes: 'V4 stall · longer cable for non-Tesla EVs · 1000V architecture · NACS + CCS1' },
+  { brand: 'BTC Power',   model: 'Premier 175kW',          level: 'DCFC', amps: null, kw: 175, plug: 'CCS+CHAdeMO',     cord: 13, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 2, transformerKva: 250, notes: 'US-made · 480V 3Φ · NEVI Build America Buy America compliant · dual dispenser' },
+  { brand: 'Tritium',     model: 'PKM150',                 level: 'DCFC', amps: null, kw: 150, plug: 'CCS+CHAdeMO',     cord: 13, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 1, transformerKva: 225, notes: 'Compact pedestal · 480V 3Φ · IP65 outdoor · high reliability fleet' },
+  { brand: 'Tritium',     model: 'RTM75',                  level: 'DCFC', amps: null, kw: 75,  plug: 'CCS+CHAdeMO',     cord: 13, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 1, transformerKva: 112, notes: 'Mid-tier · 480V 3Φ · IP65 · convenience charging stops' },
+  { brand: 'Kempower',    model: 'Satellite Dispenser',    level: 'DCFC', amps: null, kw: 400, plug: 'CCS+NACS',        cord: 16, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 4, transformerKva: 600, notes: 'Modular satellite system · 480V 3Φ · scalable from 50–400 kW · power-sharing across satellites · transit / fleet depot' },
+
+  // ─── Heavy-Duty / Megawatt Charging (Class 8 trucks, transit buses) ───
+  { brand: 'ABB',         model: 'HVC 360 (overhead pantograph)', level: 'DCFC', amps: null, kw: 360, plug: 'OppCharge pantograph', cord: 0, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 1, transformerKva: 500, notes: 'Overhead pantograph for transit buses · 480V 3Φ · roof-mounted automatic connection · 5-min layover charge' },
+  { brand: 'Heliox',      model: 'Flex 180kW',                  level: 'DCFC', amps: null, kw: 180, plug: 'CCS2 / Pantograph',    cord: 13, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 4, transformerKva: 250, notes: 'Bus depot overnight charging · 480V 3Φ · sequential power-share across 4 dispensers' },
+  { brand: 'Tesla',       model: 'Semi Megacharger (1MW)',       level: 'DCFC', amps: null, kw: 1000, plug: 'Tesla MCS',          cord: 24, breaker: null, wireAwg: 'per utility service', class: 'commercial', ports: 1, transformerKva: 1500, notes: 'Class 8 long-haul · MCS connector · 480V 3Φ → utility coordination required · 30-min add 400 mi range' }
 ];
 
 // ─── EV state ──────────────────────────────────────────────
 DS_STATE.evLoad     = null;  // { evIndex, whPerMi, miles, period, annualKwh } or null
 DS_STATE.evCharger  = null;  // selected EV_CHARGER_DB entry or null
+DS_STATE.evChargerQty = 1;   // commercial fleets often install multiple dispensers
 DS_STATE.evPeriod   = 'day'; // 'day' | 'week' | 'month' | 'year'
 // Charging AC→vehicle efficiency. Typical L2 end-to-end: 88–92%.
 const EV_CHARGING_EFFICIENCY = 0.90;
@@ -9760,30 +9791,57 @@ function populateEvDropdowns() {
       mSel.appendChild(opt);
     });
   }
+  populateEvChargerDropdown();
+}
 
+// Build the charger dropdown, scoped to the current customer class.
+// Residential customers see only Level 2 residential models. Commercial
+// customers see workplace L2, fleet depot L2, and the full DCFC ladder
+// from entry-level 50 kW through megawatt-class Class 8 chargers.
+function populateEvChargerDropdown() {
   const cSel = document.getElementById('ds-ev-charger');
-  if (cSel) {
-    cSel.innerHTML = '<option value="">— No charger — skip hardware BOM —</option>';
-    // Group by level for clarity
-    const groups = [
-      { label: 'Level 2 · Residential (240V)', filter: c => c.level === 'L2' && c.amps <= 50 },
-      { label: 'Level 2 · Commercial / Fleet', filter: c => c.level === 'L2' && c.amps > 50 },
-      { label: 'DC Fast Charging · Commercial', filter: c => c.level === 'DCFC' }
-    ];
-    // Flatten to single dropdown with disabled headers so it works on all browsers
-    groups.forEach(g => {
-      const header = document.createElement('option');
-      header.disabled = true;
-      header.textContent = `── ${g.label} ──`;
-      cSel.appendChild(header);
-      EV_CHARGER_DB.forEach((c, i) => {
-        if (!g.filter(c)) return;
-        const opt = document.createElement('option');
-        opt.value = String(i);
-        opt.textContent = `${c.brand} ${c.model} — ${c.kw.toFixed(1)} kW${c.amps ? ' @ ' + c.amps + 'A' : ''}`;
-        cSel.appendChild(opt);
-      });
+  if (!cSel) return;
+  // Preserve current selection across rebuilds where possible
+  const prev = cSel.value;
+  cSel.innerHTML = '<option value="">— No charger — skip hardware BOM —</option>';
+  const isCommercial = DS_STATE.customerClass === 'commercial';
+  const groups = isCommercial ? [
+    { label: 'Level 2 · Residential (240V)',                    filter: c => c.level === 'L2' && c.class === 'residential' },
+    { label: 'Level 2 · Commercial / Workplace / Fleet Depot',  filter: c => c.level === 'L2' && c.class === 'commercial' },
+    { label: 'DC Fast Charging · Entry (50–75 kW)',             filter: c => c.level === 'DCFC' && c.kw <= 75 },
+    { label: 'DC Fast Charging · Mid-Power (150–200 kW)',       filter: c => c.level === 'DCFC' && c.kw > 75 && c.kw <= 200 },
+    { label: 'DC Fast Charging · High-Power (250–500 kW)',      filter: c => c.level === 'DCFC' && c.kw > 200 && c.kw <= 500 },
+    { label: 'Megawatt / Pantograph (Class 8 + Transit Bus)',   filter: c => c.level === 'DCFC' && c.kw > 500 }
+  ] : [
+    { label: 'Level 2 · Residential (240V)',                    filter: c => c.level === 'L2' && c.class === 'residential' }
+  ];
+  groups.forEach(g => {
+    const matching = EV_CHARGER_DB.map((c, i) => ({c, i})).filter(({c}) => g.filter(c));
+    if (matching.length === 0) return;
+    const header = document.createElement('option');
+    header.disabled = true;
+    header.textContent = `── ${g.label} ──`;
+    cSel.appendChild(header);
+    matching.forEach(({c, i}) => {
+      const opt = document.createElement('option');
+      opt.value = String(i);
+      const portStr = c.ports && c.ports > 1 ? ` · ${c.ports} ports` : '';
+      const ampStr  = c.amps ? ` @ ${c.amps}A` : '';
+      opt.textContent = `${c.brand} ${c.model} — ${c.kw % 1 === 0 ? c.kw : c.kw.toFixed(1)} kW${ampStr}${portStr}`;
+      cSel.appendChild(opt);
     });
+  });
+  // Restore prior selection if still present in the rebuilt list; otherwise
+  // clear to "No charger" so a residential customer who was looking at a DCFC
+  // doesn't end up with a stale selection after switching to residential.
+  if (prev && cSel.querySelector(`option[value="${prev}"]`)) {
+    cSel.value = prev;
+  } else if (prev) {
+    cSel.value = '';
+    DS_STATE.evCharger = null;
+    const metaEl = document.getElementById('ds-ev-charger-meta');
+    if (metaEl) { metaEl.classList.remove('show'); metaEl.innerHTML = ''; }
+    if (typeof renderBOM === 'function') renderBOM();
   }
 }
 
@@ -9901,25 +9959,61 @@ function onEvChargerChange() {
   const sel = document.getElementById('ds-ev-charger');
   const idx = sel.value === '' ? -1 : parseInt(sel.value, 10);
   const metaEl = document.getElementById('ds-ev-charger-meta');
+  // Hide qty row by default
+  const qtyRow = document.getElementById('ds-ev-charger-qty-row');
+  if (qtyRow) qtyRow.style.display = 'none';
   if (idx < 0) {
     DS_STATE.evCharger = null;
+    DS_STATE.evChargerQty = 1;
     if (metaEl) { metaEl.classList.remove('show'); metaEl.innerHTML = ''; }
     renderBOM();
     return;
   }
   const c = EV_CHARGER_DB[idx];
   DS_STATE.evCharger = c;
+  // Default qty: 1, but commercial sites usually want 2+ DCFC dispensers
+  if (DS_STATE.evChargerQty == null) DS_STATE.evChargerQty = 1;
+
+  // Show the quantity selector for commercial customers (residential always
+  // installs exactly 1 home charger). Commercial fleets often want a row of
+  // dispensers, so quantity matters for the BOM.
+  if (qtyRow && DS_STATE.customerClass === 'commercial') {
+    qtyRow.style.display = 'flex';
+    const qtyInput = document.getElementById('ds-ev-charger-qty');
+    if (qtyInput) qtyInput.value = String(DS_STATE.evChargerQty);
+  } else {
+    DS_STATE.evChargerQty = 1;
+  }
+
   if (metaEl) {
-    const circuitInfo = c.breaker
-      ? `<div>Circuit: <strong>${c.breaker}A breaker · ${c.wireAwg}</strong> (125% continuous-load rule, NEC 625.42)</div>`
-      : `<div>Service: <strong>${c.wireAwg}</strong> · see AHJ for utility requirements</div>`;
+    const isDcfc = c.level === 'DCFC';
+    let circuitInfo;
+    if (c.breaker) {
+      // L2: dedicated 240V branch circuit
+      circuitInfo = `<div>Circuit: <strong>${c.breaker}A breaker · ${c.wireAwg}</strong> (125% continuous-load rule, NEC 625.42)</div>`;
+    } else {
+      // DCFC: utility service feed at 480V 3Φ — sized in kVA via transformer
+      const xfmr = c.transformerKva ? `<strong>${c.transformerKva} kVA</strong> step-down transformer` : `<strong>${c.wireAwg}</strong>`;
+      const portsLine = c.ports && c.ports > 1 ? ` · <strong>${c.ports} dispensers</strong> per cabinet` : '';
+      circuitInfo = `
+        <div>Service: ${xfmr} · 480V 3Φ utility feed${portsLine}</div>
+        <div style="margin-top:.15rem;font-size:.55rem;color:#92400e">⚠ Utility coordination + service upgrade typically required for DCFC. Coordinate with serving utility before quoting.</div>
+      `;
+    }
+    const portStr = c.ports && c.ports > 1 ? ` · ${c.ports} ports` : '';
     metaEl.innerHTML = `
-      <div><strong>${c.brand} ${c.model}</strong> · ${c.level} · ${c.kw.toFixed(1)} kW${c.amps ? ' @ ' + c.amps + 'A' : ''} · ${c.plug}</div>
+      <div><strong>${c.brand} ${c.model}</strong> · ${c.level === 'DCFC' ? 'DC Fast Charging' : 'Level 2'} · ${c.kw % 1 === 0 ? c.kw : c.kw.toFixed(1)} kW${c.amps ? ' @ ' + c.amps + 'A' : ''} · ${c.plug}${portStr}</div>
       <div style="margin-top:.2rem">${c.notes}</div>
       ${circuitInfo}
     `;
     metaEl.classList.add('show');
   }
+  renderBOM();
+}
+
+function onEvChargerQtyChange() {
+  const v = parseInt(document.getElementById('ds-ev-charger-qty')?.value) || 1;
+  DS_STATE.evChargerQty = Math.max(1, Math.min(99, v));
   renderBOM();
 }
 
@@ -11398,16 +11492,21 @@ const WARRANTY = {
   avansRacking:       '25-year structural',
   // EV charger warranties vary by brand — look up per brand
   evCharger: {
-    'Tesla':       '4 years',
-    'ChargePoint': '3 years',
-    'Enphase':     '5 years',
-    'Emporia':     '3 years',
-    'Wallbox':     '3 years',
-    'Grizzl-E':    '3 years',
-    'JuiceBox':    '3 years',
-    'Autel':       '3 years',
-    'Blink':       '2 years',
-    'ABB':         '2 years'
+    'Tesla':        '4 years',
+    'ChargePoint':  '3 years',
+    'Enphase':      '5 years',
+    'Emporia':      '3 years',
+    'Wallbox':      '3 years',
+    'Grizzl-E':     '3 years',
+    'JuiceBox':     '3 years',
+    'Autel':        '3 years',
+    'Blink':        '2 years',
+    'ABB':          '2 years',
+    'EVBox':        '3 years',
+    'BTC Power':    '2 years',
+    'Tritium':      '2 years',
+    'Kempower':     '3 years',
+    'Heliox':       '2 years'
   }
 };
 function evChargerWarranty(brand) {
@@ -11641,40 +11740,72 @@ function computeBOM() {
   // charging hardware, not vehicles.
   if (DS_STATE.evCharger) {
     const c = DS_STATE.evCharger;
+    const qty = Math.max(1, DS_STATE.evChargerQty || 1);
+    const isDcfc = c.level === 'DCFC';
+    const portStr = c.ports && c.ports > 1 ? ` · ${c.ports} dispensers per cabinet` : '';
     items.push({
-      category: 'EV Charging · Charger',
+      category: isDcfc ? 'EV Charging · DCFC' : 'EV Charging · Charger',
       name: `${c.brand} ${c.model}`,
       meta: withWarranty(
-        `${c.level} · ${c.kw.toFixed(1)} kW${c.amps ? ' @ ' + c.amps + 'A' : ''} · ${c.plug} · ${c.cord}' cord · ${c.notes}`,
+        `${isDcfc ? 'DC Fast Charging' : 'Level 2'} · ${c.kw % 1 === 0 ? c.kw : c.kw.toFixed(1)} kW${c.amps ? ' @ ' + c.amps + 'A' : ''} · ${c.plug}${portStr} · ${c.cord}' cord · ${c.notes}`,
         evChargerWarranty(c.brand)
       ),
-      qty: 1
+      qty: qty
     });
     if (c.breaker) {
+      // L2 path: dedicated 240V branch circuit per unit
       items.push({
         category: 'EV Charging · Circuit',
         name: `${c.breaker}A Double-Pole Breaker`,
         meta: `Dedicated 240V branch circuit for ${c.brand} ${c.model} · sized per NEC 625.42 (125% of continuous load) · Warranty: passed through from breaker manufacturer ${WARRANTY_PARTS_ONLY}`,
-        qty: 1
+        qty: qty
       });
       items.push({
         category: 'EV Charging · Circuit',
         name: `${c.wireAwg} (run to charger)`,
         meta: `Copper THHN · sized per NEC 310.16 75°C column for a ${c.breaker}A overcurrent device · home-run from main panel · Warranty: passed through from wire manufacturer ${WARRANTY_PARTS_ONLY}`,
-        qty: 1
+        qty: qty
       });
       items.push({
         category: 'EV Charging · Disconnect',
         name: 'NEMA 3R EV Disconnect',
         meta: `240V AC disconnect mounted within sight of the charger per NEC 625.43 · matches ${c.breaker}A circuit · Warranty: passed through from disconnect manufacturer ${WARRANTY_PARTS_ONLY}`,
-        qty: 1
+        qty: qty
       });
     } else {
-      // DCFC — placeholder for commercial service work, not a stock BOM line
+      // DCFC path: 480V 3Φ utility service + step-down transformer + concrete
+      // pad + ground array + utility coordination. The cabinet itself is the
+      // line item above; everything below is the supporting infrastructure.
+      const xfmrKva = c.transformerKva || Math.ceil(c.kw * 1.4 / 50) * 50;
       items.push({
-        category: 'EV Charging · Service',
-        name: 'Utility Service Upgrade (by others)',
-        meta: `${c.brand} ${c.model} requires 480V 3Φ service — coordinate with AHJ and utility; not a stock BOM line item`,
+        category: 'EV Charging · DCFC Service',
+        name: `${xfmrKva} kVA Pad-Mount Transformer (480V 3Φ → utility primary)`,
+        meta: `Sized at ~140% of charger continuous output · pad-mount or skid-mount · coordinated with serving utility · oil-filled or dry-type per AHJ · Warranty: passed through from transformer manufacturer ${WARRANTY_PARTS_ONLY}`,
+        qty: qty
+      });
+      items.push({
+        category: 'EV Charging · DCFC Service',
+        name: 'Utility Service Coordination & Interconnection',
+        meta: `${c.brand} ${c.model} requires 480V 3Φ service — disconnect/reconnect coordination, primary metering, AHJ permits, utility interconnection agreement. Responsibility tracked even when utility-side.`,
+        qty: 1
+      });
+      items.push({
+        category: 'EV Charging · DCFC Service',
+        name: 'DCFC Concrete Pad + Bollards',
+        meta: 'Reinforced 4" concrete pad sized to charger footprint, vehicle-impact bollards (NEC 625.30 / IFC 312), ground rod, equipment grounding electrode conductor',
+        qty: qty
+      });
+      items.push({
+        category: 'EV Charging · DCFC Service',
+        name: 'DCFC Service Disconnect (NEMA 3R, fused)',
+        meta: `Per NEC 625.43 — disconnecting means within sight of the charger · sized to ${c.kw} kW continuous load · 480V 3Φ rated · Warranty: passed through from disconnect manufacturer ${WARRANTY_PARTS_ONLY}`,
+        qty: qty
+      });
+      // Networking / payment systems are typical for commercial DCFC
+      items.push({
+        category: 'EV Charging · DCFC Network',
+        name: 'OCPP Network Subscription + Payment Terminal',
+        meta: 'OCPP 1.6/2.0 backend subscription, RFID/credit-card payment terminal, cellular or fiber backhaul · annual recurring software fee NOT included in capital BOM',
         qty: 1
       });
     }
