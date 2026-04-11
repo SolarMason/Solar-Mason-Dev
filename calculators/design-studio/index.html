@@ -5572,7 +5572,12 @@ async function initCesium() {
     selectionIndicator: false,
     globe: false,               // no globe — 3D tiles provide everything
     requestRenderMode: true,    // Google's recommended setting
-    creditContainer: document.createElement('div')
+    creditContainer: document.createElement('div'),
+    // CRITICAL: preserveDrawingBuffer must be true for canvas.toDataURL()
+    // to return actual pixels instead of a blank image. Without this, PDF
+    // export of the 3D view shows a black rectangle. Slight GPU memory
+    // overhead but worth it.
+    contextOptions: { webgl: { preserveDrawingBuffer: true } }
   });
 
   viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#e2e8f0');
@@ -8380,6 +8385,62 @@ function computeShadeAnalysis() {
   };
 }
 
+// Capture the live Cesium 3D scene (Google Photorealistic 3D Tiles + the
+// rendered panel entities) as a JPEG data URL. This is the SAME tilted
+// 45° aerial view the user sees in the design studio after entering an
+// address — exactly what they want in the PDF proposal.
+//
+// Cesium uses on-demand rendering (requestRenderMode: true), so we have
+// to call requestRender() and then wait for the postRender event before
+// the back-buffer actually contains pixels we can export. The viewer is
+// also created with contextOptions.webgl.preserveDrawingBuffer = true so
+// canvas.toDataURL() returns real bitmap data instead of blank.
+//
+// Returns a data URL string, or null if Cesium isn't initialized / 3D
+// view is hidden / capture fails. Callers should fall back to the flat
+// Static Maps API path in those cases.
+async function captureCesium3DSnapshot(quality = 0.88) {
+  const viewer = DS_STATE.cesiumViewer;
+  if (!viewer || !viewer.scene || !viewer.scene.canvas) return null;
+  if (!DS_STATE.cesiumMode) return null;  // user is in 2D — no Cesium scene to grab
+
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (result) => {
+      if (done) return;
+      done = true;
+      try { remove && remove(); } catch (e) {}
+      clearTimeout(safety);
+      resolve(result);
+    };
+
+    // Safety timeout — if postRender never fires (tile load stall), still
+    // try to grab whatever's in the buffer rather than hang forever.
+    const safety = setTimeout(() => {
+      try {
+        finish(viewer.scene.canvas.toDataURL('image/jpeg', quality));
+      } catch (e) {
+        console.warn('[DS] cesium snapshot safety fallback failed:', e);
+        finish(null);
+      }
+    }, 2000);
+
+    // Cesium scene.postRender returns an event remover function
+    const remove = viewer.scene.postRender.addEventListener(() => {
+      try {
+        const dataUrl = viewer.scene.canvas.toDataURL('image/jpeg', quality);
+        finish(dataUrl);
+      } catch (e) {
+        console.warn('[DS] cesium snapshot failed:', e);
+        finish(null);
+      }
+    });
+
+    // Force a render so postRender actually fires
+    viewer.scene.requestRender();
+  });
+}
+
 // Build a Google Static Maps URL rendering a satellite view with the current
 // active roof panels overlaid as filled polygons. Used in the PDF proposal so
 // customers see an actual image of their array layout, not just numbers.
@@ -8447,18 +8508,40 @@ function buildMapSnapshotUrl(width = 640, height = 400) {
   return `${base}?${common.join('&')}&path=${encodeURIComponent(pathStyle + encodePath(hullPath))}`;
 }
 
-function exportProposal() {
+async function exportProposal() {
   if (!DS_STATE.results) { alert('Run calculation first'); return; }
   const r = DS_STATE.results;
   const shade = computeShadeAnalysis();
   const bom = computeBOM();
-  // Snapshot the actual array layout from the live map so the PDF shows
-  // a real picture of where the panels will go. buildMapSnapshotUrl returns
-  // null if no active panels or no map yet — the template guards with `?:`.
-  const mapSnapshotUrl = buildMapSnapshotUrl(640, 400);
-  const mapSnapshotUrlLarge = buildMapSnapshotUrl(720, 480);
+
+  // Open the popup IMMEDIATELY in the user-gesture handler — if we await
+  // anything before window.open, browsers block the popup as if it wasn't
+  // user-initiated. Write a placeholder, then async-grab the Cesium 3D
+  // snapshot, then write the real PDF content.
   const w = window.open('', '_blank');
   if (!w) { alert('Please allow popups'); return; }
+  w.document.write(`<!DOCTYPE html><html><head><title>Solar Mason Proposal</title>
+    <style>body{font-family:-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;color:#0B2545;background:#f8fbff}
+    .ld{text-align:center}
+    .ld-title{font-size:1.4rem;font-weight:900;color:#2D82BE;margin-bottom:.5rem}
+    .ld-sub{font-size:.9rem;color:#64748B}
+    .spin{width:38px;height:38px;border:3px solid #e2e8f0;border-top-color:#2D82BE;border-radius:50%;margin:0 auto 1rem;animation:s 1s linear infinite}
+    @keyframes s{to{transform:rotate(360deg)}}</style></head><body>
+    <div class="ld"><div class="spin"></div><div class="ld-title">Solar Mason</div><div class="ld-sub">Capturing array view and assembling proposal…</div></div>
+    </body></html>`);
+
+  // Try to capture the live 3D tilted view from Cesium — that's the same
+  // 45° aerial view the user sees in the design studio. If Cesium isn't
+  // running (2D mode, tile load failure, etc.) fall back to the flat
+  // Static Maps API path so the PDF still has SOMETHING.
+  let cesiumDataUrl = null;
+  try {
+    cesiumDataUrl = await captureCesium3DSnapshot(0.88);
+  } catch (e) {
+    console.warn('[DS] cesium snapshot threw, falling back to Static Maps:', e);
+  }
+  const mapSnapshotUrl = cesiumDataUrl || buildMapSnapshotUrl(640, 400);
+  const mapSnapshotUrlLarge = cesiumDataUrl || buildMapSnapshotUrl(720, 480);
 
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const today = new Date();
@@ -8635,6 +8718,8 @@ function exportProposal() {
     ? `Enphase ${r.inverterSelection.micro || '—'} microinverter (1 per panel)`
     : `SolarEdge ${r.inverterSelection.stringInverter || '—'} string inverter + ${r.inverterSelection.optimizer || '—'} optimizer per panel`;
 
+  // Replace the loading placeholder with the real proposal content
+  w.document.open();
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Solar Mason Proposal · ${proposalId}</title>
   <style>
     @page { size: letter; margin: 0.55in 0.6in; }
