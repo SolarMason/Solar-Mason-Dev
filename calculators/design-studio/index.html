@@ -4955,6 +4955,15 @@ body.ds-mode-ground .ds-ground-only{display:block}
         <select id="ds-panel-model" onchange="onPanelModelChange()"></select>
       </div>
       <div class="ds-panel-specs" id="ds-panel-specs"></div>
+
+      <!-- Upload a custom panel datasheet (PDF) — auto-extracts Voc/Vmp/Isc/Imp/wattage
+           and adds the panel to the active session (not persisted). -->
+      <div style="margin-top:.45rem;padding:.45rem .55rem;background:rgba(45,130,190,.04);border:1px dashed rgba(45,130,190,.28);border-radius:7px;font-size:.6rem;color:#64748B;line-height:1.4">
+        Don't see your panel? <a href="#" onclick="document.getElementById('ds-datasheet-input').click();return false;" style="color:#2D82BE;font-weight:800;text-decoration:none">Upload Module Datasheet (PDF)</a> — we'll auto-extract specs for this session.
+        <input type="file" id="ds-datasheet-input" accept="application/pdf" style="display:none" onchange="if(this.files[0])processDatasheetFile(this.files[0]).catch(function(e){console.error('[DS] Datasheet error:',e)})">
+        <div style="margin-top:.2rem;font-size:.55rem;font-style:italic">To permanently add a panel to our catalog, email the datasheet to <a href="mailto:engineering@solarmason.com" style="color:#2D82BE;font-weight:700">engineering@solarmason.com</a>.</div>
+        <div id="ds-datasheet-status" style="margin-top:.25rem;font-weight:700;display:none"></div>
+      </div>
       <!-- Hidden legacy input so all downstream code that reads ds-panel-w still works -->
       <input type="hidden" id="ds-panel-w" value="440">
 
@@ -11533,6 +11542,124 @@ function renderPanelSpecs(brand, p) {
     <div class="row"><span>${p.length_mm}×${p.width_mm}×${p.thick_mm} mm</span><span>${lengthIn}"×${widthIn}" · ${p.weight_kg} kg</span></div>
     <div class="tech">${p.tech}${p.datasheet ? ' · <a href="' + p.datasheet + '" target="_blank" style="color:var(--brand)">Datasheet PDF</a>' : ''}</div>
   `;
+}
+
+// ============================================================
+// CUSTOM PANEL DATASHEET UPLOAD (session-only, not persisted)
+// ============================================================
+// Parses a manufacturer PDF datasheet, extracts the standard STC
+// electrical specs (Pmax / Voc / Vmp / Isc / Imp), dimensions, and
+// adds the panel to PANEL_DB under a "Custom (Uploaded)" brand
+// group for the current session only. Does NOT persist — users
+// who want permanent inclusion must email engineering@solarmason.com.
+async function processDatasheetFile(file) {
+  const status = document.getElementById('ds-datasheet-status');
+  const show = (msg, color) => {
+    if (!status) return;
+    status.style.display = 'block';
+    status.style.color = color || '#2D82BE';
+    status.innerHTML = msg;
+  };
+  show('Parsing datasheet…');
+  try {
+    const ab = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+    let text = '';
+    for (let i = 1; i <= Math.min(pdf.numPages, 4); i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += ' ' + content.items.map(it => it.str).join(' ');
+    }
+    const spec = extractPanelSpecsFromText(text, file.name);
+    if (!spec) {
+      show('❌ Could not extract panel specs. Email the datasheet to <a href="mailto:engineering@solarmason.com" style="color:#2D82BE">engineering@solarmason.com</a> for manual addition.', '#dc2626');
+      return;
+    }
+    // Add to PANEL_DB under "Custom (Uploaded)" brand
+    if (!PANEL_DB['Custom (Uploaded)']) PANEL_DB['Custom (Uploaded)'] = [];
+    PANEL_DB['Custom (Uploaded)'].push(spec);
+
+    // Rebuild the dropdown, select the new panel, and update everything
+    populatePanelDropdown();
+    const sel = document.getElementById('ds-panel-model');
+    if (sel) {
+      sel.value = `Custom (Uploaded)|${spec.model}`;
+      onPanelModelChange();
+    }
+    show(`✓ <strong>${spec.model}</strong> loaded (${spec.w}W · ${spec.voc}V Voc · ${spec.isc}A Isc). Session only — email engineering@solarmason.com to add permanently.`, '#059669');
+  } catch (err) {
+    console.error('[DS] Datasheet parse error:', err);
+    show('❌ Parse error: ' + (err.message || 'unknown'), '#dc2626');
+  }
+}
+
+// Regex-based spec extraction. Handles the standard datasheet layouts
+// from LG, Q CELLS, Canadian Solar, Jinko, LONGi, REC, SunPower, Trina,
+// Panasonic, Silfab, etc. Returns a panel object compatible with PANEL_DB
+// entries, or null if not enough data could be extracted.
+function extractPanelSpecsFromText(rawText, filename) {
+  const t = rawText.replace(/\s+/g, ' ');
+  const grab = (patterns) => {
+    for (const re of patterns) {
+      const m = t.match(re);
+      if (m) return parseFloat(m[1]);
+    }
+    return null;
+  };
+  // Power / Pmax — look for "W" or "Wp" suffix near a 3-4 digit number
+  const w = grab([
+    /(?:Pmax|P\s*max|Rated Power|Nominal Power|Maximum Power|Module Power)[^0-9]{0,20}(\d{3,4})\s*W/i,
+    /(\d{3,4})\s*W(?:p|\s|\()/
+  ]);
+  // Open-circuit voltage
+  const voc = grab([
+    /Voc[^0-9]{0,20}(\d{1,2}\.?\d{0,2})\s*V/i,
+    /Open[- ]Circuit Voltage[^0-9]{0,20}(\d{1,2}\.?\d{0,2})/i
+  ]);
+  // Max-power voltage
+  const vmp = grab([
+    /Vmpp?[^0-9]{0,20}(\d{1,2}\.?\d{0,2})\s*V/i,
+    /Voltage at Maximum Power[^0-9]{0,20}(\d{1,2}\.?\d{0,2})/i
+  ]);
+  // Short-circuit current
+  const isc = grab([
+    /Isc[^0-9]{0,20}(\d{1,2}\.?\d{0,2})\s*A/i,
+    /Short[- ]Circuit Current[^0-9]{0,20}(\d{1,2}\.?\d{0,2})/i
+  ]);
+  // Max-power current
+  const imp = grab([
+    /Impp?[^0-9]{0,20}(\d{1,2}\.?\d{0,2})\s*A/i,
+    /Current at Maximum Power[^0-9]{0,20}(\d{1,2}\.?\d{0,2})/i
+  ]);
+  // Dimensions — L × W × D in mm
+  const dimM = t.match(/(\d{4})\s*[×x*]\s*(\d{3,4})\s*[×x*]\s*(\d{1,2})\s*mm/i);
+  const length_mm = dimM ? parseInt(dimM[1]) : null;
+  const width_mm  = dimM ? parseInt(dimM[2]) : null;
+  const thick_mm  = dimM ? parseInt(dimM[3]) : 35;
+  // Weight
+  const weight_kg = grab([/(\d{1,2}\.?\d{0,2})\s*kg/i]) || 22;
+  // Cell count
+  const cells = grab([/(\d{2,3})[- ]?cell/i]) || 120;
+
+  // Require at least wattage, Voc, Isc, and dimensions to be confident
+  if (!w || !voc || !isc || !length_mm || !width_mm) return null;
+
+  // Derive a model name from the filename (strip path + extension)
+  const modelName = filename.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ').trim() || 'Custom Panel';
+
+  return {
+    model: modelName,
+    w: Math.round(w),
+    voc: voc,
+    vmp: vmp || Math.round(voc * 0.82 * 100) / 100,
+    isc: isc,
+    imp: imp || Math.round(isc * 0.94 * 100) / 100,
+    length_mm, width_mm, thick_mm,
+    weight_kg,
+    cells: Math.round(cells),
+    tech: 'Custom upload (session only)',
+    datasheet: null
+  };
 }
 
 function setIronRidgeSeries(series) {
