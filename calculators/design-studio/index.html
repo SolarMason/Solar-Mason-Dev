@@ -3965,6 +3965,17 @@ html { scroll-behavior: smooth; }
 /* ═══ DESIGN STUDIO V2 STYLES ═══ */
 /* ═══ DESIGN STUDIO V3 — FULL-VIEWPORT LAYOUT (OpenSolar-style) ═══ */
 /* Breaks out of the content-section's 1280px cap so the map fills the screen */
+/* ───────────────────────────────────────────────────────────
+   DESIGN STUDIO PAGE — kill all parallax / fixed-attachment.
+   The studio uses a fixed-position bottom-sheet tools overlay on
+   mobile and a fixed map canvas on desktop. Background-attachment:
+   fixed on the body and subpage-hero causes weird visual jitter
+   and z-index conflicts during scroll/touch interactions. Force
+   everything to scroll naturally on this page only. */
+html, body { background-attachment: scroll !important; }
+.subpage-hero { background-attachment: scroll !important; }
+* { background-attachment: scroll !important; }
+
 .ds-studio-fullscreen{position:relative;width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);height:calc(100vh - 72px);min-height:640px;background:#e2e8f0;overflow:hidden}
 
 /* Full-viewport map background */
@@ -12364,14 +12375,8 @@ window.initGoogleMaps = function() {
 </div>
 
 
-<!-- ════════════ CTA ════════════ -->
-<div class="content-section">
-  <div class="cta-banner">
-    <h2>Ready to Go Solar?</h2>
-    <p>Get a free consultation and custom system design from our engineering team.</p>
-    <a href="/calculators/bill-analyzer/" class="cta-btn">Free Estimate</a>
-  </div>
-</div>
+<!-- CTA banner removed — was overlapping the design studio tools panel
+     and is redundant with the nav CTA + bill-analyzer entry point -->
 
 <footer class="footer">
       <div class="footer-inner">
