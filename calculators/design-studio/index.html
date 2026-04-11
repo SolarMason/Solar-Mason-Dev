@@ -4409,6 +4409,29 @@ html { scroll-behavior: smooth; }
 .ds-inv-compat.err{background:rgba(220,38,38,.06);border-color:rgba(220,38,38,.3);color:#991b1b}
 .ds-inv-compat strong{color:inherit;font-weight:800}
 
+/* ─── EV CHARGING SECTION ────────────────────────────────────── */
+.ds-ev-meta{margin-top:.3rem;font-size:.62rem;color:#64748B;line-height:1.4}
+.ds-ev-meta strong{color:#0B2545;font-weight:800}
+.ds-ev-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:.25rem;margin:.35rem 0 .55rem}
+.ds-ev-tab{padding:.38rem .2rem;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:7px;font-size:.62rem;font-weight:700;color:#64748B;cursor:pointer;font-family:inherit;transition:all .15s;text-align:center}
+.ds-ev-tab:hover{background:#f1f5f9;border-color:rgba(59,112,162,.35)}
+.ds-ev-tab.active{background:linear-gradient(135deg,rgba(59,112,162,.1),rgba(59,112,162,.02));border-color:#3B70A2;color:#0B2545}
+.ds-ev-slider-row{display:grid;grid-template-columns:1fr 80px;gap:.55rem;align-items:center}
+.ds-ev-miles-num{font-size:.78rem;padding:.4rem .45rem;border:1.5px solid #e2e8f0;border-radius:7px;text-align:center;font-weight:800;color:#0B2545;font-family:inherit;-moz-appearance:textfield}
+.ds-ev-miles-num::-webkit-outer-spin-button,.ds-ev-miles-num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ds-ev-miles-pretty{margin-top:.3rem;font-size:.62rem;color:#64748B;line-height:1.3;text-align:right}
+.ds-ev-miles-pretty strong{color:#0B2545;font-weight:800}
+.ds-ev-result-card{margin:.7rem 0 .5rem;padding:.7rem .85rem;background:linear-gradient(135deg,rgba(45,130,190,.08),rgba(45,130,190,.02));border:1px solid rgba(45,130,190,.25);border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.ds-ev-result-label{font-size:.62rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.04em}
+.ds-ev-result-val{font-size:1.4rem;font-weight:900;color:#0B2545;line-height:1}
+.ds-ev-result-val .unit{font-size:.62rem;color:#64748B;font-weight:600;margin-left:.2rem}
+.ds-ev-result-sub{font-size:.58rem;color:#94a3b8;margin-top:.2rem;font-weight:600}
+.ds-ev-result-card.empty{background:rgba(148,163,184,.06);border-color:rgba(148,163,184,.2)}
+.ds-ev-result-card.empty .ds-ev-result-val{color:#94a3b8}
+.ds-ev-charger-meta{margin-top:.3rem;padding:.4rem .55rem;background:rgba(59,112,162,.04);border:1px solid rgba(59,112,162,.15);border-radius:7px;font-size:.6rem;color:#475569;line-height:1.5;display:none}
+.ds-ev-charger-meta.show{display:block}
+.ds-ev-charger-meta strong{color:#0B2545;font-weight:800}
+
 /* Panel spec display + IronRidge selector */
 .ds-panel-specs{margin-top:.35rem;padding:.42rem .55rem;background:rgba(59,112,162,.04);border:1px solid rgba(59,112,162,.15);border-radius:7px;font-size:.62rem;color:#475569;line-height:1.5;display:none}
 .ds-panel-specs.show{display:block}
@@ -4814,6 +4837,61 @@ body.ds-mode-ground .ds-ground-only{display:block}
         <div class="ds-stat"><div class="ds-stat-label">System Size</div><div class="ds-stat-value" id="ds-kw">0.00<span class="ds-stat-unit">kW DC</span></div></div>
         <div class="ds-stat"><div class="ds-stat-label">Active Panels</div><div class="ds-stat-value" id="ds-active-count">0<span class="ds-stat-unit">panels</span></div></div>
       </div>
+      </div>
+    </details>
+
+    <!-- EV Charging (optional) — adds EV load to annual kWh target + emits charger hardware in BOM -->
+    <details class="ds-panel">
+      <summary><h3><svg class="gc-ico" viewBox="0 0 20 20" fill="none" style="width:1.1rem;height:1.1rem"><path d="M4 4h8v13H4zM12 8h2l2 2v5a1 1 0 01-2 0v-2h-2" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 8l-1 4h3l-1 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> EV Charging <em style="font-weight:500;color:#94a3b8;font-size:.7rem;margin-left:.3rem">(optional)</em></h3></summary>
+      <div class="ds-panel-body">
+        <!-- EV Model -->
+        <div class="ds-field">
+          <label>Electric Vehicle</label>
+          <select id="ds-ev-model" onchange="onEvModelChange()">
+            <option value="">— No EV —</option>
+          </select>
+          <div class="ds-ev-meta" id="ds-ev-model-meta">Select a vehicle to estimate annual charging load</div>
+        </div>
+
+        <!-- Custom Wh/mi override (only shown when EV = Custom) -->
+        <div class="ds-field" id="ds-ev-custom-row" style="display:none">
+          <label>Custom Efficiency (Wh/mi)</label>
+          <input type="number" id="ds-ev-custom-wh" min="150" max="900" step="5" value="300" oninput="recalcEvLoad()">
+        </div>
+
+        <!-- Mileage period + slider -->
+        <div class="ds-field" id="ds-ev-miles-field" style="display:none">
+          <label>Miles Driven</label>
+          <div class="ds-ev-tabs" id="ds-ev-period-tabs">
+            <button type="button" class="ds-ev-tab active" data-period="day">Per Day</button>
+            <button type="button" class="ds-ev-tab" data-period="week">Per Week</button>
+            <button type="button" class="ds-ev-tab" data-period="month">Per Month</button>
+            <button type="button" class="ds-ev-tab" data-period="year">Per Year</button>
+          </div>
+          <div class="ds-ev-slider-row">
+            <input type="range" class="ds-slider" id="ds-ev-miles-slider" min="0" max="200" value="35" oninput="onEvSliderInput()">
+            <input type="number" class="ds-ev-miles-num" id="ds-ev-miles-num" min="0" value="35" oninput="onEvNumberInput()">
+          </div>
+          <div class="ds-ev-miles-pretty" id="ds-ev-miles-pretty"><strong>35</strong> mi/day · <strong>12,775</strong> mi/year</div>
+        </div>
+
+        <!-- Annual load result card -->
+        <div class="ds-ev-result-card empty" id="ds-ev-result-card">
+          <div>
+            <div class="ds-ev-result-label">Annual EV Load</div>
+            <div class="ds-ev-result-sub">Added to your baseline for sizing</div>
+          </div>
+          <div class="ds-ev-result-val"><span id="ds-ev-annual-kwh">0</span> <span class="unit">kWh/yr</span></div>
+        </div>
+
+        <!-- Charger hardware -->
+        <div class="ds-field">
+          <label>Charger Hardware <em style="font-weight:500;color:#94a3b8;font-size:.65rem">(goes in BOM)</em></label>
+          <select id="ds-ev-charger" onchange="onEvChargerChange()">
+            <option value="">— No charger — skip hardware BOM —</option>
+          </select>
+          <div class="ds-ev-charger-meta" id="ds-ev-charger-meta"></div>
+        </div>
       </div>
     </details>
 
@@ -7647,7 +7725,12 @@ function panelCountForOffset(offsetPct) {
   const lossesPct = parseFloat(document.getElementById('ds-losses')?.value) || 14;
   const acFactor = 1 - lossesPct / 100;
 
-  const targetKwh = DS_STATE.billData.annualKwh * (offsetPct / 100);
+  // Total annual load = bill + EV (if the user has configured an EV).
+  // This makes the 80/100/120% presets size against the REAL future load,
+  // not just the historical bill, which is exactly what an EV buyer needs.
+  const baseKwh = DS_STATE.billData.annualKwh;
+  const evKwh   = (DS_STATE.evLoad && DS_STATE.evLoad.annualKwh) || 0;
+  const targetKwh = (baseKwh + evKwh) * (offsetPct / 100);
   const roofPanels = DS_STATE.allPanels.filter(p => !p.isGround && !DS_STATE.disabledPanels.has(p.idx));
 
   let cumulative = 0;
@@ -7692,7 +7775,15 @@ function refreshOffsetPresets() {
   }
   wrap.style.display = '';
   const sub = document.getElementById('ds-preset-sub');
-  if (sub) sub.textContent = `(${DS_STATE.billData.annualKwh.toLocaleString()} kWh / yr)`;
+  if (sub) {
+    const baseKwh = DS_STATE.billData.annualKwh;
+    const evKwh = (DS_STATE.evLoad && DS_STATE.evLoad.annualKwh) || 0;
+    if (evKwh > 0) {
+      sub.innerHTML = `(${baseKwh.toLocaleString()} + ${Math.round(evKwh).toLocaleString()} EV = <strong>${Math.round(baseKwh + evKwh).toLocaleString()}</strong> kWh / yr)`;
+    } else {
+      sub.textContent = `(${baseKwh.toLocaleString()} kWh / yr)`;
+    }
+  }
 
   const panelKw = (DS_STATE.panelCapacityW || 400) / 1000;
   [80, 100, 120].forEach(pct => {
@@ -8998,6 +9089,267 @@ function computeIronRidgeBOM(panel, totalPanels, segments, series) {
 // Default IronRidge series — stored on DS_STATE so switching it re-renders the BOM live
 DS_STATE.ironRidgeSeries = 'XR100';
 
+// ============================================================
+// EV CHARGING
+// ============================================================
+// Two independent things tracked here:
+//   1. EV LOAD   — how many kWh/year the customer's EV will pull. This
+//      feeds into the offset presets so "100% offset" covers home + EV.
+//      The EV itself is NEVER in the BOM (per Solar Mason SOP — we sell
+//      solar, not vehicles).
+//   2. EV CHARGER — the Level 2 hardware that DOES get installed on the
+//      wall + dedicated 240V circuit. Goes in the BOM with the charger,
+//      properly-sized breaker (125% continuous-load rule), copper THHN
+//      wire, and NEMA 3R disconnect.
+//
+// Efficiency numbers are EPA combined Wh/mi (real-world, not MPGe
+// conversion). Sourced from fueleconomy.gov and manufacturer spec sheets.
+// Charger specs are from manufacturer datasheets. Breaker size is 125%
+// of continuous amperage, rounded to the next standard breaker per NEC
+// 210.20(A) / 625.42.
+
+const EV_DB = [
+  // Most efficient first within each group
+  { brand: 'Lucid',      model: 'Air Pure RWD',          whPerMi: 222, notes: 'Most efficient EV on sale · 410 mi range' },
+  { brand: 'Hyundai',    model: 'Ioniq 6 SE RWD',        whPerMi: 227, notes: '361 mi range · most efficient sedan under $50k' },
+  { brand: 'Tesla',      model: 'Model 3 LR RWD',        whPerMi: 244, notes: '363 mi range' },
+  { brand: 'Tesla',      model: 'Model 3 RWD',           whPerMi: 250, notes: '272 mi range · base' },
+  { brand: 'BMW',        model: 'i4 eDrive35',           whPerMi: 263, notes: '260 mi range' },
+  { brand: 'Chevrolet',  model: 'Bolt EUV',              whPerMi: 270, notes: '247 mi range · budget' },
+  { brand: 'Tesla',      model: 'Model Y LR AWD',        whPerMi: 278, notes: '310 mi range · best-seller' },
+  { brand: 'Nissan',     model: 'Leaf SV Plus',          whPerMi: 286, notes: '212 mi range' },
+  { brand: 'Kia',        model: 'EV6 Wind RWD',          whPerMi: 294, notes: '310 mi range' },
+  { brand: 'Polestar',   model: '2 LR Single Motor',     whPerMi: 294, notes: '270 mi range' },
+  { brand: 'Ford',       model: 'Mustang Mach-E RWD',    whPerMi: 303, notes: '312 mi range' },
+  { brand: 'Hyundai',    model: 'Ioniq 5 SE RWD',        whPerMi: 303, notes: '220 mi range' },
+  { brand: 'Tesla',      model: 'Model S AWD',           whPerMi: 303, notes: '405 mi range' },
+  { brand: 'Volkswagen', model: 'ID.4 Pro RWD',          whPerMi: 333, notes: '291 mi range' },
+  { brand: 'Tesla',      model: 'Model X LR',            whPerMi: 333, notes: '348 mi range' },
+  { brand: 'Kia',        model: 'EV9 Wind RWD',          whPerMi: 385, notes: '304 mi range · 3-row SUV' },
+  { brand: 'Tesla',      model: 'Cybertruck AWD',        whPerMi: 400, notes: '340 mi range' },
+  { brand: 'Rivian',     model: 'R1T Dual Max Pack',     whPerMi: 476, notes: '410 mi range · full-size truck' },
+  { brand: 'Chevrolet',  model: 'Silverado EV RST',      whPerMi: 476, notes: '440 mi range' },
+  { brand: 'Rivian',     model: 'R1S Dual Max Pack',     whPerMi: 500, notes: '400 mi range · 7-seat SUV' },
+  { brand: 'Ford',       model: 'F-150 Lightning ER',    whPerMi: 500, notes: '300 mi range · extended range battery' },
+  { brand: 'GMC',        model: 'Hummer EV Pickup',      whPerMi: 667, notes: '329 mi range · least efficient EV' },
+  { brand: 'Custom',     model: 'Enter my own Wh/mi',    whPerMi: 300, custom: true, notes: 'Use if your vehicle isn\'t listed' }
+];
+
+// Level 2 = 240 V AC. DCFC = 480 V 3Φ DC, commercial only.
+// Breaker sizing: NEC 625.42 / 210.20(A) — 125% of continuous load.
+// Wire sizing assumes THHN copper @ 75°C terminations per NEC 310.16
+// (60A→6AWG, 50A→8AWG, 40A→8AWG, 80A→3AWG, 100A→2AWG).
+const EV_CHARGER_DB = [
+  // ─── Level 2 Residential ───
+  { brand: 'Tesla',       model: 'Wall Connector (Gen 3)', level: 'L2', amps: 48, kw: 11.5, plug: 'NACS',   cord: 24, breaker: 60,  wireAwg: '6 AWG Cu THHN', notes: 'NACS connector · J1772 adapter sold separately · hardwired' },
+  { brand: 'ChargePoint', model: 'Home Flex',              level: 'L2', amps: 50, kw: 12.0, plug: 'J1772',  cord: 23, breaker: 60,  wireAwg: '6 AWG Cu THHN', notes: 'Adjustable 16–50A · WiFi · ENERGY STAR' },
+  { brand: 'Enphase',     model: 'IQ EV Charger 40',       level: 'L2', amps: 40, kw:  9.6, plug: 'J1772',  cord: 25, breaker: 50,  wireAwg: '8 AWG Cu THHN', notes: 'Integrates with Enphase App · ENERGY STAR' },
+  { brand: 'Emporia',     model: 'EV Charger (48A)',       level: 'L2', amps: 48, kw: 11.5, plug: 'J1772',  cord: 24, breaker: 60,  wireAwg: '6 AWG Cu THHN', notes: 'Load balancing with Vue energy monitor · ENERGY STAR' },
+  { brand: 'Wallbox',     model: 'Pulsar Plus 40A',        level: 'L2', amps: 40, kw:  9.6, plug: 'J1772',  cord: 25, breaker: 50,  wireAwg: '8 AWG Cu THHN', notes: 'Compact indoor/outdoor · WiFi/Bluetooth' },
+  { brand: 'Grizzl-E',    model: 'Classic 40A',            level: 'L2', amps: 40, kw:  9.6, plug: 'J1772',  cord: 24, breaker: 50,  wireAwg: '8 AWG Cu THHN', notes: 'Rugged aluminum · no app · budget workhorse' },
+  { brand: 'JuiceBox',    model: '48 (Enel X)',            level: 'L2', amps: 48, kw: 11.5, plug: 'J1772',  cord: 25, breaker: 60,  wireAwg: '6 AWG Cu THHN', notes: 'Enel X · WiFi + scheduling · hardwired' },
+  { brand: 'Autel',       model: 'MaxiCharger AC Wallbox', level: 'L2', amps: 50, kw: 12.0, plug: 'J1772',  cord: 25, breaker: 60,  wireAwg: '6 AWG Cu THHN', notes: '50A hardwired · OCPP 1.6 · WiFi + Bluetooth' },
+  // ─── Commercial / Fleet Level 2 ───
+  { brand: 'ChargePoint', model: 'CT4000 (dual port)',     level: 'L2', amps: 32, kw:  7.2, plug: 'J1772',  cord: 18, breaker: 40,  wireAwg: '8 AWG Cu THHN', notes: 'Commercial single or dual port · OCPP · bollard or wall mount' },
+  { brand: 'Blink',       model: 'Series 7 IQ 200 (80A)',  level: 'L2', amps: 80, kw: 19.2, plug: 'J1772',  cord: 18, breaker: 100, wireAwg: '3 AWG Cu THHN', notes: 'Commercial 80A · OCPP 1.6 · fleet-grade' },
+  // ─── Commercial DCFC ───
+  { brand: 'ChargePoint', model: 'Express 250 (62.5 kW)',  level: 'DCFC', amps: null, kw: 62.5, plug: 'CCS+CHAdeMO', cord: 14, breaker: null, wireAwg: 'per utility service', notes: 'Commercial DCFC · requires 480V 3Φ service · single port' },
+  { brand: 'ABB',         model: 'Terra 54 (50 kW)',       level: 'DCFC', amps: null, kw: 50.0, plug: 'CCS+CHAdeMO', cord: 13, breaker: null, wireAwg: 'per utility service', notes: 'Commercial DCFC · requires 480V 3Φ service · dual connector' }
+];
+
+// ─── EV state ──────────────────────────────────────────────
+DS_STATE.evLoad     = null;  // { evIndex, whPerMi, miles, period, annualKwh } or null
+DS_STATE.evCharger  = null;  // selected EV_CHARGER_DB entry or null
+DS_STATE.evPeriod   = 'day'; // 'day' | 'week' | 'month' | 'year'
+// Charging AC→vehicle efficiency. Typical L2 end-to-end: 88–92%.
+const EV_CHARGING_EFFICIENCY = 0.90;
+
+// Slider max per period — stays bounded to realistic input ranges
+const EV_PERIOD_SLIDER_MAX = { day: 250, week: 1750, month: 7500, year: 60000 };
+const EV_PERIOD_DEFAULT    = { day: 35,  week: 245,  month: 1070, year: 12775 };
+const EV_PERIOD_TO_ANNUAL  = { day: 365, week: 52,   month: 12,   year: 1 };
+
+// Populate the two EV dropdowns (model + charger) at startup
+function populateEvDropdowns() {
+  const mSel = document.getElementById('ds-ev-model');
+  if (mSel) {
+    mSel.innerHTML = '<option value="">— No EV —</option>';
+    EV_DB.forEach((ev, i) => {
+      const opt = document.createElement('option');
+      opt.value = String(i);
+      opt.textContent = `${ev.brand} ${ev.model} — ${ev.whPerMi} Wh/mi`;
+      mSel.appendChild(opt);
+    });
+  }
+
+  const cSel = document.getElementById('ds-ev-charger');
+  if (cSel) {
+    cSel.innerHTML = '<option value="">— No charger — skip hardware BOM —</option>';
+    // Group by level for clarity
+    const groups = [
+      { label: 'Level 2 · Residential (240V)', filter: c => c.level === 'L2' && c.amps <= 50 },
+      { label: 'Level 2 · Commercial / Fleet', filter: c => c.level === 'L2' && c.amps > 50 },
+      { label: 'DC Fast Charging · Commercial', filter: c => c.level === 'DCFC' }
+    ];
+    // Flatten to single dropdown with disabled headers so it works on all browsers
+    groups.forEach(g => {
+      const header = document.createElement('option');
+      header.disabled = true;
+      header.textContent = `── ${g.label} ──`;
+      cSel.appendChild(header);
+      EV_CHARGER_DB.forEach((c, i) => {
+        if (!g.filter(c)) return;
+        const opt = document.createElement('option');
+        opt.value = String(i);
+        opt.textContent = `${c.brand} ${c.model} — ${c.kw.toFixed(1)} kW${c.amps ? ' @ ' + c.amps + 'A' : ''}`;
+        cSel.appendChild(opt);
+      });
+    });
+  }
+}
+
+function onEvModelChange() {
+  const sel = document.getElementById('ds-ev-model');
+  const idx = sel.value === '' ? -1 : parseInt(sel.value, 10);
+  const milesField = document.getElementById('ds-ev-miles-field');
+  const customRow  = document.getElementById('ds-ev-custom-row');
+  const metaEl     = document.getElementById('ds-ev-model-meta');
+
+  if (idx < 0) {
+    DS_STATE.evLoad = null;
+    milesField.style.display = 'none';
+    customRow.style.display  = 'none';
+    metaEl.innerHTML = 'Select a vehicle to estimate annual charging load';
+    updateEvResultCard();
+    refreshOffsetPresets();
+    renderBOM();
+    return;
+  }
+
+  const ev = EV_DB[idx];
+  milesField.style.display = '';
+  customRow.style.display  = ev.custom ? '' : 'none';
+  metaEl.innerHTML = `<strong>${ev.brand} ${ev.model}</strong> · ${ev.whPerMi} Wh/mi · ${ev.notes}`;
+
+  // Initialize miles from period default
+  setEvPeriod(DS_STATE.evPeriod, { resetToDefault: true });
+  recalcEvLoad();
+}
+
+// Switch miles period tab (day/week/month/year) and rescale the slider range
+function setEvPeriod(period, opts = {}) {
+  DS_STATE.evPeriod = period;
+  document.querySelectorAll('#ds-ev-period-tabs .ds-ev-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.period === period);
+  });
+  const slider = document.getElementById('ds-ev-miles-slider');
+  const num    = document.getElementById('ds-ev-miles-num');
+  if (slider) slider.max = EV_PERIOD_SLIDER_MAX[period];
+  if (opts.resetToDefault && slider && num) {
+    slider.value = EV_PERIOD_DEFAULT[period];
+    num.value    = EV_PERIOD_DEFAULT[period];
+  }
+  recalcEvLoad();
+}
+
+function onEvSliderInput() {
+  const slider = document.getElementById('ds-ev-miles-slider');
+  const num    = document.getElementById('ds-ev-miles-num');
+  if (num && slider) num.value = slider.value;
+  recalcEvLoad();
+}
+function onEvNumberInput() {
+  const slider = document.getElementById('ds-ev-miles-slider');
+  const num    = document.getElementById('ds-ev-miles-num');
+  if (num && slider) {
+    const v = Math.max(0, Math.min(EV_PERIOD_SLIDER_MAX[DS_STATE.evPeriod], parseFloat(num.value) || 0));
+    slider.value = v;
+    num.value    = v;
+  }
+  recalcEvLoad();
+}
+
+// Main EV load calculation — converts miles in the active period to
+// annual kWh including charging losses.
+function recalcEvLoad() {
+  const sel = document.getElementById('ds-ev-model');
+  const idx = sel && sel.value !== '' ? parseInt(sel.value, 10) : -1;
+  if (idx < 0) {
+    DS_STATE.evLoad = null;
+    updateEvResultCard();
+    return;
+  }
+  const ev = EV_DB[idx];
+  const whPerMi = ev.custom
+    ? (parseFloat(document.getElementById('ds-ev-custom-wh')?.value) || 300)
+    : ev.whPerMi;
+
+  const miles = parseFloat(document.getElementById('ds-ev-miles-num')?.value) || 0;
+  const milesAnnual = miles * EV_PERIOD_TO_ANNUAL[DS_STATE.evPeriod];
+  // kWh = mi × (Wh/mi / 1000) ÷ charging efficiency
+  const annualKwh = (milesAnnual * whPerMi) / 1000 / EV_CHARGING_EFFICIENCY;
+
+  DS_STATE.evLoad = { evIndex: idx, whPerMi, miles, period: DS_STATE.evPeriod, milesAnnual, annualKwh };
+  updateEvResultCard();
+  refreshOffsetPresets();  // offset targets now include EV load
+}
+
+function updateEvResultCard() {
+  const card = document.getElementById('ds-ev-result-card');
+  const val  = document.getElementById('ds-ev-annual-kwh');
+  const pretty = document.getElementById('ds-ev-miles-pretty');
+  if (!card || !val) return;
+  const load = DS_STATE.evLoad;
+  if (!load) {
+    card.classList.add('empty');
+    val.textContent = '0';
+    if (pretty) pretty.innerHTML = '<strong>0</strong> mi · <strong>0</strong> kWh/yr';
+    return;
+  }
+  card.classList.remove('empty');
+  val.textContent = Math.round(load.annualKwh).toLocaleString();
+  if (pretty) {
+    const unit = DS_STATE.evPeriod === 'day' ? 'mi/day'
+              : DS_STATE.evPeriod === 'week' ? 'mi/week'
+              : DS_STATE.evPeriod === 'month' ? 'mi/month' : 'mi/year';
+    pretty.innerHTML = `<strong>${Math.round(load.miles).toLocaleString()}</strong> ${unit} · <strong>${Math.round(load.milesAnnual).toLocaleString()}</strong> mi/year`;
+  }
+}
+
+function onEvChargerChange() {
+  const sel = document.getElementById('ds-ev-charger');
+  const idx = sel.value === '' ? -1 : parseInt(sel.value, 10);
+  const metaEl = document.getElementById('ds-ev-charger-meta');
+  if (idx < 0) {
+    DS_STATE.evCharger = null;
+    if (metaEl) { metaEl.classList.remove('show'); metaEl.innerHTML = ''; }
+    renderBOM();
+    return;
+  }
+  const c = EV_CHARGER_DB[idx];
+  DS_STATE.evCharger = c;
+  if (metaEl) {
+    const circuitInfo = c.breaker
+      ? `<div>Circuit: <strong>${c.breaker}A breaker · ${c.wireAwg}</strong> (125% continuous-load rule, NEC 625.42)</div>`
+      : `<div>Service: <strong>${c.wireAwg}</strong> · see AHJ for utility requirements</div>`;
+    metaEl.innerHTML = `
+      <div><strong>${c.brand} ${c.model}</strong> · ${c.level} · ${c.kw.toFixed(1)} kW${c.amps ? ' @ ' + c.amps + 'A' : ''} · ${c.plug}</div>
+      <div style="margin-top:.2rem">${c.notes}</div>
+      ${circuitInfo}
+    `;
+    metaEl.classList.add('show');
+  }
+  renderBOM();
+}
+
+// Wire up period tabs — called from the main init block at end of file
+function initEvSection() {
+  populateEvDropdowns();
+  document.querySelectorAll('#ds-ev-period-tabs .ds-ev-tab').forEach(b => {
+    b.addEventListener('click', () => setEvPeriod(b.dataset.period));
+  });
+}
+
 // ------- Panel picker UI wiring -------
 
 // Populate the Panel Model dropdown with optgroups for every brand in PANEL_DB
@@ -9650,7 +10002,50 @@ function computeBOM() {
     }
   }
 
-  // 4. Balance of System (BOS)
+  // 4. EV Charging (charger + dedicated circuit hardware)
+  // Only emitted when the user has picked a charger in Step EV.
+  // The EV itself is intentionally NOT in the BOM — Solar Mason installs
+  // charging hardware, not vehicles.
+  if (DS_STATE.evCharger) {
+    const c = DS_STATE.evCharger;
+    items.push({
+      category: 'EV Charging · Charger',
+      name: `${c.brand} ${c.model}`,
+      meta: `${c.level} · ${c.kw.toFixed(1)} kW${c.amps ? ' @ ' + c.amps + 'A' : ''} · ${c.plug} · ${c.cord}' cord · ${c.notes}`,
+      qty: 1
+    });
+    if (c.breaker) {
+      // Residential / commercial Level 2 with a dedicated 240V circuit
+      items.push({
+        category: 'EV Charging · Circuit',
+        name: `${c.breaker}A Double-Pole Breaker`,
+        meta: `Dedicated 240V branch circuit for ${c.brand} ${c.model} · sized per NEC 625.42 (125% of continuous load)`,
+        qty: 1
+      });
+      items.push({
+        category: 'EV Charging · Circuit',
+        name: `${c.wireAwg} (run to charger)`,
+        meta: `Copper THHN · sized per NEC 310.16 75°C column for a ${c.breaker}A overcurrent device · home-run from main panel`,
+        qty: 1
+      });
+      items.push({
+        category: 'EV Charging · Disconnect',
+        name: 'NEMA 3R EV Disconnect',
+        meta: `240V AC disconnect mounted within sight of the charger per NEC 625.43 · matches ${c.breaker}A circuit`,
+        qty: 1
+      });
+    } else {
+      // DCFC — placeholder for commercial service work, not a stock BOM line
+      items.push({
+        category: 'EV Charging · Service',
+        name: 'Utility Service Upgrade (by others)',
+        meta: `${c.brand} ${c.model} requires 480V 3Φ service — coordinate with AHJ and utility; not a stock BOM line item`,
+        qty: 1
+      });
+    }
+  }
+
+  // 5. Balance of System (BOS)
   items.push({
     category: 'BOS',
     name: 'PV Wire, Conduit, Connectors',
@@ -9783,6 +10178,7 @@ setCustomerClass('residential');
 renderIncentives();
 setInverterBrand('enphase');          // Initial brand → populates the Enphase dropdown
 refreshInverterRecommendations();
+initEvSection();                      // Populate EV + charger dropdowns, wire period tabs
 
 // Tools overlay collapse/expand
 function toggleToolsOverlay() {
