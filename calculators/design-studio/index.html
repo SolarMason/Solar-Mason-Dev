@@ -4264,6 +4264,44 @@ html { scroll-behavior: smooth; }
 .ds-preset-btn.active .ds-preset-pct{color:#2D82BE}
 .ds-preset-meta{font-size:.65rem;font-weight:700;color:#64748B;line-height:1.2}
 
+/* ─── CUSTOMER & PROJECT INFO (Step 1) ──────────────────── */
+.ds-contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem .55rem}
+.ds-contact-grid .full{grid-column:1/-1}
+.ds-contact-grid input,.ds-contact-grid textarea{width:100%;padding:.45rem .55rem;border:1.5px solid #e2e8f0;border-radius:7px;font-size:.78rem;font-family:inherit;color:#0B2545}
+.ds-contact-grid input:focus,.ds-contact-grid textarea:focus{outline:none;border-color:#2D82BE;box-shadow:0 0 0 3px rgba(45,130,190,.12)}
+.ds-contact-label{font-size:.6rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.18rem;display:block}
+.ds-phase-toggle{display:grid;grid-template-columns:1fr 1fr;gap:.3rem;margin-top:.35rem}
+.ds-phase-btn{padding:.55rem .35rem;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:7px;font-size:.66rem;font-weight:800;color:#64748B;cursor:pointer;font-family:inherit;text-align:center;line-height:1.2;transition:all .15s}
+.ds-phase-btn:hover{background:#f1f5f9;border-color:rgba(59,112,162,.35)}
+.ds-phase-btn.active{background:linear-gradient(135deg,rgba(59,112,162,.1),rgba(59,112,162,.02));border-color:#3B70A2;color:#0B2545}
+.ds-phase-btn .phase-name{display:block;font-size:.72rem;font-weight:900;color:#0B2545;margin-bottom:.05rem}
+.ds-phase-btn .phase-sub{display:block;font-size:.55rem;color:#94a3b8;font-weight:600}
+
+/* ─── MAIN PANEL UPGRADE (MPU) — Step 10 ───────────────── */
+.ds-mpu-card{padding:.65rem .75rem;border-radius:9px;margin-top:.45rem;font-size:.62rem;line-height:1.5;border:1px solid #e2e8f0;background:#f8fafc;color:#475569}
+.ds-mpu-card.warn{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.35);border-left:3px solid #f59e0b;color:#78350f}
+.ds-mpu-card.danger{background:rgba(220,38,38,.06);border-color:rgba(220,38,38,.35);border-left:3px solid #dc2626;color:#7f1d1d}
+.ds-mpu-card.ok{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.3);border-left:3px solid #22c55e;color:#14532d}
+.ds-mpu-card strong{color:inherit;font-weight:900}
+.ds-mpu-card .mpu-title{display:block;font-size:.7rem;font-weight:900;margin-bottom:.2rem}
+.ds-mpu-toggle-row{display:flex;align-items:center;gap:.4rem;margin-top:.4rem;padding:.4rem .55rem;background:#fff;border:1px solid #e2e8f0;border-radius:7px}
+.ds-mpu-toggle-row input[type=checkbox]{width:14px;height:14px;accent-color:#3B70A2;cursor:pointer}
+.ds-mpu-toggle-row label{flex:1;font-size:.66rem;font-weight:700;color:#0B2545;cursor:pointer;line-height:1.3}
+
+/* ─── FLEET EV section additions ───────────────────────── */
+.ds-fleet-row{display:grid;grid-template-columns:2fr 80px 36px;gap:.4rem;align-items:center;margin-top:.35rem}
+.ds-fleet-row select{width:100%;padding:.42rem .5rem;border:1.5px solid #e2e8f0;border-radius:7px;font-size:.7rem;font-family:inherit;color:#0B2545}
+.ds-fleet-row input[type=number]{width:100%;padding:.42rem .35rem;border:1.5px solid #e2e8f0;border-radius:7px;font-size:.7rem;text-align:center;font-weight:800;color:#0B2545;font-family:inherit;-moz-appearance:textfield}
+.ds-fleet-row input::-webkit-outer-spin-button,.ds-fleet-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ds-fleet-row .ds-fleet-rm{padding:0;background:#fee2e2;border:1.5px solid #fca5a5;border-radius:7px;color:#991b1b;font-weight:900;font-size:.85rem;cursor:pointer;font-family:inherit;height:30px;line-height:1}
+.ds-fleet-row .ds-fleet-rm:hover{background:#fecaca}
+.ds-fleet-add{margin-top:.45rem;padding:.5rem .65rem;background:#f1f5f9;border:1.5px dashed #cbd5e1;border-radius:8px;color:#475569;font-weight:800;font-size:.7rem;cursor:pointer;font-family:inherit;width:100%;transition:all .15s}
+.ds-fleet-add:hover{background:#e2e8f0;border-color:#94a3b8}
+.ds-fleet-summary{margin-top:.45rem;padding:.55rem .7rem;background:linear-gradient(135deg,rgba(45,130,190,.08),rgba(45,130,190,.02));border:1px solid rgba(45,130,190,.25);border-radius:9px;font-size:.65rem;color:#0B2545;line-height:1.45;display:none}
+.ds-fleet-summary.show{display:block}
+.ds-fleet-summary strong{color:#0B2545;font-weight:900}
+.ds-fleet-cap-warn{margin-top:.3rem;font-size:.55rem;color:#92400e;font-weight:700}
+
 /* Custom offset input — under the 80/100/120 presets */
 .ds-custom-offset-row{display:flex;align-items:center;gap:.5rem;margin-top:.65rem;padding-top:.6rem;border-top:1px solid rgba(45,130,190,.12)}
 .ds-custom-offset-row label{font-size:.65rem;font-weight:800;color:#0B2545;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
@@ -4678,9 +4716,52 @@ body.ds-mode-ground .ds-ground-only{display:block}
       <button class="ds-tools-toggle" onclick="toggleToolsOverlay()" title="Collapse / expand panel">◀</button>
     </div>
     <div class="ds-tools-body" id="ds-tools-body">
-    <!-- Step 1: Utility Bill Upload (parses address, usage, rate) -->
+    <!-- Step 1: Customer & Project Info — contact, class, phase -->
     <details class="ds-panel" open>
-      <summary><h3><span class="step">1</span> Upload Utility Bill</h3></summary>
+      <summary><h3><span class="step">1</span> Customer &amp; Project Info</h3></summary>
+      <div class="ds-panel-body">
+        <!-- Project class — drives ALL downstream logic (panel default, inverter scoping,
+             MACRS gating, ITC residential vs commercial, fleet EV cap, MPU service rules) -->
+        <div class="ds-field">
+          <label>Project Class</label>
+          <div class="ds-class-toggle">
+            <button type="button" class="ds-class-btn active" id="ds-class-res-top" onclick="setCustomerClass('residential')"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 10l7-7 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v7h10V9" stroke="currentColor" stroke-width="1.4"/><path d="M8 16v-4h4v4" stroke="currentColor" stroke-width="1.3"/></svg> Residential</button>
+            <button type="button" class="ds-class-btn" id="ds-class-com-top" onclick="setCustomerClass('commercial')"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="4" y="3" width="12" height="15" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M7 6h2M11 6h2M7 9h2M11 9h2M7 12h2M11 12h2M8 15h4v3H8z" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg> Commercial</button>
+          </div>
+        </div>
+
+        <!-- Service phase — drives inverter scoping (split-phase 1Φ vs 3Φ commercial) -->
+        <div class="ds-field">
+          <label>Electrical Service</label>
+          <div class="ds-phase-toggle">
+            <button type="button" class="ds-phase-btn active" id="ds-phase-1ph" onclick="setServicePhase('1ph')">
+              <span class="phase-name">Single-Phase</span>
+              <span class="phase-sub">120/240V split · most residential</span>
+            </button>
+            <button type="button" class="ds-phase-btn" id="ds-phase-3ph" onclick="setServicePhase('3ph')">
+              <span class="phase-name">Three-Phase</span>
+              <span class="phase-sub">208V / 480V · commercial</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Contact info — flows into the PDF cover page -->
+        <div class="ds-field">
+          <label>Contact</label>
+          <div class="ds-contact-grid">
+            <div class="full"><span class="ds-contact-label">Customer / Company Name</span><input type="text" id="ds-contact-name" placeholder="John Smith / Acme Corp" oninput="onContactChange()"></div>
+            <div><span class="ds-contact-label">Phone</span><input type="tel" id="ds-contact-phone" placeholder="(570) 555-0123" oninput="onContactChange()"></div>
+            <div><span class="ds-contact-label">Email</span><input type="email" id="ds-contact-email" placeholder="customer@example.com" oninput="onContactChange()"></div>
+            <div class="full"><span class="ds-contact-label">Project Site (if different from billing)</span><input type="text" id="ds-contact-site" placeholder="Optional — defaults to address in Step 3" oninput="onContactChange()"></div>
+            <div class="full"><span class="ds-contact-label">Project Notes</span><textarea id="ds-contact-notes" rows="2" placeholder="Optional internal notes — appears on the proposal cover" oninput="onContactChange()"></textarea></div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- Step 2: Utility Bill Upload (parses address, usage, rate) -->
+    <details class="ds-panel" open>
+      <summary><h3><span class="step">2</span> Upload Utility Bill</h3></summary>
       <div class="ds-panel-body">
       <div class="ds-bill-upload" id="ds-bill-upload" onclick="document.getElementById('ds-bill-input').click()">
         <input type="file" id="ds-bill-input" accept="application/pdf" style="display:none"
@@ -4701,7 +4782,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Address -->
     <details class="ds-panel" open>
-      <summary><h3><span class="step">2</span> Project Address</h3></summary>
+      <summary><h3><span class="step">3</span> Project Address</h3></summary>
       <div class="ds-panel-body">
       <div class="ds-addr" style="display:flex;gap:.5rem">
         <input type="text" id="ds-addr-input" placeholder="Type an address and press Enter" autocomplete="off" style="flex:1">
@@ -4713,7 +4794,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Mount Mode Toggle -->
     <details class="ds-panel">
-      <summary><h3><span class="step">3</span> Mount Type</h3></summary>
+      <summary><h3><span class="step">4</span> Mount Type</h3></summary>
       <div class="ds-panel-body">
       <div class="ds-mode-toggle">
         <button class="ds-mode-btn active" id="ds-mode-roof" onclick="setMountMode('roof')"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 10l7-7 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v7h10V9" stroke="currentColor" stroke-width="1.4"/><path d="M8 16v-4h4v4" stroke="currentColor" stroke-width="1.3"/></svg> Roof</button>
@@ -4724,7 +4805,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Obstructions & Keep-Out Zones -->
     <details class="ds-panel">
-      <summary><h3><span class="step">4</span> Obstructions</h3></summary>
+      <summary><h3><span class="step">5</span> Obstructions</h3></summary>
       <div class="ds-panel-body">
       <div class="ds-obst-buttons">
         <button class="ds-mini-btn" id="ds-draw-obst" onclick="toggleDrawObstruction()"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 14l8-8 3 3-8 8H3v-3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M11 6l3 3" stroke="currentColor" stroke-width="1.3"/></svg>️ Draw</button>
@@ -4736,7 +4817,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Panel Layout -->
     <details class="ds-panel" open>
-      <summary><h3><span class="step">5</span> Panel Layout</h3></summary>
+      <summary><h3><span class="step">6</span> Panel Layout</h3></summary>
       <div class="ds-panel-body">
       <div class="ds-status waiting" id="ds-seg-status">Awaiting roof analysis</div>
 
@@ -4809,7 +4890,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- System Config -->
     <details class="ds-panel">
-      <summary><h3><span class="step">6</span> System Configuration</h3></summary>
+      <summary><h3><span class="step">7</span> System Configuration</h3></summary>
       <div class="ds-panel-body">
       <!-- Panel Model picker — populated from PANEL_DB on boot, grouped by brand -->
       <div class="ds-field">
@@ -4906,7 +4987,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- EV Charging (optional) — adds EV load to annual kWh target + emits charger hardware in BOM -->
     <details class="ds-panel">
-      <summary><h3><span class="step">7</span> EV Charging <em style="font-weight:500;color:#94a3b8;font-size:.7rem;margin-left:.3rem">(optional)</em></h3></summary>
+      <summary><h3><span class="step">8</span> EV Charging <em style="font-weight:500;color:#94a3b8;font-size:.7rem;margin-left:.3rem">(optional)</em></h3></summary>
       <div class="ds-panel-body">
         <!-- EV Model -->
         <div class="ds-field">
@@ -4954,6 +5035,14 @@ body.ds-mode-ground .ds-ground-only{display:block}
           <span id="ds-ev-v2h-text"></span>
         </div>
 
+        <!-- ── Fleet (extra vehicles) ── -->
+        <div class="ds-field" style="margin-top:.85rem;padding-top:.65rem;border-top:1px solid rgba(0,0,0,.08)">
+          <label>Additional Fleet Vehicles <em style="font-weight:500;color:#94a3b8;font-size:.65rem" id="ds-fleet-cap-label">(up to 4 — residential)</em></label>
+          <div id="ds-fleet-list"></div>
+          <button type="button" class="ds-fleet-add" id="ds-fleet-add-btn" onclick="addFleetVehicle()">+ Add Fleet Vehicle</button>
+          <div class="ds-fleet-summary" id="ds-fleet-summary"></div>
+        </div>
+
         <!-- Charger hardware -->
         <div class="ds-field">
           <label>Charger Hardware <em style="font-weight:500;color:#94a3b8;font-size:.65rem">(goes in BOM)</em></label>
@@ -4967,7 +5056,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Battery Backup (optional) — essential loads picker, auto-sizing, system controller hardware -->
     <details class="ds-panel">
-      <summary><h3><span class="step">8</span> Battery Backup <em style="font-weight:500;color:#94a3b8;font-size:.7rem;margin-left:.3rem">(optional)</em></h3></summary>
+      <summary><h3><span class="step">9</span> Battery Backup <em style="font-weight:500;color:#94a3b8;font-size:.7rem;margin-left:.3rem">(optional)</em></h3></summary>
       <div class="ds-panel-body">
 
         <!-- Battery brand + model -->
@@ -5055,9 +5144,63 @@ body.ds-mode-ground .ds-ground-only{display:block}
       </div>
     </details>
 
+    <!-- Main Panel Upgrade & Service Equipment — Step 10 -->
+    <details class="ds-panel">
+      <summary><h3><span class="step">10</span> Main Panel &amp; Service</h3></summary>
+      <div class="ds-panel-body">
+        <!-- Existing service capacity -->
+        <div class="ds-row">
+          <div class="ds-field">
+            <label>Existing Main Service</label>
+            <select id="ds-mpu-existing" onchange="onMpuChange()">
+              <option value="100">100A</option>
+              <option value="150">150A</option>
+              <option value="200" selected>200A</option>
+              <option value="225">225A</option>
+              <option value="320">320A</option>
+              <option value="400">400A</option>
+              <option value="600">600A</option>
+              <option value="800">800A</option>
+              <option value="1200">1200A</option>
+              <option value="other">Other / Unknown</option>
+            </select>
+          </div>
+          <div class="ds-field">
+            <label>Service Voltage</label>
+            <select id="ds-mpu-voltage" onchange="onMpuChange()">
+              <option value="120/240" selected>120/240V 1Φ split</option>
+              <option value="120/208">120/208V 3Φ wye</option>
+              <option value="277/480">277/480V 3Φ wye</option>
+              <option value="240/480">240/480V 3Φ delta</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Live capacity card — auto-evaluates 120% rule per NEC 705.12 -->
+        <div class="ds-mpu-card" id="ds-mpu-result">
+          <span class="mpu-title">Service Capacity Analysis</span>
+          <div id="ds-mpu-result-text">Add panels to evaluate the service.</div>
+        </div>
+
+        <!-- Force-include MPU even if math says we don't need it (customer may want headroom) -->
+        <div class="ds-mpu-toggle-row">
+          <input type="checkbox" id="ds-mpu-force" onchange="onMpuChange()">
+          <label for="ds-mpu-force">Force-include service upgrade in BOM (even if not strictly required)</label>
+        </div>
+        <div class="ds-mpu-toggle-row">
+          <input type="checkbox" id="ds-mpu-meter" onchange="onMpuChange()">
+          <label for="ds-mpu-meter">Include net-meter base + production meter socket</label>
+        </div>
+        <div class="ds-mpu-toggle-row">
+          <input type="checkbox" id="ds-mpu-loadcenter" onchange="onMpuChange()">
+          <label for="ds-mpu-loadcenter">Critical-loads sub-panel (battery backup integration)</label>
+        </div>
+      </div>
+    </details>
+
     <!-- Financials -->
     <details class="ds-panel">
-      <summary><h3><span class="step">9</span> Financial Inputs</h3></summary>
+      <summary><h3><span class="step">11</span> Financial Inputs</h3></summary>
       <div class="ds-panel-body">
 
       <!-- Residential vs Commercial toggle -->
@@ -5134,7 +5277,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
     <!-- Auto-Detected Incentives -->
     <details class="ds-panel" open>
-      <summary><h3><span class="step">10</span> Incentives &amp; Credits</h3></summary>
+      <summary><h3><span class="step">12</span> Incentives &amp; Credits</h3></summary>
       <div class="ds-panel-body">
       <p class="ds-incent-intro">Auto-detected based on your project's <strong>state</strong> and <strong>utility</strong>. Toggle any line on/off — values flow into the 25-year financial model. Hover or tap a type badge for a plain-English explanation.</p>
 
@@ -7215,6 +7358,10 @@ function updateSystemStats() {
   if (document.getElementById('ds-inv-ep-model')) {
     refreshInverterRecommendations();
   }
+  // Re-evaluate the MPU 120% rule whenever active panel count changes —
+  // the inverter AC current grows with the panel count, which is what
+  // determines whether the existing service can handle the backfeed.
+  if (typeof recalcMpu === 'function') recalcMpu();
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -7820,8 +7967,11 @@ async function processBillFile(file) {
 function setCustomerClass(cls, auto = false) {
   if (cls !== 'residential' && cls !== 'commercial') return;
   DS_STATE.customerClass = cls;
-  document.getElementById('ds-class-res').classList.toggle('active', cls === 'residential');
-  document.getElementById('ds-class-com').classList.toggle('active', cls === 'commercial');
+  // Sync BOTH class toggles (top-of-page Step 1 + legacy Financial Inputs)
+  document.getElementById('ds-class-res')?.classList.toggle('active', cls === 'residential');
+  document.getElementById('ds-class-com')?.classList.toggle('active', cls === 'commercial');
+  document.getElementById('ds-class-res-top')?.classList.toggle('active', cls === 'residential');
+  document.getElementById('ds-class-com-top')?.classList.toggle('active', cls === 'commercial');
   document.getElementById('ds-itc-residential').style.display = cls === 'residential' ? '' : 'none';
   document.getElementById('ds-itc-commercial').style.display  = cls === 'commercial'  ? '' : 'none';
 
@@ -7850,6 +8000,23 @@ function setCustomerClass(cls, auto = false) {
     const sel = document.getElementById('ds-panel-model');
     if (sel) { sel.value = defKey; onPanelModelChange(); }
   }
+
+  // Fold in everything that depends on customer class:
+  //  - Repopulate EV dropdown to include commercial fleet vehicles
+  //  - Re-render fleet list (cap label changes)
+  //  - Default MPU service to 3-phase 120/208V for commercial
+  //  - Re-evaluate inverter recommendations (commercial scope)
+  if (typeof repopulateEvDropdownForClass === 'function') repopulateEvDropdownForClass();
+  if (typeof renderFleetList === 'function') renderFleetList();
+  if (!auto && typeof setServicePhase === 'function') {
+    // Auto-suggest the typical phase for the new class — user can override
+    setServicePhase(cls === 'commercial' ? '3ph' : '1ph');
+  }
+  if (cls === 'commercial' && !auto) {
+    const mpuV = document.getElementById('ds-mpu-voltage');
+    if (mpuV && mpuV.value === '120/240') { mpuV.value = '120/208'; onMpuChange(); }
+  }
+  if (typeof refreshInverterRecommendations === 'function') refreshInverterRecommendations();
 }
 
 // Show/hide low-income category picker when checkbox changes
@@ -7900,12 +8067,13 @@ function panelCountForOffset(offsetPct) {
   const lossesPct = parseFloat(document.getElementById('ds-losses')?.value) || 14;
   const acFactor = 1 - lossesPct / 100;
 
-  // Total annual load = bill + EV (if the user has configured an EV).
+  // Total annual load = bill + EV + fleet (if configured).
   // This makes the 80/100/120% presets size against the REAL future load,
   // not just the historical bill, which is exactly what an EV buyer needs.
-  const baseKwh = DS_STATE.billData.annualKwh;
-  const evKwh   = (DS_STATE.evLoad && DS_STATE.evLoad.annualKwh) || 0;
-  const targetKwh = (baseKwh + evKwh) * (offsetPct / 100);
+  const baseKwh  = DS_STATE.billData.annualKwh;
+  const evKwh    = (DS_STATE.evLoad && DS_STATE.evLoad.annualKwh) || 0;
+  const fleetKwh = (DS_STATE.fleetLoad && DS_STATE.fleetLoad.totalAnnualKwh) || 0;
+  const targetKwh = (baseKwh + evKwh + fleetKwh) * (offsetPct / 100);
   const roofPanels = DS_STATE.allPanels.filter(p => !p.isGround && !DS_STATE.disabledPanels.has(p.idx));
 
   let cumulative = 0;
@@ -8001,10 +8169,15 @@ function refreshOffsetPresets() {
   if (sub) {
     const baseKwh = DS_STATE.billData.annualKwh;
     const evKwh = (DS_STATE.evLoad && DS_STATE.evLoad.annualKwh) || 0;
-    if (evKwh > 0) {
-      sub.innerHTML = `(${baseKwh.toLocaleString()} + ${Math.round(evKwh).toLocaleString()} EV = <strong>${Math.round(baseKwh + evKwh).toLocaleString()}</strong> kWh / yr)`;
-    } else {
+    const fleetKwh = (DS_STATE.fleetLoad && DS_STATE.fleetLoad.totalAnnualKwh) || 0;
+    const total = baseKwh + evKwh + fleetKwh;
+    const parts = [`${baseKwh.toLocaleString()}`];
+    if (evKwh > 0) parts.push(`${Math.round(evKwh).toLocaleString()} EV`);
+    if (fleetKwh > 0) parts.push(`${Math.round(fleetKwh).toLocaleString()} fleet`);
+    if (parts.length === 1) {
       sub.textContent = `(${baseKwh.toLocaleString()} kWh / yr)`;
+    } else {
+      sub.innerHTML = `(${parts.join(' + ')} = <strong>${Math.round(total).toLocaleString()}</strong> kWh / yr)`;
     }
   }
 
@@ -9004,6 +9177,9 @@ async function exportProposal() {
 
       <div class="cover-meta">
         <table>
+          ${DS_STATE.contact?.name  ? `<tr><td>Customer</td><td>${DS_STATE.contact.name}</td></tr>` : ''}
+          ${DS_STATE.contact?.phone ? `<tr><td>Phone</td><td>${DS_STATE.contact.phone}</td></tr>` : ''}
+          ${DS_STATE.contact?.email ? `<tr><td>Email</td><td>${DS_STATE.contact.email}</td></tr>` : ''}
           <tr><td>Proposal ID</td><td>${proposalId}</td></tr>
           <tr><td>Issue Date</td><td>${today.toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'})}</td></tr>
           <tr><td>Valid Through</td><td>${new Date(today.getFullYear(), today.getMonth()+1, today.getDate()).toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'})}</td></tr>
@@ -9011,8 +9187,11 @@ async function exportProposal() {
           <tr><td>Annual Production</td><td>${Math.round(r.annualProd).toLocaleString()} kWh</td></tr>
           <tr><td>25-Year Savings</td><td>$${Math.round(r.totalSavings25).toLocaleString()}</td></tr>
           <tr><td>Project Class</td><td>${r.projectType === 'commercial' ? 'Commercial (§48E ITC)' : 'Residential'}</td></tr>
+          ${DS_STATE.servicePhase ? `<tr><td>Service</td><td>${DS_STATE.servicePhase === '3ph' ? 'Three-Phase' : 'Single-Phase (split)'}</td></tr>` : ''}
         </table>
       </div>
+
+      ${DS_STATE.contact?.notes ? `<div class="callout"><strong>Project Notes:</strong> ${DS_STATE.contact.notes.replace(/\n/g, '<br>')}</div>` : ''}
 
       <div class="callout">
         <strong>Prepared by Solar Mason LLC</strong> — a Pennsylvania-licensed solar EPC (HIC-181628) headquartered in Scranton. We deliver engineering, procurement, and construction services for residential and commercial solar projects across Northeastern Pennsylvania, backed by our 10-year workmanship warranty and direct relationships with Enphase and SolarEdge.
@@ -9213,6 +9392,15 @@ async function exportProposal() {
     800 James Ave, Suite 209, Scranton, PA 18510 · 570-MY-SOLAR · engineering@solarmason.com · www.solar-mason.com<br>
     Installation performed by NEPA-PRO, our designated installation subcontractor. Roof analysis provided by Google Solar API. Production modeling by NREL PVWatts v8. Proposal ID: ${proposalId}.
   </footer>
+
+  <!-- Second Export / Print button at the bottom of the document so users
+       don't have to scroll back up to the floating button after reading -->
+  <div class="no-print" style="text-align:center;margin:1.5rem 0 .5rem">
+    <button onclick="window.print()" style="padding:.85rem 1.8rem;background:#2D82BE;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(45,130,190,.35);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:inline-flex;align-items:center;gap:.5rem">
+      <svg class="gc-ico" viewBox="0 0 20 20" fill="none" style="width:20px;height:20px"><rect x="3" y="7" width="14" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M6 7V3h8v4M6 12h8v5H6z" stroke="currentColor" stroke-width="1.3"/></svg>
+      Print / Save as PDF
+    </button>
+  </div>
 
   </body></html>`);
   w.document.close();
@@ -10234,6 +10422,370 @@ function initBatterySection() {
   // when they do open it via the meta line.
 }
 
+// ============================================================
+// CUSTOMER & PROJECT INFO (Step 1)
+// ============================================================
+// Contact info flows into the PDF cover page. Project class drives ALL
+// downstream logic (panel default, inverter scoping, MACRS, ITC,
+// fleet EV cap, MPU service rules). Service phase scopes the inverter
+// dropdowns to 1Φ split-phase or 3Φ commercial models.
+
+DS_STATE.contact = {
+  name: '', phone: '', email: '', site: '', notes: ''
+};
+DS_STATE.servicePhase = '1ph';   // '1ph' | '3ph'
+
+function onContactChange() {
+  DS_STATE.contact = {
+    name:  document.getElementById('ds-contact-name')?.value.trim()  || '',
+    phone: document.getElementById('ds-contact-phone')?.value.trim() || '',
+    email: document.getElementById('ds-contact-email')?.value.trim() || '',
+    site:  document.getElementById('ds-contact-site')?.value.trim()  || '',
+    notes: document.getElementById('ds-contact-notes')?.value.trim() || ''
+  };
+}
+
+// Switch electrical service phase. Drives:
+//   • Inverter dropdown scoping (single-phase vs three-phase models)
+//   • Default Enphase micro recommendation (240V split vs 208V 3Φ -3P models)
+//   • SolarEdge inverter filter (HD-Wave residential vs Synergy commercial)
+//   • MPU voltage default
+function setServicePhase(phase) {
+  if (phase !== '1ph' && phase !== '3ph') return;
+  DS_STATE.servicePhase = phase;
+  document.getElementById('ds-phase-1ph')?.classList.toggle('active', phase === '1ph');
+  document.getElementById('ds-phase-3ph')?.classList.toggle('active', phase === '3ph');
+  // Re-pick inverters scoped to the new phase
+  if (typeof refreshInverterRecommendations === 'function') refreshInverterRecommendations();
+  // Re-evaluate MPU since voltage assumptions changed
+  if (typeof recalcMpu === 'function') recalcMpu();
+}
+
+// ============================================================
+// FLEET EV — extra vehicles beyond the primary one in EV section
+// ============================================================
+// Lets the user model multiple EVs for sizing. Cap of 4 in residential,
+// uncapped in commercial. Each fleet entry contributes its own annual
+// kWh to the panelCountForOffset() target so 100% offset really covers
+// the whole fleet.
+//
+// Commercial-class vehicles (Ford E-Transit, Chevy BrightDrop, school
+// buses, etc.) are added to the EV picker dropdown when the project
+// class is set to commercial.
+
+DS_STATE.fleet = [];   // [{evIndex, milesPerDay, count}]
+
+const RES_FLEET_CAP = 4;
+
+// Extra vehicles available only when project class = commercial.
+// Wh/mi sourced from manufacturer specs and Argonne ANL fleet data.
+const COMMERCIAL_EV_DB = [
+  { brand: 'Ford',         model: 'E-Transit Cargo Van',     whPerMi: 690,  notes: '126 mi range · 68 kWh pack · most popular cargo EV', commercial: true },
+  { brand: 'Chevrolet',    model: 'BrightDrop Zevo 600',     whPerMi: 800,  notes: '250 mi range · 165 kWh pack · class 3 step van', commercial: true },
+  { brand: 'Chevrolet',    model: 'BrightDrop Zevo 400',     whPerMi: 750,  notes: '160 mi range · 120 kWh pack', commercial: true },
+  { brand: 'Rivian',       model: 'EDV 700 (Amazon spec)',   whPerMi: 850,  notes: '150 mi range · 135 kWh pack', commercial: true },
+  { brand: 'Mercedes-Benz',model: 'eSprinter (113 kWh)',     whPerMi: 720,  notes: '150 mi range · cargo van · DEF-free', commercial: true },
+  { brand: 'Ford',         model: 'F-150 Lightning Pro Fleet', whPerMi: 510, notes: '240 mi range · 131 kWh pack · fleet trim', commercial: true },
+  { brand: 'Lion Electric',model: 'LionC School Bus (Type C)', whPerMi: 1500, notes: '155 mi range · 168 kWh pack · 72 passengers', commercial: true },
+  { brand: 'Blue Bird',    model: 'Vision Electric (Type C)',  whPerMi: 1450, notes: '120 mi range · 155 kWh pack · 78 passengers', commercial: true },
+  { brand: 'Thomas',       model: 'Saf-T-Liner C2 Jouley',     whPerMi: 1500, notes: '138 mi range · 226 kWh pack · 81 passengers', commercial: true },
+  { brand: 'Proterra',     model: 'ZX5 Transit Bus (40 ft)',   whPerMi: 2200, notes: '329 mi range · 660 kWh pack · 40-ft city bus', commercial: true },
+  { brand: 'New Flyer',    model: 'Xcelsior CHARGE NG (40 ft)',whPerMi: 2300, notes: '300 mi range · 525 kWh pack', commercial: true },
+  { brand: 'Volvo',        model: 'VNR Electric (Class 8 day cab)', whPerMi: 2100, notes: '275 mi range · 565 kWh pack · regional haul', commercial: true },
+  { brand: 'Freightliner', model: 'eCascadia (Class 8)',       whPerMi: 2100, notes: '230 mi range · 438 kWh pack · long-haul tractor', commercial: true },
+  { brand: 'Peterbilt',    model: 'Model 579EV (Class 8)',     whPerMi: 2150, notes: '150 mi range · 396 kWh pack', commercial: true },
+  { brand: 'Tesla',        model: 'Semi (Class 8)',            whPerMi: 1700, notes: '500 mi range · ~900 kWh pack · long-haul' , commercial: true },
+  { brand: 'Mack',         model: 'LR Electric (refuse)',      whPerMi: 2400, notes: '100 mi range · 376 kWh pack · refuse/recycling', commercial: true }
+];
+
+// Repopulate the EV dropdown to include commercial vehicles when applicable.
+// Called from setCustomerClass(). The primary EV picker shares the same
+// dropdown so commercial fleet operators can pick a Lightning Pro Fleet as
+// their primary vehicle.
+function repopulateEvDropdownForClass() {
+  const mSel = document.getElementById('ds-ev-model');
+  if (!mSel) return;
+  const prevValue = mSel.value;
+  mSel.innerHTML = '<option value="">— No EV —</option>';
+
+  // Build a unified pool: residential EVs always, commercial only when class = commercial
+  const pool = [...EV_DB];
+  if (DS_STATE.customerClass === 'commercial') {
+    pool.push(...COMMERCIAL_EV_DB);
+  }
+  // Group residential vs commercial visually
+  const resGroup = pool.filter(e => !e.commercial);
+  const comGroup = pool.filter(e => e.commercial);
+
+  if (resGroup.length) {
+    const hdr = document.createElement('option');
+    hdr.disabled = true;
+    hdr.textContent = '── Passenger / Light Duty ──';
+    mSel.appendChild(hdr);
+    resGroup.forEach((ev) => {
+      const idx = pool.indexOf(ev);
+      const opt = document.createElement('option');
+      opt.value = String(idx);
+      opt.textContent = `${ev.brand} ${ev.model} — ${ev.whPerMi} Wh/mi`;
+      mSel.appendChild(opt);
+    });
+  }
+  if (comGroup.length) {
+    const hdr = document.createElement('option');
+    hdr.disabled = true;
+    hdr.textContent = '── Commercial / Fleet ──';
+    mSel.appendChild(hdr);
+    comGroup.forEach((ev) => {
+      const idx = pool.indexOf(ev);
+      const opt = document.createElement('option');
+      opt.value = String(idx);
+      opt.textContent = `${ev.brand} ${ev.model} — ${ev.whPerMi} Wh/mi`;
+      mSel.appendChild(opt);
+    });
+  }
+  // Replace EV_DB with the active pool so onEvModelChange's index lookup works
+  // without re-engineering recalcEvLoad. We re-export the pool as window-scoped.
+  window.EV_DB_ACTIVE = pool;
+  // Restore prior selection if still valid
+  if (prevValue && parseInt(prevValue) < pool.length) {
+    mSel.value = prevValue;
+  }
+}
+
+// Override the original recalcEvLoad to read from EV_DB_ACTIVE when present
+// (set by repopulateEvDropdownForClass). Falls back to EV_DB so existing
+// behavior is preserved when fleet section is untouched.
+function getActiveEvDb() {
+  return window.EV_DB_ACTIVE || EV_DB;
+}
+
+function addFleetVehicle() {
+  const cap = (DS_STATE.customerClass === 'commercial') ? Infinity : RES_FLEET_CAP;
+  if (DS_STATE.fleet.length >= cap) return;
+  DS_STATE.fleet.push({ evIndex: 0, milesPerDay: 35, count: 1 });
+  renderFleetList();
+  recalcFleetLoad();
+}
+
+function removeFleetVehicle(idx) {
+  DS_STATE.fleet.splice(idx, 1);
+  renderFleetList();
+  recalcFleetLoad();
+}
+
+function updateFleetEntry(idx, field, value) {
+  if (!DS_STATE.fleet[idx]) return;
+  if (field === 'count') {
+    DS_STATE.fleet[idx].count = Math.max(1, Math.min(99, parseInt(value) || 1));
+  } else if (field === 'evIndex') {
+    DS_STATE.fleet[idx].evIndex = parseInt(value) || 0;
+  } else if (field === 'miles') {
+    DS_STATE.fleet[idx].milesPerDay = Math.max(0, parseFloat(value) || 0);
+  }
+  recalcFleetLoad();
+}
+
+function renderFleetList() {
+  const wrap = document.getElementById('ds-fleet-list');
+  if (!wrap) return;
+  const pool = getActiveEvDb();
+  const cap = (DS_STATE.customerClass === 'commercial') ? Infinity : RES_FLEET_CAP;
+  const capLabel = document.getElementById('ds-fleet-cap-label');
+  if (capLabel) {
+    capLabel.textContent = (DS_STATE.customerClass === 'commercial')
+      ? '(unlimited — commercial fleet)'
+      : `(up to ${RES_FLEET_CAP} — residential)`;
+  }
+  if (DS_STATE.fleet.length === 0) {
+    wrap.innerHTML = '<div style="font-size:.62rem;color:#94a3b8;font-style:italic;padding:.3rem 0">No additional fleet vehicles. Click + below to add one.</div>';
+  } else {
+    wrap.innerHTML = DS_STATE.fleet.map((f, i) => {
+      const opts = pool.map((ev, j) => `<option value="${j}" ${j === f.evIndex ? 'selected' : ''}>${ev.brand} ${ev.model} — ${ev.whPerMi} Wh/mi</option>`).join('');
+      return `
+      <div class="ds-fleet-row">
+        <select onchange="updateFleetEntry(${i}, 'evIndex', this.value)">${opts}</select>
+        <input type="number" min="1" max="99" value="${f.count}" placeholder="qty" oninput="updateFleetEntry(${i}, 'count', this.value)" title="How many of this vehicle">
+        <button type="button" class="ds-fleet-rm" onclick="removeFleetVehicle(${i})" title="Remove">×</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:.4rem;margin-top:.2rem;margin-bottom:.55rem;padding-left:.2rem">
+        <span style="font-size:.6rem;color:#64748B;font-weight:700">Miles per vehicle / day:</span>
+        <input type="number" min="0" max="500" step="1" value="${f.milesPerDay}" oninput="updateFleetEntry(${i}, 'miles', this.value)" style="width:60px;padding:.25rem .35rem;border:1.5px solid #e2e8f0;border-radius:5px;font-size:.62rem;text-align:center;font-weight:800;font-family:inherit;color:#0B2545">
+      </div>
+      `;
+    }).join('');
+  }
+  // Cap warning
+  const addBtn = document.getElementById('ds-fleet-add-btn');
+  if (addBtn) {
+    if (DS_STATE.fleet.length >= cap) {
+      addBtn.disabled = true;
+      addBtn.style.opacity = '0.5';
+      addBtn.style.cursor = 'not-allowed';
+      addBtn.textContent = `Cap reached (${cap}) — switch to commercial for more`;
+    } else {
+      addBtn.disabled = false;
+      addBtn.style.opacity = '';
+      addBtn.style.cursor = '';
+      addBtn.textContent = '+ Add Fleet Vehicle';
+    }
+  }
+}
+
+// Compute total annual kWh from all fleet vehicles. Each entry contributes
+// (count × milesPerDay × 365 × Wh/mi / 1000 / 0.90 charging efficiency).
+function recalcFleetLoad() {
+  let totalAnnualKwh = 0;
+  let totalVehicles  = 0;
+  const pool = getActiveEvDb();
+  for (const f of DS_STATE.fleet) {
+    const ev = pool[f.evIndex];
+    if (!ev) continue;
+    const milesAnnualPerVehicle = f.milesPerDay * 365;
+    const annualKwhPerVehicle = (milesAnnualPerVehicle * ev.whPerMi) / 1000 / EV_CHARGING_EFFICIENCY;
+    totalAnnualKwh += annualKwhPerVehicle * f.count;
+    totalVehicles  += f.count;
+  }
+  DS_STATE.fleetLoad = { totalAnnualKwh, totalVehicles };
+  updateFleetSummary();
+  if (typeof refreshOffsetPresets === 'function') refreshOffsetPresets();
+}
+
+function updateFleetSummary() {
+  const sum = document.getElementById('ds-fleet-summary');
+  if (!sum) return;
+  const f = DS_STATE.fleetLoad;
+  if (!f || f.totalVehicles === 0) {
+    sum.classList.remove('show');
+    return;
+  }
+  sum.classList.add('show');
+  sum.innerHTML = `<strong>${f.totalVehicles} fleet ${f.totalVehicles === 1 ? 'vehicle' : 'vehicles'}</strong> adding <strong>${Math.round(f.totalAnnualKwh).toLocaleString()} kWh/yr</strong> to the sizing target. Combined with the primary EV (Step 8 above) this folds into the offset preset math automatically.`;
+}
+
+// ============================================================
+// MAIN PANEL UPGRADE (MPU) — Step 10
+// ============================================================
+// Evaluates the existing main service capacity against NEC 705.12(B)(2)
+// "120% rule" — the sum of the supply OCPDs feeding a busbar can't exceed
+// 120% of the busbar rating. The PV breaker is sized to 125% of the
+// inverter continuous output current per NEC 690.8 / 690.9.
+//
+// If the math fails, the BOM auto-emits an MPU line item (and a 200A→
+// upgraded panel as appropriate). Force-include override is provided for
+// customers who want headroom regardless.
+
+DS_STATE.mpu = {
+  existingAmps: 200,
+  voltage: '120/240',
+  forceUpgrade: false,
+  includeMeter: false,
+  includeLoadCenter: false,
+  result: null
+};
+
+function onMpuChange() {
+  DS_STATE.mpu.existingAmps = parseInt(document.getElementById('ds-mpu-existing')?.value) || 200;
+  DS_STATE.mpu.voltage      = document.getElementById('ds-mpu-voltage')?.value || '120/240';
+  DS_STATE.mpu.forceUpgrade = !!document.getElementById('ds-mpu-force')?.checked;
+  DS_STATE.mpu.includeMeter = !!document.getElementById('ds-mpu-meter')?.checked;
+  DS_STATE.mpu.includeLoadCenter = !!document.getElementById('ds-mpu-loadcenter')?.checked;
+  recalcMpu();
+}
+
+// Compute the inverter AC output current for the current system.
+// Returns amps, or 0 if no system yet.
+function computeInverterAcAmps() {
+  const activeCount = (typeof activeCountForMode === 'function') ? activeCountForMode() : 0;
+  if (activeCount === 0) return 0;
+  const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
+  const totalAcW = activeCount * panelW * 0.97;  // ~97% DC→AC conversion is a fair planning number
+
+  const v = DS_STATE.mpu.voltage || '120/240';
+  // System voltage for amps = AC line-to-line nominal
+  const voltageMap = {
+    '120/240': 240,                       // single-phase split
+    '120/208': 208 * Math.sqrt(3),        // 3-phase wye line current = P / (V_LL × √3)
+    '277/480': 480 * Math.sqrt(3),
+    '240/480': 480 * Math.sqrt(3)
+  };
+  const voltageDenom = voltageMap[v] || 240;
+  return totalAcW / voltageDenom;
+}
+
+// NEC 705.12(B)(2) 120% rule check
+function recalcMpu() {
+  const existing = DS_STATE.mpu.existingAmps || 200;
+  const acAmps = computeInverterAcAmps();
+  const pvBreakerAmps = Math.ceil((acAmps * 1.25) / 5) * 5;  // 125% of inverter, rounded up to nearest 5A
+  const allowedFeed = existing * 1.20;  // 120% of busbar rating
+  const totalLoad = existing + pvBreakerAmps;  // main breaker + PV backfeed
+  const headroomAmps = allowedFeed - totalLoad;
+  const passes = totalLoad <= allowedFeed && acAmps > 0;
+  let mpuRequired = false;
+  let recommendedNewService = existing;
+
+  if (acAmps === 0) {
+    DS_STATE.mpu.result = null;
+    updateMpuCard();
+    if (typeof renderBOM === 'function') renderBOM();
+    return;
+  }
+  if (!passes) {
+    mpuRequired = true;
+    // Recommend the next standard service rating that satisfies the rule
+    const standards = [200, 225, 320, 400, 600, 800, 1200];
+    for (const s of standards) {
+      if (s <= existing) continue;
+      if ((s + pvBreakerAmps) <= s * 1.20) { recommendedNewService = s; break; }
+    }
+    if (recommendedNewService === existing) recommendedNewService = Math.max(...standards);
+  }
+  DS_STATE.mpu.result = {
+    acAmps, pvBreakerAmps, allowedFeed, totalLoad, headroomAmps,
+    passes, mpuRequired, recommendedNewService, existing
+  };
+  updateMpuCard();
+  if (typeof renderBOM === 'function') renderBOM();
+}
+
+function updateMpuCard() {
+  const card = document.getElementById('ds-mpu-result');
+  const txt  = document.getElementById('ds-mpu-result-text');
+  if (!card || !txt) return;
+  const r = DS_STATE.mpu.result;
+  card.classList.remove('warn','danger','ok');
+  if (!r) {
+    txt.textContent = 'Add panels to evaluate the service.';
+    return;
+  }
+  if (r.mpuRequired) {
+    card.classList.add('danger');
+    txt.innerHTML = `
+      <strong>Service upgrade REQUIRED.</strong><br>
+      Inverter AC output: <strong>${r.acAmps.toFixed(1)} A</strong> · PV breaker (125%): <strong>${r.pvBreakerAmps} A</strong><br>
+      Existing ${r.existing} A bus allows up to <strong>${r.allowedFeed.toFixed(0)} A</strong> total (NEC 705.12 120% rule), but main + PV would total <strong>${r.totalLoad.toFixed(0)} A</strong>.<br>
+      Recommended new service: <strong>${r.recommendedNewService} A</strong>.
+    `;
+  } else if (r.headroomAmps < (r.existing * 0.10)) {
+    card.classList.add('warn');
+    txt.innerHTML = `
+      <strong>Service passes the 120% rule</strong>, but headroom is tight (${r.headroomAmps.toFixed(0)} A).<br>
+      Inverter AC: ${r.acAmps.toFixed(1)} A · PV breaker (125%): ${r.pvBreakerAmps} A · Bus allowance: ${r.allowedFeed.toFixed(0)} A.<br>
+      Future EV / load additions may require an upgrade — consider proactive MPU.
+    `;
+  } else {
+    card.classList.add('ok');
+    txt.innerHTML = `
+      <strong>Existing ${r.existing} A service is adequate.</strong><br>
+      Inverter AC: ${r.acAmps.toFixed(1)} A · PV breaker (125%): ${r.pvBreakerAmps} A · Bus allowance: ${r.allowedFeed.toFixed(0)} A · Headroom: ${r.headroomAmps.toFixed(0)} A.
+    `;
+  }
+}
+
+function initMpuSection() {
+  recalcMpu();
+}
+
 // ------- Panel picker UI wiring -------
 
 // Populate the Panel Model dropdown with optgroups for every brand in PANEL_DB
@@ -10472,21 +11024,24 @@ DS_STATE.inverterSelection = { micro: null, optimizer: null, stringInverter: nul
 function recommendEnphaseMicro(panelW) {
   const micros = INVERTER_DB.enphase.micro;
   // Solar Mason default: everyone wants the LARGEST compatible single-phase
-  // micro. For residential (240V split-phase), filter to 240V models and
-  // pick the highest peakAC that fits the panel's power class. For
-  // commercial 3-phase, fall back to any compatible model.
-  const isCommercial = DS_STATE.customerClass === 'commercial';
-  const pool = isCommercial
-    ? micros  // commercial may use -3P variants
-    : micros.filter(m => /240V split/i.test(m.voltage));
+  // micro. Phase scoping (Step 1):
+  //   1ph + residential: 240V split-phase models only (no -3P)
+  //   1ph + commercial:  240V split-phase only (rare but allowed)
+  //   3ph                : -3P (208V 3-phase) models
+  const phase = DS_STATE.servicePhase || '1ph';
+  let pool;
+  if (phase === '3ph') {
+    pool = micros.filter(m => /3-phase/i.test(m.voltage));
+  } else {
+    pool = micros.filter(m => /240V split/i.test(m.voltage));
+  }
   const compatible = pool.filter(m => panelW >= m.minPanelW && panelW <= m.maxPanelW);
   if (compatible.length > 0) {
     // Largest first
     compatible.sort((a, b) => b.peakAC - a.peakAC);
     return compatible[0];
   }
-  // No exact compat — return the largest pool member as a fallback so the
-  // user sees something sensible in the dropdown.
+  // No exact compat — return the largest pool member as a fallback
   return pool.slice().sort((a, b) => b.peakAC - a.peakAC)[0] || micros[micros.length - 1];
 }
 
@@ -10674,11 +11229,25 @@ function populateSolarEdgeDropdowns(panelW, totalDCkW) {
   const sized = sizeSolarEdgeSystem(totalDCkW || 0, panelW, activeCount);
   DS_STATE.sizedSE = sized;  // consumed by updateInverterCompatDisplay + computeBOM
 
-  const scopedInvs = INVERTER_DB.solaredge.stringInverter.filter(
-    i => i.application === (isCommercial ? 'commercial' : 'residential')
-  );
-  const recInvModel = sized ? sized.inverter.model : scopedInvs[0].model;
-  invSel.innerHTML = scopedInvs.map(i => {
+  // Phase scoping (Step 1 service phase) is the strict filter:
+  //   1ph → HD-Wave residential (240V 1Φ, 208/240V 1Φ)
+  //   3ph → Synergy commercial (380/400V 3Φ, 480V 3Φ)
+  // Application (residential vs commercial) is a secondary signal that
+  // matches in the typical case but yields to phase if the user explicitly
+  // overrides (e.g. small commercial on a 1Φ service still gets HD-Wave).
+  const phase = DS_STATE.servicePhase || '1ph';
+  const scopedInvs = INVERTER_DB.solaredge.stringInverter.filter(i => {
+    if (phase === '3ph') return /3Φ/.test(i.voltage);
+    return /1Φ/.test(i.voltage);
+  });
+  // Defensive fallback: if the filter wiped everything out (shouldn't happen
+  // with the current DB), fall back to application scoping so the dropdown
+  // never goes empty.
+  const finalInvs = scopedInvs.length > 0
+    ? scopedInvs
+    : INVERTER_DB.solaredge.stringInverter.filter(i => i.application === (isCommercial ? 'commercial' : 'residential'));
+  const recInvModel = sized ? sized.inverter.model : finalInvs[0].model;
+  invSel.innerHTML = finalInvs.map(i => {
     // Compute how many of THIS model would be needed, so the user can see the tradeoff
     const minCount = Math.max(1, Math.ceil((totalDCkW || 0) / i.maxDCkW));
     const suffix = minCount > 1 ? ` (×${minCount})` : '';
@@ -11144,6 +11713,50 @@ function computeBOM() {
     });
   }
 
+  // 5b. Main Panel Upgrade & Service Equipment (Step 10)
+  // Auto-emits when NEC 705.12(B)(2) 120% rule fails OR when the user
+  // force-includes the upgrade for headroom. Both meter and load-center
+  // toggles emit independently.
+  if (DS_STATE.mpu) {
+    const mpuRes = DS_STATE.mpu.result;
+    const forceMpu = DS_STATE.mpu.forceUpgrade;
+    const mpuRequired = mpuRes && mpuRes.mpuRequired;
+    if (mpuRes && (mpuRequired || forceMpu)) {
+      const newAmps = mpuRequired ? mpuRes.recommendedNewService : Math.max(mpuRes.existing, 200);
+      const triggerNote = mpuRequired
+        ? `NEC 705.12(B)(2) 120% rule failed (existing ${mpuRes.existing}A bus + ${mpuRes.pvBreakerAmps}A PV breaker = ${mpuRes.totalLoad.toFixed(0)}A vs allowed ${mpuRes.allowedFeed.toFixed(0)}A)`
+        : `Customer-elected upgrade for headroom (existing ${mpuRes.existing}A passes but headroom is tight or future EV/load growth expected)`;
+      items.push({
+        category: 'Service · Main Panel',
+        name: `Main Panel Upgrade — ${mpuRes.existing}A → ${newAmps}A`,
+        meta: withWarranty(`${triggerNote} · ${DS_STATE.mpu.voltage}V service · includes meter base, main breaker, ground bar, and listed-for-PV-backfeed busbar`, '10-year limited (panel manufacturer)'),
+        qty: 1
+      });
+      items.push({
+        category: 'Service · Permits',
+        name: 'Utility Service Coordination',
+        meta: 'Disconnect/reconnect coordination with serving utility (PPL/PennPower/UGI/etc.) · meter pull permit · re-energize after install · responsibility tracked even when utility-side',
+        qty: 1
+      });
+    }
+    if (DS_STATE.mpu.includeMeter) {
+      items.push({
+        category: 'Service · Metering',
+        name: 'Production Meter Socket + Net Meter Base',
+        meta: withWarranty('Bidirectional revenue-grade production meter socket per utility net-metering agreement · NEMA 3R · ringless or ringed per AHJ', '10-year limited'),
+        qty: 1
+      });
+    }
+    if (DS_STATE.mpu.includeLoadCenter) {
+      items.push({
+        category: 'Service · Sub-Panel',
+        name: 'Critical-Loads Sub-Panel (battery backup integration)',
+        meta: withWarranty('60A or 100A NEMA 3R sub-panel for critical loads downstream of battery system controller · isolates essential circuits during grid outage · sized to selected backup loads', '10-year limited'),
+        qty: 1
+      });
+    }
+  }
+
   // 6. Balance of System (BOS)
   items.push({
     category: 'BOS',
@@ -11291,6 +11904,9 @@ setInverterBrand('enphase');          // Initial brand → populates the Enphase
 refreshInverterRecommendations();
 initEvSection();                      // Populate EV + charger dropdowns, wire period tabs
 initBatterySection();                 // Populate battery dropdown, wire duration tabs
+initMpuSection();                     // Compute initial 120% rule eval (will show empty card until panels)
+renderFleetList();                    // Render initial empty fleet list
+repopulateEvDropdownForClass();       // Build EV dropdown for current class (residential default)
 
 // Tools overlay collapse/expand
 function toggleToolsOverlay() {
