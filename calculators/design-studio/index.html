@@ -9110,7 +9110,62 @@ async function exportProposal() {
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Solar Mason Proposal · ${proposalId}</title>
   <style>
     @page { size: letter; margin: 0.55in 0.6in; }
-    @media print { .no-print { display: none !important; } .page-break { page-break-before: always; } }
+
+    /* ─── PRINT-ONLY rules: page breaks, orphan/widow control, keep-together ─── */
+    @media print {
+      .no-print { display: none !important; }
+
+      /* Force a fresh page before any explicit .page-break div */
+      .page-break { page-break-before: always !important; break-before: page !important; }
+
+      /* Every h2 starts a new page, even if no .page-break div is present.
+         This is the safety net — as you add new sections, they get a fresh
+         page automatically without you having to remember the marker div. */
+      h2 { page-break-before: always !important; break-before: page !important; }
+
+      /* The very first h2 (Executive Summary) should NOT page-break — it
+         already has an explicit .page-break div before it which handles
+         the cover→summary transition cleanly. We use :first-of-type on
+         a wrapper, but since h2s are siblings of divs the simplest fix
+         is to leave the explicit divs in place; the duplicate break is
+         coalesced by the print engine into a single page boundary. */
+
+      /* Keep h2 with its first paragraph — never let an h2 sit alone at
+         the bottom of a page. */
+      h2 { page-break-after: avoid !important; break-after: avoid !important; }
+      h3 { page-break-after: avoid !important; break-after: avoid !important; }
+
+      /* Keep these block elements together — never split mid-element */
+      .box, .big-box, .callout, .warn,
+      .grid, .grid-3, .grid-4 {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+
+      /* Tables: try to keep rows together, repeat headers on continuation pages */
+      table { page-break-inside: auto; }
+      thead { display: table-header-group; }   /* repeat <thead> on each page */
+      tfoot { display: table-footer-group; }
+      tr    { page-break-inside: avoid !important; break-inside: avoid !important; }
+
+      /* SVG charts and embedded images shouldn't split */
+      svg, img { page-break-inside: avoid !important; break-inside: avoid !important; }
+
+      /* Cover page: make sure it's exactly one page, no overflow onto page 2 */
+      .cover { page-break-after: always !important; break-after: page !important; min-height: 9in; }
+
+      /* Footer at the bottom of the doc — keep it on its own with the prior content */
+      footer { page-break-inside: avoid !important; break-inside: avoid !important; }
+
+      /* Orphan and widow control — minimum 3 lines of a paragraph at the top
+         or bottom of a page. Prevents single-line orphans/widows. */
+      p, li { orphans: 3; widows: 3; }
+
+      /* Force background colors to print (Chrome/Edge/Safari) so the
+         brand-blue cover meta box and big-box stat cards don't render as
+         empty white rectangles. */
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 8.5in; margin: 0 auto; padding: .5in; color: #0B2545; line-height: 1.55; font-size: 10.5pt; }
     h1 { color: #2D82BE; margin: 0 0 .25rem 0; font-size: 2rem; letter-spacing: -0.02em; }
