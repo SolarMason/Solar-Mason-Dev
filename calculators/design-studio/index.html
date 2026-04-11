@@ -4054,13 +4054,18 @@ html, body { background-attachment: scroll !important; }
     overflow:visible;        /* was 'hidden' — let the tools panel below show */
     display:block;
   }
-  /* The map canvas stays fixed-height inside the studio container so
-     it has a predictable viewport for Google Maps + Cesium 3D init. */
-  #ds-map, #ds-cesium-container{
+  /* The map background was position:absolute;inset:0 which collapsed to
+     zero height the moment we made the studio container height:auto.
+     Promote it to a normal in-flow block with an explicit height so the
+     absolutely-positioned map + cesium children inside it have something
+     to fill. */
+  .ds-map-background{
     position:relative !important;
-    height:60vh !important;
-    min-height:380px !important;
-    max-height:560px !important;
+    inset:auto !important;
+    width:100%;
+    height:60vh;
+    min-height:380px;
+    max-height:560px;
   }
 
   /* Hide the 'Ready to Go Solar?' CTA banner on mobile — it sits in the
