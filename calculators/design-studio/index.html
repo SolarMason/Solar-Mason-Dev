@@ -5045,13 +5045,9 @@ body.ds-mode-ground .ds-ground-only{display:block}
           <div class="ds-inv-compat" id="ds-inv-ep-compat"></div>
         </div>
 
-        <!-- Tier 3: SolarEdge string + optimizer (shown when type=string + brand=solaredge) -->
+        <!-- Tier 3: SolarEdge string (shown when type=string + brand=solaredge) -->
         <div class="ds-inv-block" id="ds-inv-solaredge" style="display:none">
           <div class="ds-field">
-            <label>Power Optimizer <span id="ds-inv-se-opt-rec" class="ds-inv-rec"></span></label>
-            <select id="ds-inv-se-opt" onchange="onInverterModelChange()"></select>
-          </div>
-          <div class="ds-field" style="margin-top:.5rem">
             <label>String Inverter <span id="ds-inv-se-inv-rec" class="ds-inv-rec"></span></label>
             <select id="ds-inv-se-inv" onchange="onInverterModelChange()"></select>
           </div>
@@ -5068,6 +5064,26 @@ body.ds-mode-ground .ds-ground-only{display:block}
             </select>
           </div>
           <div class="ds-inv-compat" id="ds-inv-custom-compat"></div>
+        </div>
+
+        <!-- Power Optimizer — ONLY shown when the selected string inverter
+             requires optimizers (SolarEdge + SolarEdge-branded custom uploads).
+             Every other string inverter brand (SolarArk, Fronius, SMA, Growatt,
+             Deye, GoodWe, Sungrow) runs strings directly into MPPT inputs and
+             handles rapid shutdown at the module level via Tigo TS4-A-F or
+             APsmart RSD. Toggled via populateOptimizerVisibility(). -->
+        <div class="ds-field" id="ds-inv-se-opt-field" style="display:none;margin-top:.6rem">
+          <label>Power Optimizer <span id="ds-inv-se-opt-rec" class="ds-inv-rec"></span></label>
+          <select id="ds-inv-se-opt" onchange="onInverterModelChange()"></select>
+          <div style="margin-top:.3rem;font-size:.6rem;color:#64748B;line-height:1.4;font-style:italic">SolarEdge architecture requires one optimizer per module for per-module MPPT and integrated NEC 690.12 rapid shutdown.</div>
+        </div>
+
+        <!-- Rapid shutdown advisory — shown when a string inverter WITHOUT
+             optimizers is selected. NEC 690.12 still requires rapid shutdown,
+             which is typically provided by Tigo TS4-A-F, APsmart RSD, or an
+             integrated MLPE module solution. -->
+        <div id="ds-inv-rsd-advisory" style="display:none;margin-top:.6rem;padding:.55rem .65rem;background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.3);border-radius:7px;font-size:.62rem;color:#78350F;line-height:1.5">
+          <strong>Rapid shutdown required (NEC 690.12).</strong> This inverter does not use optimizers. A module-level rapid shutdown device (Tigo TS4-A-F, APsmart RSD-S-PLC, or equivalent) will be included in the BOM — one per module — to satisfy the NEC 690.12 within-array shutdown requirement.
         </div>
       </div>
 
@@ -11885,6 +11901,13 @@ function extractInverterSpecsFromText(rawText, filename) {
     const ratedAC = acKw || (acW ? acW / 1000 : 0);
     if (!ratedAC) return null;
     const isThreePhase = /3[ΦP]|208|480/.test(voltage);
+    // SolarEdge is the only string inverter brand that REQUIRES optimizers.
+    // Every other brand (SolarArk, Fronius, SMA, Growatt, Deye, GoodWe,
+    // Sungrow, etc.) runs strings directly into MPPT inputs and handles
+    // rapid shutdown at the module level. We detect SolarEdge from the
+    // filename so an uploaded SolarEdge datasheet still gets the flag,
+    // but everything else defaults to optimizer-free.
+    const isSolarEdge = /solaredge|se\d+/i.test(filename);
     return {
       type: 'string',
       entry: {
@@ -11895,6 +11918,7 @@ function extractInverterSpecsFromText(rawText, filename) {
         maxPerString: 25,
         maxStringKw: Math.min(13.5, (maxDCkW || ratedAC * 1.5)),
         voltage: isThreePhase ? '480V 3Φ' : '240V 1Φ',
+        requiresOptimizer: isSolarEdge,
         notes: 'Custom upload (session only)',
         application: isThreePhase ? 'commercial' : 'residential',
         datasheet: null
@@ -12240,21 +12264,25 @@ const INVERTER_DB = {
       // ─── RESIDENTIAL HD-WAVE SINGLE-PHASE (US) ───
       // HD-Wave: 1 DC input per inverter, 1 string, operating range 200-480Vdc nominal 380Vdc.
       // maxPerString is the absolute optimizer limit; the real cap is usually maxDCkW.
-      { model: 'SE3000H-US', ratedAC: 3.0,  maxDCkW: 4.65,  dcInputs: 1, maxPerString: 25, maxStringKw: 4.65,  voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
-      { model: 'SE3800H-US', ratedAC: 3.8,  maxDCkW: 5.90,  dcInputs: 1, maxPerString: 25, maxStringKw: 5.90,  voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
-      { model: 'SE5000H-US', ratedAC: 5.0,  maxDCkW: 7.75,  dcInputs: 1, maxPerString: 25, maxStringKw: 7.75,  voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
-      { model: 'SE5700H-US', ratedAC: 5.76, ratedAC208: 5.0, maxDCkW: 8.93, dcInputs: 1, maxPerString: 25, maxStringKw: 8.93, voltage: '208/240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
-      { model: 'SE6000H-US', ratedAC: 6.0,  ratedAC208: 5.0, maxDCkW: 9.30, dcInputs: 1, maxPerString: 25, maxStringKw: 9.30, voltage: '208/240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
-      { model: 'SE7600H-US', ratedAC: 7.6,  maxDCkW: 11.78, dcInputs: 1, maxPerString: 25, maxStringKw: 11.78, voltage: '240V 1Φ', notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
-      { model: 'SE10000H-US', ratedAC: 10.0, maxDCkW: 15.50, dcInputs: 1, maxPerString: 25, maxStringKw: 15.50, voltage: '240V 1Φ', notes: 'Large residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
-      { model: 'SE11400H-US', ratedAC: 11.4, ratedAC208: 10.0, maxDCkW: 17.67, dcInputs: 1, maxPerString: 25, maxStringKw: 17.67, voltage: '208/240V 1Φ', notes: 'Max single-phase residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      // ALL SolarEdge HD-Wave + Synergy inverters REQUIRE optimizers — that's
+      // the whole point of the SolarEdge architecture (per-module MPPT +
+      // integrated rapid shutdown). Generic string inverters (SolarArk, Fronius,
+      // SMA, Growatt, Deye, GoodWe, Sungrow) do NOT require them.
+      { model: 'SE3000H-US', ratedAC: 3.0,  maxDCkW: 4.65,  dcInputs: 1, maxPerString: 25, maxStringKw: 4.65,  voltage: '240V 1Φ', requiresOptimizer: true, notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE3800H-US', ratedAC: 3.8,  maxDCkW: 5.90,  dcInputs: 1, maxPerString: 25, maxStringKw: 5.90,  voltage: '240V 1Φ', requiresOptimizer: true, notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE5000H-US', ratedAC: 5.0,  maxDCkW: 7.75,  dcInputs: 1, maxPerString: 25, maxStringKw: 7.75,  voltage: '240V 1Φ', requiresOptimizer: true, notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE5700H-US', ratedAC: 5.76, ratedAC208: 5.0, maxDCkW: 8.93, dcInputs: 1, maxPerString: 25, maxStringKw: 8.93, voltage: '208/240V 1Φ', requiresOptimizer: true, notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE6000H-US', ratedAC: 6.0,  ratedAC208: 5.0, maxDCkW: 9.30, dcInputs: 1, maxPerString: 25, maxStringKw: 9.30, voltage: '208/240V 1Φ', requiresOptimizer: true, notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE7600H-US', ratedAC: 7.6,  maxDCkW: 11.78, dcInputs: 1, maxPerString: 25, maxStringKw: 11.78, voltage: '240V 1Φ', requiresOptimizer: true, notes: 'Residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE10000H-US', ratedAC: 10.0, maxDCkW: 15.50, dcInputs: 1, maxPerString: 25, maxStringKw: 15.50, voltage: '240V 1Φ', requiresOptimizer: true, notes: 'Large residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
+      { model: 'SE11400H-US', ratedAC: 11.4, ratedAC208: 10.0, maxDCkW: 17.67, dcInputs: 1, maxPerString: 25, maxStringKw: 17.67, voltage: '208/240V 1Φ', requiresOptimizer: true, notes: 'Max single-phase residential', application: 'residential', datasheet: '/datasheets/inverters/solaredge-hd-wave-single-phase.pdf' },
       // ─── COMMERCIAL 3-PHASE SYNERGY (verified from DS-000019-2.2-ENG) ───
       // SE66.6K = 2 Synergy Units × 2 MPPT each = 4 DC inputs; SE90K+ = 3 Synergy Units × 2 MPPT = 6 DC inputs.
       // Per-string max power 13.5 kW, max 50 power optimizers per string.
-      { model: 'SE66.6K',  ratedAC: 66.6,  maxDCkW: 100.0, dcInputs: 4, maxPerString: 50, maxStringKw: 13.5, voltage: '380/400V 3Φ', notes: 'Commercial · 2 Synergy Units, pre-commissioning, built-in arc fault', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
-      { model: 'SE90K',    ratedAC: 90.0,  maxDCkW: 135.0, dcInputs: 6, maxPerString: 50, maxStringKw: 13.5, voltage: '380/400V 3Φ', notes: 'Commercial · 3 Synergy Units, 98.1% peak efficiency', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
-      { model: 'SE100K',   ratedAC: 100.0, maxDCkW: 150.0, dcInputs: 6, maxPerString: 50, maxStringKw: 13.5, voltage: '380/400V 3Φ', notes: 'Commercial · 3 Synergy Units, 145 Aac continuous', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
-      { model: 'SE120K',   ratedAC: 120.0, maxDCkW: 180.0, dcInputs: 6, maxPerString: 50, maxStringKw: 13.5, voltage: '480V 3Φ',     notes: 'Commercial · 3 Synergy Units, 480V grid', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
+      { model: 'SE66.6K',  ratedAC: 66.6,  maxDCkW: 100.0, dcInputs: 4, maxPerString: 50, maxStringKw: 13.5, voltage: '380/400V 3Φ', requiresOptimizer: true, notes: 'Commercial · 2 Synergy Units, pre-commissioning, built-in arc fault', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
+      { model: 'SE90K',    ratedAC: 90.0,  maxDCkW: 135.0, dcInputs: 6, maxPerString: 50, maxStringKw: 13.5, voltage: '380/400V 3Φ', requiresOptimizer: true, notes: 'Commercial · 3 Synergy Units, 98.1% peak efficiency', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
+      { model: 'SE100K',   ratedAC: 100.0, maxDCkW: 150.0, dcInputs: 6, maxPerString: 50, maxStringKw: 13.5, voltage: '380/400V 3Φ', requiresOptimizer: true, notes: 'Commercial · 3 Synergy Units, 145 Aac continuous', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
+      { model: 'SE120K',   ratedAC: 120.0, maxDCkW: 180.0, dcInputs: 6, maxPerString: 50, maxStringKw: 13.5, voltage: '480V 3Φ',     requiresOptimizer: true, notes: 'Commercial · 3 Synergy Units, 480V grid', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
     ]
   },
   // Custom uploads live in their own bucket, separated by type. Uploaded
@@ -12455,6 +12483,88 @@ function populateEnphaseMicroDropdown(panelW) {
   updateInverterCompatDisplay();
 }
 
+// Resolve the currently-selected string inverter across all three
+// brands (SolarEdge OEM, or custom upload with type=string). Returns
+// the inverter entry object or null if nothing is selected.
+function getSelectedStringInverter() {
+  if (DS_STATE.inverterBrand === 'solaredge') {
+    return INVERTER_DB.solaredge.stringInverter.find(
+      i => i.model === DS_STATE.inverterSelection.stringInverter
+    ) || null;
+  }
+  if (DS_STATE.inverterBrand === 'custom' && DS_STATE.inverterType === 'string') {
+    return INVERTER_DB.custom.stringInverter.find(
+      i => i.model === DS_STATE.inverterSelection.custom
+    ) || null;
+  }
+  return null;
+}
+
+// Show or hide the optimizer field + rapid shutdown advisory based on
+// whether the selected string inverter requires optimizers. SolarEdge
+// requires them (that's the whole SolarEdge architecture); every other
+// string inverter brand handles rapid shutdown at the module level.
+function updateOptimizerVisibility() {
+  const optField = document.getElementById('ds-inv-se-opt-field');
+  const rsdAdvisory = document.getElementById('ds-inv-rsd-advisory');
+  if (!optField || !rsdAdvisory) return;
+
+  // Optimizer field is only relevant when a string inverter is selected.
+  // Hide both when in micro mode.
+  if (DS_STATE.inverterType !== 'string') {
+    optField.style.display = 'none';
+    rsdAdvisory.style.display = 'none';
+    return;
+  }
+
+  const inv = getSelectedStringInverter();
+  if (!inv) {
+    optField.style.display = 'none';
+    rsdAdvisory.style.display = 'none';
+    return;
+  }
+
+  if (inv.requiresOptimizer) {
+    optField.style.display = 'block';
+    rsdAdvisory.style.display = 'none';
+    // Make sure the optimizer dropdown is populated (it may not have been
+    // if the user came from a non-requiring inverter first).
+    const optSel = document.getElementById('ds-inv-se-opt');
+    if (optSel && optSel.options.length === 0) {
+      const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
+      populateOptimizerDropdown(panelW);
+    }
+  } else {
+    optField.style.display = 'none';
+    rsdAdvisory.style.display = 'block';
+    // Clear the optimizer selection so downstream code (BOM emission)
+    // doesn't think there's an optimizer attached to a non-SolarEdge
+    // string inverter.
+    DS_STATE.inverterSelection.optimizer = null;
+  }
+}
+
+// Standalone optimizer dropdown populator — split out from
+// populateSolarEdgeDropdowns so updateOptimizerVisibility can call it
+// independently when it needs to lazy-fill an empty dropdown.
+function populateOptimizerDropdown(panelW) {
+  const optSel = document.getElementById('ds-inv-se-opt');
+  if (!optSel) return;
+  const isCommercial = DS_STATE.customerClass === 'commercial';
+  const scopedOpts = INVERTER_DB.solaredge.optimizer.filter(
+    o => o.application === (isCommercial ? 'commercial' : 'residential')
+  );
+  const recOpt = recommendSolarEdgeOptimizer(panelW);
+  optSel.innerHTML = scopedOpts.map(o => {
+    const compat = panelW <= o.rated;
+    const badge = compat ? '' : ' <svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+    return `<option value="${o.model}" ${o.model === recOpt.model ? 'selected' : ''}>${o.model} — ${o.rated}W max${badge}</option>`;
+  }).join('');
+  DS_STATE.inverterSelection.optimizer = recOpt.model;
+  const optRec = document.getElementById('ds-inv-se-opt-rec');
+  if (optRec) optRec.textContent = `auto: ${recOpt.model}`;
+}
+
 function populateSolarEdgeDropdowns(panelW, totalDCkW) {
   const optSel = document.getElementById('ds-inv-se-opt');
   const invSel = document.getElementById('ds-inv-se-inv');
@@ -12513,6 +12623,7 @@ function populateSolarEdgeDropdowns(panelW, totalDCkW) {
   }
 
   updateInverterCompatDisplay();
+  updateOptimizerVisibility();
 }
 
 // Three-tier inverter selection — Type → Brand → Model.
@@ -12638,6 +12749,9 @@ function refreshInverterRecommendations() {
   } else if (DS_STATE.inverterBrand === 'custom') {
     populateCustomInverterDropdown();
   }
+  // Optimizer visibility depends on the selected string inverter's
+  // requiresOptimizer flag — refresh it after every recommendation.
+  updateOptimizerVisibility();
 }
 
 function onPanelWattageChange() {
@@ -12649,7 +12763,14 @@ function onInverterModelChange() {
   if (DS_STATE.inverterBrand === 'enphase') {
     DS_STATE.inverterSelection.micro = document.getElementById('ds-inv-ep-model').value;
   } else if (DS_STATE.inverterBrand === 'solaredge') {
-    DS_STATE.inverterSelection.optimizer = document.getElementById('ds-inv-se-opt').value;
+    // Optimizer dropdown may be hidden if the selected inverter doesn't
+    // require them (all current SolarEdge inverters DO, but this guards
+    // against a future optimizer-free SolarEdge product or a stale read
+    // when the field was hidden by the custom brand path).
+    const optEl = document.getElementById('ds-inv-se-opt');
+    if (optEl && optEl.offsetParent !== null) {
+      DS_STATE.inverterSelection.optimizer = optEl.value;
+    }
     DS_STATE.inverterSelection.stringInverter = document.getElementById('ds-inv-se-inv').value;
   } else if (DS_STATE.inverterBrand === 'custom') {
     DS_STATE.inverterSelection.custom = document.getElementById('ds-inv-custom-model').value;
@@ -12663,6 +12784,11 @@ function onInverterModelChange() {
     }
   }
   updateInverterCompatDisplay();
+  // Re-evaluate whether the optimizer field should be shown. Changing
+  // the selected string inverter (e.g. from SolarEdge SE10000H to an
+  // uploaded SolarArk) needs to immediately hide/show the optimizer
+  // picker and the RSD advisory.
+  updateOptimizerVisibility();
   if (typeof recalcMpu === 'function') recalcMpu();
 }
 
@@ -12874,7 +13000,13 @@ function computeBOM() {
     const inv = sized ? sized.inverter : null;
     const invCount = sized ? sized.count : 1;
 
-    if (opt) {
+    // Optimizer emission is now conditional on the selected string inverter's
+    // requiresOptimizer flag. All current SolarEdge HD-Wave + Synergy
+    // inverters require them (that's the whole SolarEdge architecture), but
+    // this future-proofs against an optimizer-free SolarEdge product line.
+    const invNeedsOptimizer = inv ? (inv.requiresOptimizer !== false) : true;
+
+    if (opt && invNeedsOptimizer) {
       items.push({
         category: 'Optimizers',
         name: `SolarEdge ${opt.model}`,
@@ -12894,6 +13026,18 @@ function computeBOM() {
           WARRANTY.solaredgeInverter
         ),
         qty: invCount
+      });
+    }
+    // If the inverter does NOT use optimizers, we still need a module-level
+    // rapid shutdown device per NEC 690.12 — typically Tigo TS4-A-F or
+    // APsmart RSD-S-PLC. Optimizers provide NEC 690.12 compliance natively,
+    // so this line is only emitted when optimizers are skipped.
+    if (!invNeedsOptimizer) {
+      items.push({
+        category: 'Rapid Shutdown',
+        name: 'Tigo TS4-A-F Rapid Shutdown Device',
+        meta: 'Module-level rapid shutdown per NEC 690.12 · one per module · TS4-A-F (fire-safety, 475W max) · compatible with any string inverter that does not provide integrated NEC 690.12 compliance · Warranty: 25 years (parts only, labor not included)',
+        qty: activeCount
       });
     }
     // DC disconnect per inverter (NEC 690.13)
@@ -12930,6 +13074,32 @@ function computeBOM() {
           meta: `${s.ratedAC} kW AC · max ${s.maxDCkW} kW DC · ${s.voltage || 'per datasheet'} · custom upload — verify warranty terms directly with manufacturer ${WARRANTY_PARTS_ONLY}`,
           qty: 1
         });
+        // If the uploaded inverter requires optimizers (detected from the
+        // filename containing "solaredge" or "SE###"), emit SolarEdge
+        // optimizers matched to the panel wattage. Otherwise, emit Tigo
+        // TS4-A-F rapid shutdown devices to satisfy NEC 690.12 at the
+        // module level without the SolarEdge architecture.
+        if (s.requiresOptimizer) {
+          const panelWnum = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
+          const recOpt = typeof recommendSolarEdgeOptimizer === 'function'
+            ? recommendSolarEdgeOptimizer(panelWnum)
+            : null;
+          if (recOpt) {
+            items.push({
+              category: 'Optimizers',
+              name: `SolarEdge ${recOpt.model}`,
+              meta: withWarranty(`${recOpt.rated}W max input · paired with custom upload inverter · ${recOpt.notes}`, WARRANTY.solaredgeOptimizer),
+              qty: activeCount
+            });
+          }
+        } else {
+          items.push({
+            category: 'Rapid Shutdown',
+            name: 'Tigo TS4-A-F Rapid Shutdown Device',
+            meta: 'Module-level rapid shutdown per NEC 690.12 · one per module · TS4-A-F (fire-safety, 475W max) · compatible with any string inverter that does not provide integrated NEC 690.12 compliance · Warranty: 25 years (parts only, labor not included)',
+            qty: activeCount
+          });
+        }
         // DC disconnect still required per NEC 690.13 regardless of inverter brand
         items.push({
           category: 'Disconnect',
