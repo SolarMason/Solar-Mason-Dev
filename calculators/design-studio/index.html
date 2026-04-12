@@ -11992,10 +11992,22 @@ function extractInverterSpecsFromText(rawText, filename) {
     ]) || 1500;
 
     // Integrated transformer kVA rating
-    const transformerKva = grab([
+    // Integrated transformer kVA rating. Three cases:
+    //   1. Datasheet explicitly mentions "transformerless" → null
+    //      (external MV xfmr required, e.g. ABB PVS800 family)
+    //   2. Datasheet lists a kVA rating for the integrated transformer → use it
+    //   3. Neither → leave null and let the BOM emission path decide
+    //      (the default assumption for an unknown datasheet is: probably
+    //      transformerless since bundled integrated transformers are the
+    //      exception not the rule for central inverters in 2024+)
+    const isTransformerless = /transformer[- ]?less/i.test(t);
+    const transformerKvaRaw = grab([
       /(?:Transformer|MV\s*Transformer|Step[- ]?up\s*Transformer)[^0-9]{0,25}(\d{3,5})\s*kVA/i,
       /(\d{3,5})\s*kVA\s*(?:MV|transformer|step[- ]?up)/i
-    ]) || Math.round(ratedAC * 1.10);
+    ]);
+    const transformerKva = isTransformerless ? null
+                         : transformerKvaRaw ? Math.round(transformerKvaRaw)
+                         : null;  // default to null when nothing detected
 
     // Peak CEC / EU efficiency
     const efficiency = grab([
@@ -12006,6 +12018,7 @@ function extractInverterSpecsFromText(rawText, filename) {
     let mountType = 'skid';
     if (/pad[- ]?mount/i.test(t)) mountType = 'pad';
     else if (/station|turnkey/i.test(t)) mountType = 'station';
+    else if (/cabinet|IP\s?22|IP\s?42/i.test(t)) mountType = 'cabinet';
 
     return {
       type: 'central',
@@ -12015,8 +12028,10 @@ function extractInverterSpecsFromText(rawText, filename) {
         maxDCkW: maxDCkW || Math.round(ratedAC * 1.20),
         dcInputs: Math.round(dcInputs),
         dcVoltage: Math.round(dcVoltage),
-        acVoltage: 'MV (configurable, typically 13.8–34.5 kV 3Φ)',
-        transformerKva: Math.round(transformerKva),
+        acVoltage: isTransformerless
+          ? 'LV 3Φ (transformerless — external MV xfmr required)'
+          : 'MV (configurable, typically 13.8–34.5 kV 3Φ)',
+        transformerKva,  // null for transformerless, number otherwise
         mountType,
         efficiency: Math.round(efficiency * 10) / 10,
         warranty: 'Per manufacturer datasheet (typically 5 yr standard, extendable to 20)',
@@ -12428,27 +12443,109 @@ const INVERTER_DB = {
   // (type=central) to add session-only entries, or email datasheets to
   // engineering@solarmason.com for permanent catalog inclusion.
   //
-  // Target OEMs for permanent catalog: SMA Sunny Central UP series,
-  // Sungrow SG2500-MV / SG3125-MV, Huawei SUN2000 central, CPS America
-  // SCH2750-S-MV, Fimer PVS-175, TMEIC Solar Ware.
+  // Target OEMs for permanent catalog: ABB PVS800 (verified below),
+  // SMA Sunny Central UP series, Sungrow SG2500-MV / SG3125-MV, Huawei
+  // SUN2000 central, CPS America SCH2750-S-MV, Fimer PVS-175, TMEIC
+  // Solar Ware.
   //
   // Entry schema (must match what BOM + computeInverterAcAmps expect):
   //   {
   //     model: 'SMA Sunny Central 2750-EV',
-  //     ratedAC: 2750,       // kW AC at the MV transformer secondary
+  //     ratedAC: 2750,       // kW AC at the output (pre or post MV xfmr)
   //     maxDCkW: 3300,       // max DC array size
   //     dcInputs: 24,        // DC combiner connections
   //     dcVoltage: 1500,     // 1000 / 1500 Vdc system
-  //     acVoltage: 'MV 34.5kV 3Φ',  // MV secondary after transformer
-  //     transformerKva: 3000, // integrated step-up transformer rating
-  //     mountType: 'skid',    // 'skid' | 'pad' | 'station'
+  //     acVoltage: 'MV 34.5kV 3Φ' | '300V 3Φ (transformerless)',
+  //     transformerKva: 3000,   // integrated step-up xfmr kVA, OR
+  //                             // null if the inverter is transformerless
+  //                             // and requires an external MV transformer
+  //     mountType: 'skid' | 'pad' | 'station' | 'cabinet',
   //     footprint: '30 × 8 ft',
   //     efficiency: 98.9,
   //     warranty: '5 years standard, extendable to 20',
   //     notes: 'Description from datasheet',
   //     datasheet: '/datasheets/inverters/sma-sunny-central-2750ev.pdf'
   //   }
-  central: []
+  //
+  // When transformerKva is null, the BOM emits an advisory "External MV
+  // Transformer Required" line instead of the integrated transformer line,
+  // since the customer (or their electrical contractor) must source the
+  // MV transformer separately.
+  central: [
+    // ─── ABB PVS800 SERIES (verified from 3AUA0000057380 REV G EN 11.10.2011) ───
+    // Transformerless central inverters, 100–500 kW, 300 V 3Φ AC output.
+    // Require an EXTERNAL medium-voltage step-up transformer — the
+    // architecture diagram on page 3 of the datasheet shows the transformer
+    // between the inverter bank and the 20 kV 3-phase grid.
+    // Warranty noted as "engineered to provide a long and reliable service
+    // life of at least 20 years" with warranty extensions available.
+    {
+      model: 'ABB PVS800-57-0100kW-A',
+      ratedAC: 100,
+      maxDCkW: 120,         // Recommended max input power (PPV)
+      dcInputs: 4,          // 1 (+/-) × 4 protected MCB inputs at 80 A each
+      dcVoltage: 900,       // Max DC voltage (1000 V optional)
+      mpptRangeV: '450–750 V (825 V opt)',
+      maxDcCurrentA: 245,
+      acVoltage: '300 V 3Φ (transformerless — external MV xfmr required)',
+      nominalAcCurrentA: 195,
+      transformerKva: null, // Transformerless — external MV xfmr required
+      mountType: 'cabinet',
+      footprint: '1030 × 2130 × 644 mm (W × H × D), 550 kg',
+      efficiency: 98.0,
+      eurEta: 97.5,
+      ambientC: '-15 to +40 (derated to +50)',
+      ipRating: 'IP22 (IP42 optional)',
+      gridSupport: 'Low voltage ride through, reactive power compensation, power reduction',
+      warranty: '20-year design life · warranty extensions available from ABB',
+      notes: 'Smallest of the PVS800 family · ideal for commercial / industrial rooftop · transformerless — requires external MV step-up transformer',
+      datasheet: '/datasheets/inverters/abb-pvs800-central-inverter.pdf'
+    },
+    {
+      model: 'ABB PVS800-57-0250kW-A',
+      ratedAC: 250,
+      maxDCkW: 300,
+      dcInputs: 8,          // 2 (+/-) × 8 protected MCB inputs at 80 A each
+      dcVoltage: 900,
+      mpptRangeV: '450–750 V (825 V opt)',
+      maxDcCurrentA: 600,
+      acVoltage: '300 V 3Φ (transformerless — external MV xfmr required)',
+      nominalAcCurrentA: 485,
+      transformerKva: null,
+      mountType: 'cabinet',
+      footprint: '1830 × 2130 × 644 mm (W × H × D), 1100 kg',
+      efficiency: 98.0,
+      eurEta: 97.6,
+      ambientC: '-15 to +40 (derated to +50)',
+      ipRating: 'IP22 (IP42 optional)',
+      gridSupport: 'Low voltage ride through, reactive power compensation, power reduction',
+      warranty: '20-year design life · warranty extensions available from ABB',
+      notes: 'Mid-range PVS800 · typical for multi-MW commercial installs · transformerless — requires external MV step-up transformer · parallel AC connection to single MV xfmr supported',
+      datasheet: '/datasheets/inverters/abb-pvs800-central-inverter.pdf'
+    },
+    {
+      model: 'ABB PVS800-57-0500kW-A',
+      ratedAC: 500,
+      maxDCkW: 600,
+      dcInputs: 16,         // 4 (+/-) × 16 protected MCB inputs at 80 A each
+      dcVoltage: 900,
+      mpptRangeV: '450–750 V (825 V opt)',
+      maxDcCurrentA: 1145,
+      acVoltage: '300 V 3Φ (transformerless — external MV xfmr required)',
+      nominalAcCurrentA: 965,
+      transformerKva: null,
+      mountType: 'cabinet',
+      footprint: '3030 × 2130 × 644 mm (W × H × D), 1800 kg',
+      efficiency: 98.6,     // highest in family
+      eurEta: 98.2,
+      ambientC: '-15 to +40 (derated to +50)',
+      ipRating: 'IP22 (IP42 optional)',
+      gridSupport: 'Low voltage ride through, reactive power compensation, power reduction',
+      warranty: '20-year design life · warranty extensions available from ABB',
+      notes: 'Top of PVS800 family · highest efficiency (98.6% max, 98.2% Euro-eta) · typical for utility-scale multi-MW plants · transformerless — requires external MV step-up transformer · parallel AC connection to single MV xfmr supported for cost/space savings',
+      datasheet: '/datasheets/inverters/abb-pvs800-central-inverter.pdf'
+    }
+  ]
 };
 
 // DS state for inverter selection — mirrors the UI controls
@@ -13410,17 +13507,32 @@ function computeBOM() {
         qty: invCount
       });
 
-      // Integrated MV step-up transformer — usually bundled in the unit
-      // for skid-mount inverters, separately rated for pad-mount. We
-      // emit a BOM line for it either way so the customer can see the
-      // transformer rating that was sized into the system.
-      const totalXfmrKva = (inv.transformerKva || Math.round(inv.ratedAC * 1.10)) * invCount;
-      items.push({
-        category: 'MV Transformer',
-        name: `Integrated MV Step-Up Transformer (${inv.transformerKva || Math.round(inv.ratedAC * 1.10)} kVA)`,
-        meta: `${totalXfmrKva} kVA total across ${invCount} inverter unit${invCount > 1 ? 's' : ''} · MV secondary configurable (13.8 / 24.9 / 34.5 kV 3Φ typical) · utility-coordinated interconnection point · Warranty: passed through from transformer manufacturer ${WARRANTY_PARTS_ONLY}`,
-        qty: invCount
-      });
+      // MV step-up transformer. Two cases:
+      //   (a) transformerKva set → integrated transformer bundled in the unit
+      //   (b) transformerKva === null → transformerless inverter (e.g. ABB
+      //       PVS800), external MV transformer required as a separate line
+      //       item. The customer/contractor sources it independently.
+      if (inv.transformerKva === null) {
+        // Sized at ~110% of inverter AC rating (typical practice for
+        // transformerless central inverters paralleled into a single MV xfmr)
+        const advisoryKva = Math.round(inv.ratedAC * invCount * 1.10);
+        items.push({
+          category: 'MV Transformer (external)',
+          name: `External MV Step-Up Transformer (≈ ${advisoryKva} kVA)`,
+          meta: `${inv.model} is TRANSFORMERLESS — requires a separately-sourced MV step-up transformer · sized at ~110% of inverter AC rating (${inv.ratedAC} kW × ${invCount} unit${invCount > 1 ? 's' : ''} × 1.10 = ${advisoryKva} kVA) · MV secondary configurable per utility service (13.8 / 24.9 / 34.5 kV 3Φ typical) · NOT a Solar Mason-supplied item — coordinate with utility and sitework contractor`,
+          qty: 1
+        });
+      } else {
+        // Integrated transformer bundled in the unit (typical for skid-mount
+        // inverters like SMA Sunny Central UP, Sungrow SG2500-MV, etc.)
+        const totalXfmrKva = inv.transformerKva * invCount;
+        items.push({
+          category: 'MV Transformer',
+          name: `Integrated MV Step-Up Transformer (${inv.transformerKva} kVA)`,
+          meta: `${totalXfmrKva} kVA total across ${invCount} inverter unit${invCount > 1 ? 's' : ''} · MV secondary configurable (13.8 / 24.9 / 34.5 kV 3Φ typical) · utility-coordinated interconnection point · Warranty: passed through from transformer manufacturer ${WARRANTY_PARTS_ONLY}`,
+          qty: invCount
+        });
+      }
 
       // DC combiner boxes — sized at ~500 kW per combiner, one combiner
       // input per string. This is a conservative count; real projects may
