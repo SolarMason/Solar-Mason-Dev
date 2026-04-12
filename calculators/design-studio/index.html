@@ -5017,16 +5017,22 @@ body.ds-mode-ground .ds-ground-only{display:block}
              3. MODEL  (filtered by brand — the existing dropdowns)
            Custom uploads are a first-class brand, not shoved into Enphase/SolarEdge. -->
       <div class="ds-inv-section">
-        <!-- Tier 1: Type -->
+        <!-- Tier 1: Type — three architectural choices. Central is commercial-
+             only (hidden when customerClass !== 'commercial') since residential
+             systems are always micro or small string. -->
         <div class="ds-inv-label">Inverter Type</div>
-        <div class="ds-inv-brand-row">
+        <div class="ds-inv-brand-row" id="ds-inv-type-row">
           <button type="button" class="ds-inv-brand-btn active" data-inv-type="micro" onclick="setInverterType('micro')">
             <span class="ds-inv-brand-name">Microinverter</span>
             <span class="ds-inv-brand-sub">1 per panel · module-level MPPT</span>
           </button>
           <button type="button" class="ds-inv-brand-btn" data-inv-type="string" onclick="setInverterType('string')">
             <span class="ds-inv-brand-name">String Inverter</span>
-            <span class="ds-inv-brand-sub">Central inverter · with optimizers</span>
+            <span class="ds-inv-brand-sub">String-connected · up to ~150 kW</span>
+          </button>
+          <button type="button" class="ds-inv-brand-btn" data-inv-type="central" id="ds-inv-type-central-btn" style="display:none" onclick="setInverterType('central')">
+            <span class="ds-inv-brand-name">Central Inverter</span>
+            <span class="ds-inv-brand-sub">Utility-scale · 250 kW – 5 MW · skid/pad mount</span>
           </button>
         </div>
 
@@ -5064,6 +5070,24 @@ body.ds-mode-ground .ds-ground-only{display:block}
             </select>
           </div>
           <div class="ds-inv-compat" id="ds-inv-custom-compat"></div>
+        </div>
+
+        <!-- Tier 3: Central inverter (shown when type=central). Central
+             inverters are utility-scale equipment (250 kW – 5 MW) with MV
+             transformer integration, typically skid or pad mounted. They
+             never use optimizers and rapid shutdown is handled upstream of
+             the array at the combiner level (not NEC 690.12 module-level). -->
+        <div class="ds-inv-block" id="ds-inv-central" style="display:none">
+          <div class="ds-field">
+            <label>Central Inverter Model <span class="ds-inv-rec" id="ds-inv-central-rec"></span></label>
+            <select id="ds-inv-central-model" onchange="onInverterModelChange()">
+              <option value="">— No central inverters in catalog yet —</option>
+            </select>
+          </div>
+          <div class="ds-inv-compat" id="ds-inv-central-compat"></div>
+          <div id="ds-inv-central-advisory" style="margin-top:.55rem;padding:.55rem .65rem;background:rgba(45,130,190,.06);border:1px solid rgba(45,130,190,.25);border-radius:7px;font-size:.6rem;color:#0B2545;line-height:1.5">
+            <strong>Central inverter systems are utility-scale equipment.</strong> Typical installations include MV step-up transformer (pad or skid mount), DC combiner boxes (one per ~1–2 MW DC field), SCADA &amp; string monitoring, grounding grid, and access road / concrete pad. These line items are auto-emitted in the BOM. Solar Mason's central inverter catalog is built exclusively from verified manufacturer datasheets — upload a PDF below to add one for this session, or email <a href="mailto:engineering@solarmason.com" style="color:#2D82BE">engineering@solarmason.com</a> for permanent catalog inclusion.
+          </div>
         </div>
 
         <!-- Power Optimizer — ONLY shown when the selected string inverter
@@ -8168,6 +8192,17 @@ function setCustomerClass(cls, auto = false) {
     if (mpuV && mpuV.value === '120/240') { mpuV.value = '120/208'; onMpuChange(); }
   }
   if (typeof refreshInverterRecommendations === 'function') refreshInverterRecommendations();
+
+  // Central inverter type is commercial-only. Show the button in the tier-1
+  // row when commercial, hide when residential. If the user is currently on
+  // the central type and switches to residential, demote them back to micro.
+  const centralBtn = document.getElementById('ds-inv-type-central-btn');
+  if (centralBtn) {
+    centralBtn.style.display = (cls === 'commercial') ? '' : 'none';
+  }
+  if (cls === 'residential' && DS_STATE.inverterType === 'central') {
+    if (typeof setInverterType === 'function') setInverterType('micro');
+  }
 }
 
 // Show/hide low-income category picker when checkbox changes
@@ -9318,11 +9353,16 @@ async function exportProposal() {
       <td class="num">$${Math.round(s.vsSolar).toLocaleString()}</td>
     </tr>`).join('');
 
-  // Inverter description for the PDF proposal. Handles all three brand
-  // paths: Enphase micros, SolarEdge string + optimizer, and custom uploads
-  // (which can be either type — check inverterType to know which).
+  // Inverter description for the PDF proposal. Handles all four paths:
+  // Enphase micros, SolarEdge string + optimizer, central inverters
+  // (utility-scale), and custom uploads (micro OR string OR central).
   let inverterDesc;
-  if (r.inverterBrand === 'enphase') {
+  if (r.inverterType === 'central') {
+    // Central takes priority over brand — the selection is stored in
+    // inverterSelection.central regardless of solarmason/custom brand
+    const centralModel = r.inverterSelection.central || '—';
+    inverterDesc = `${centralModel} central inverter (utility-scale) · integrated MV step-up transformer`;
+  } else if (r.inverterBrand === 'enphase') {
     inverterDesc = `Enphase ${r.inverterSelection.micro || '—'} microinverter (1 per panel)`;
   } else if (r.inverterBrand === 'solaredge') {
     inverterDesc = `SolarEdge ${r.inverterSelection.stringInverter || '—'} string inverter + ${r.inverterSelection.optimizer || '—'} optimizer per panel`;
@@ -11305,7 +11345,7 @@ function computeInverterAcAmps() {
       const inv = INVERTER_DB.solaredge.stringInverter.find(i => i.model === modelName);
       if (inv) inverterAcW = inv.ratedAC * 1000;
     }
-  } else if (brand === 'custom') {
+  } else if (brand === 'custom' && type !== 'central') {
     // Custom uploaded inverter — look it up in the type-appropriate
     // bucket. Micros multiply by active panel count (one per panel);
     // string inverters are a single unit.
@@ -11317,6 +11357,15 @@ function computeInverterAcAmps() {
       const s = INVERTER_DB.custom.stringInverter.find(i => i.model === modelName);
       if (s) inverterAcW = s.ratedAC * 1000;
     }
+  } else if (type === 'central') {
+    // Central inverter — look in the verified catalog first, then the
+    // session upload bucket. Central ratedAC is in kW at the MV
+    // secondary (after the integrated step-up transformer), so the
+    // math is the same as string inverters.
+    const modelName = DS_STATE.inverterSelection?.central;
+    const inv = INVERTER_DB.central.find(i => i.model === modelName)
+             || INVERTER_DB.custom.central.find(i => i.model === modelName);
+    if (inv) inverterAcW = inv.ratedAC * 1000;
   }
 
   // Fallback: no inverter resolved yet (page just loaded, nothing clicked).
@@ -11810,6 +11859,18 @@ async function processInverterDatasheetFile(file) {
       populateCustomInverterDropdown();
       const sel = document.getElementById('ds-inv-custom-model');
       if (sel) { sel.value = spec.entry.model; onInverterModelChange(); }
+    } else if (spec.type === 'central') {
+      // Central uploads require commercial class. If the user is on
+      // residential, auto-flip to commercial so the central UI is visible.
+      if (DS_STATE.customerClass !== 'commercial') {
+        if (typeof setCustomerClass === 'function') setCustomerClass('commercial');
+      }
+      INVERTER_DB.custom.central.push(spec.entry);
+      if (DS_STATE.inverterType !== 'central') setInverterType('central');
+      setInverterBrand('custom');
+      populateCentralInverterDropdown();
+      const sel = document.getElementById('ds-inv-central-model');
+      if (sel) { sel.value = `custom|${spec.entry.model}`; onInverterModelChange(); }
     } else {
       INVERTER_DB.custom.stringInverter.push(spec.entry);
       if (DS_STATE.inverterType !== 'string') setInverterType('string');
@@ -11822,9 +11883,13 @@ async function processInverterDatasheetFile(file) {
     renderInverterBrandButtons();
     setInverterBrand('custom');
 
-    const typeLabel = spec.type === 'micro' ? 'Microinverter' : 'String Inverter';
+    const typeLabel = spec.type === 'micro' ? 'Microinverter'
+                    : spec.type === 'central' ? 'Central Inverter'
+                    : 'String Inverter';
     const ratingLabel = spec.type === 'micro'
       ? `${spec.entry.peakAC}VA peak AC`
+      : spec.type === 'central'
+      ? `${spec.entry.ratedAC}kW AC · ${spec.entry.maxDCkW}kW max DC · ${spec.entry.transformerKva}kVA xfmr · ${spec.entry.dcInputs} DC inputs · ${spec.entry.mountType} mount`
       : `${spec.entry.ratedAC}kW AC · ${spec.entry.maxDCkW}kW max DC`;
     show(`✓ <strong>${spec.entry.model}</strong> loaded as ${typeLabel} (${ratingLabel}). Session only — email engineering@solarmason.com to add permanently.`, '#059669');
     if (typeof recalcMpu === 'function') recalcMpu();
@@ -11870,12 +11935,23 @@ function extractInverterSpecsFromText(rawText, filename) {
   const voltage = voltageMatch ? voltageMatch[0].replace(/\s+/g, ' ').trim() : '240V 1Φ';
 
   // Determine type: microinverter (≤1500W / ≤1.5kW) vs string inverter
+  // vs central inverter (≥250 kW or filename says so). Central inverters
+  // are utility-scale equipment typically ≥ 250 kW with integrated MV
+  // transformer, often skid or pad mounted.
   let isMicro = false;
+  let isCentral = false;
   if (acW && acW <= 1500) isMicro = true;
   if (acKw && acKw <= 1.5) isMicro = true;
+  // Central detection: ratedAC ≥ 250 kW
+  if (acKw && acKw >= 250) isCentral = true;
   // Filename hints
-  if (/iq\s*8|enphase|micro/i.test(filename)) isMicro = true;
+  if (/iq\s*8|enphase|micro/i.test(filename)) { isMicro = true; isCentral = false; }
   if (/string|solaredge|fronius|sma|growatt|hoymiles-ms/i.test(filename)) isMicro = false;
+  // Central filename hints — target OEMs and common model patterns
+  if (/central|sunny\s*central|sc\d{3,4}|sg\s?\d{3,4}(?:hv|mv|hx)|sch\d{3,4}|tmeic|solar\s*ware|pvs[- ]?\d{3}/i.test(filename)) {
+    isCentral = true;
+    isMicro = false;
+  }
 
   const modelName = filename.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ').trim() || 'Custom Inverter';
 
@@ -11893,6 +11969,57 @@ function extractInverterSpecsFromText(rawText, filename) {
         maxPerBranch: 13,
         voltage: /3[ΦP]|208/.test(voltage) ? '208V 3-phase' : '240V split-phase',
         warranty: '25 years',
+        notes: 'Custom upload (session only)',
+        datasheet: null
+      }
+    };
+  } else if (isCentral) {
+    // Central inverter — utility-scale. Extract the central-specific
+    // fields with regex patterns targeted at SMA Sunny Central, Sungrow
+    // SG, Huawei, CPS, Fimer, TMEIC datasheet layouts.
+    const ratedAC = acKw || (acW ? acW / 1000 : 0);
+    if (!ratedAC) return null;
+
+    // DC inputs (combiner connections into the inverter)
+    const dcInputs = grab([
+      /(?:DC\s*Inputs?|Number\s*of\s*DC\s*Inputs?|Combiner\s*(?:Box\s*)?Inputs?)[^0-9]{0,20}(\d{1,3})/i,
+      /(\d{1,3})\s*(?:DC\s*inputs?|combiner)/i
+    ]) || 24;  // sensible default for ~2.5 MW class
+
+    // DC system voltage (1000 V or 1500 V)
+    const dcVoltage = grab([
+      /(?:Max(?:imum)?\s*DC\s*Voltage|DC\s*(?:System\s*)?Voltage)[^0-9]{0,20}(1000|1100|1500)/i
+    ]) || 1500;
+
+    // Integrated transformer kVA rating
+    const transformerKva = grab([
+      /(?:Transformer|MV\s*Transformer|Step[- ]?up\s*Transformer)[^0-9]{0,25}(\d{3,5})\s*kVA/i,
+      /(\d{3,5})\s*kVA\s*(?:MV|transformer|step[- ]?up)/i
+    ]) || Math.round(ratedAC * 1.10);
+
+    // Peak CEC / EU efficiency
+    const efficiency = grab([
+      /(?:Peak\s*Efficiency|Max(?:imum)?\s*Efficiency|CEC\s*Efficiency)[^0-9]{0,15}(\d{2}(?:\.\d{1,2})?)\s*%/i
+    ]) || 98.5;
+
+    // Mount type detection
+    let mountType = 'skid';
+    if (/pad[- ]?mount/i.test(t)) mountType = 'pad';
+    else if (/station|turnkey/i.test(t)) mountType = 'station';
+
+    return {
+      type: 'central',
+      entry: {
+        model: modelName,
+        ratedAC: Math.round(ratedAC),
+        maxDCkW: maxDCkW || Math.round(ratedAC * 1.20),
+        dcInputs: Math.round(dcInputs),
+        dcVoltage: Math.round(dcVoltage),
+        acVoltage: 'MV (configurable, typically 13.8–34.5 kV 3Φ)',
+        transformerKva: Math.round(transformerKva),
+        mountType,
+        efficiency: Math.round(efficiency * 10) / 10,
+        warranty: 'Per manufacturer datasheet (typically 5 yr standard, extendable to 20)',
         notes: 'Custom upload (session only)',
         datasheet: null
       }
@@ -12289,15 +12416,45 @@ const INVERTER_DB = {
   // inverters are NOT shoved into Enphase or SolarEdge — they stand alone
   // as session-only entries under the "Custom" brand.
   custom: {
-    micro: [],        // populated by processInverterDatasheetFile (type=micro)
-    stringInverter: [] // populated by processInverterDatasheetFile (type=string)
-  }
+    micro: [],          // populated by processInverterDatasheetFile (type=micro)
+    stringInverter: [], // populated by processInverterDatasheetFile (type=string)
+    central: []         // populated by processInverterDatasheetFile (type=central)
+  },
+  // Central inverter catalog — utility-scale equipment (250 kW – 5 MW)
+  // with MV transformer integration. Populated EXCLUSIVELY from verified
+  // manufacturer datasheets. No placeholder/training-data entries — every
+  // entry here must be cross-checked against a real datasheet before use
+  // in a customer proposal. Upload a PDF via the datasheet upload flow
+  // (type=central) to add session-only entries, or email datasheets to
+  // engineering@solarmason.com for permanent catalog inclusion.
+  //
+  // Target OEMs for permanent catalog: SMA Sunny Central UP series,
+  // Sungrow SG2500-MV / SG3125-MV, Huawei SUN2000 central, CPS America
+  // SCH2750-S-MV, Fimer PVS-175, TMEIC Solar Ware.
+  //
+  // Entry schema (must match what BOM + computeInverterAcAmps expect):
+  //   {
+  //     model: 'SMA Sunny Central 2750-EV',
+  //     ratedAC: 2750,       // kW AC at the MV transformer secondary
+  //     maxDCkW: 3300,       // max DC array size
+  //     dcInputs: 24,        // DC combiner connections
+  //     dcVoltage: 1500,     // 1000 / 1500 Vdc system
+  //     acVoltage: 'MV 34.5kV 3Φ',  // MV secondary after transformer
+  //     transformerKva: 3000, // integrated step-up transformer rating
+  //     mountType: 'skid',    // 'skid' | 'pad' | 'station'
+  //     footprint: '30 × 8 ft',
+  //     efficiency: 98.9,
+  //     warranty: '5 years standard, extendable to 20',
+  //     notes: 'Description from datasheet',
+  //     datasheet: '/datasheets/inverters/sma-sunny-central-2750ev.pdf'
+  //   }
+  central: []
 };
 
 // DS state for inverter selection — mirrors the UI controls
-DS_STATE.inverterType = 'micro';        // 'micro' | 'string' — primary decision
+DS_STATE.inverterType = 'micro';        // 'micro' | 'string' | 'central' — primary decision
 DS_STATE.inverterBrand = 'enphase';     // brand within the selected type
-DS_STATE.inverterSelection = { micro: null, optimizer: null, stringInverter: null, custom: null };
+DS_STATE.inverterSelection = { micro: null, optimizer: null, stringInverter: null, central: null, custom: null };
 
 // Return the smallest Enphase micro that can handle a given panel wattage
 function recommendEnphaseMicro(panelW) {
@@ -12636,15 +12793,21 @@ function populateSolarEdgeDropdowns(panelW, totalDCkW) {
 // bucket — they are NOT shoved into Enphase or SolarEdge like the old flow.
 
 function setInverterType(type) {
-  if (type !== 'micro' && type !== 'string') return;
+  if (type !== 'micro' && type !== 'string' && type !== 'central') return;
+  // Central inverters are commercial-only. If the user somehow triggers
+  // this path while on residential, refuse and stay put.
+  if (type === 'central' && DS_STATE.customerClass !== 'commercial') return;
   DS_STATE.inverterType = type;
   // Update type button visual state
   document.querySelectorAll('[data-inv-type]').forEach(b => {
     b.classList.toggle('active', b.dataset.invType === type);
   });
-  // Default brand for the newly-selected type: OEM first, custom only if
-  // OEM has been deselected previously or has no entries in this type.
-  const defaultBrand = (type === 'micro') ? 'enphase' : 'solaredge';
+  // Default brand for the newly-selected type. Central has no OEM catalog
+  // yet — all central entries come from uploads, so it defaults to custom.
+  let defaultBrand;
+  if (type === 'micro') defaultBrand = 'enphase';
+  else if (type === 'string') defaultBrand = 'solaredge';
+  else defaultBrand = 'custom';  // central
   renderInverterBrandButtons();
   setInverterBrand(defaultBrand);
 }
@@ -12652,13 +12815,18 @@ function setInverterType(type) {
 // Build the brand button row dynamically based on selected type. Each type
 // has its OEM plus "Custom" (always visible) so uploaded inverters are a
 // first-class sibling of the OEM brand rather than hidden inside it.
+// Central type is a special case — no verified OEM catalog exists yet, so
+// only the Custom Upload button is shown until datasheets are committed
+// to the permanent catalog.
 function renderInverterBrandButtons() {
   const row = document.getElementById('ds-inv-brand-row');
   if (!row) return;
   const type = DS_STATE.inverterType;
-  const customCount = type === 'micro'
-    ? INVERTER_DB.custom.micro.length
-    : INVERTER_DB.custom.stringInverter.length;
+  let customList;
+  if (type === 'micro') customList = INVERTER_DB.custom.micro;
+  else if (type === 'string') customList = INVERTER_DB.custom.stringInverter;
+  else customList = INVERTER_DB.custom.central;
+  const customCount = customList.length;
   const customSub = customCount === 0
     ? 'Upload a datasheet below'
     : `${customCount} uploaded this session`;
@@ -12674,11 +12842,27 @@ function renderInverterBrandButtons() {
         <span class="ds-inv-brand-sub">${customSub}</span>
       </button>
     `;
-  } else {
+  } else if (type === 'string') {
     row.innerHTML = `
       <button type="button" class="ds-inv-brand-btn" data-brand="solaredge" onclick="setInverterBrand('solaredge')">
         <span class="ds-inv-brand-name">SolarEdge</span>
         <span class="ds-inv-brand-sub">HD-Wave + Synergy · OEM catalog</span>
+      </button>
+      <button type="button" class="ds-inv-brand-btn" data-brand="custom" onclick="setInverterBrand('custom')">
+        <span class="ds-inv-brand-name">Custom Upload</span>
+        <span class="ds-inv-brand-sub">${customSub}</span>
+      </button>
+    `;
+  } else {
+    // Central: only Custom Upload until verified OEM catalog exists
+    const oemCount = INVERTER_DB.central.length;
+    const oemSub = oemCount === 0
+      ? 'No catalog entries yet · verified datasheets pending'
+      : `${oemCount} verified models`;
+    row.innerHTML = `
+      <button type="button" class="ds-inv-brand-btn" data-brand="solarmason" ${oemCount === 0 ? 'disabled style="opacity:.45;cursor:not-allowed"' : ''} onclick="${oemCount === 0 ? 'return false' : "setInverterBrand('solarmason')"}">
+        <span class="ds-inv-brand-name">Solar Mason Catalog</span>
+        <span class="ds-inv-brand-sub">${oemSub}</span>
       </button>
       <button type="button" class="ds-inv-brand-btn" data-brand="custom" onclick="setInverterBrand('custom')">
         <span class="ds-inv-brand-name">Custom Upload</span>
@@ -12703,24 +12887,38 @@ function setInverterBrand(brand) {
   const ep = document.getElementById('ds-inv-enphase');
   const se = document.getElementById('ds-inv-solaredge');
   const cu = document.getElementById('ds-inv-custom');
+  const ce = document.getElementById('ds-inv-central');
   if (ep) ep.style.display = (brand === 'enphase' && type === 'micro') ? 'block' : 'none';
   if (se) se.style.display = (brand === 'solaredge' && type === 'string') ? 'block' : 'none';
-  if (cu) cu.style.display = (brand === 'custom') ? 'block' : 'none';
+  // Central block shows for type=central regardless of brand (both the OEM
+  // 'solarmason' path and the 'custom' upload path use the same picker).
+  if (ce) ce.style.display = (type === 'central') ? 'block' : 'none';
+  // Custom block is hidden when type=central because the central block
+  // already handles custom uploads for that type via the same dropdown.
+  if (cu) cu.style.display = (brand === 'custom' && type !== 'central') ? 'block' : 'none';
   refreshInverterRecommendations();
   // If a battery is selected and it's from the OPPOSITE family, swap it to
   // the matching brand (Enphase ↔ SolarEdge). Third-party batteries (Tesla,
-  // FranklinWH, Generac) and custom inverter brands stay put.
-  if (typeof autoSelectBatteryForInverter === 'function' && brand !== 'custom') {
+  // FranklinWH, Generac) and custom/central inverter brands stay put.
+  if (typeof autoSelectBatteryForInverter === 'function' && brand !== 'custom' && brand !== 'solarmason') {
     autoSelectBatteryForInverter();
   }
 }
 
 // Build the Custom Uploads dropdown, filtered by the current inverter type.
-// Shows either uploaded micros or uploaded string inverters, not both.
+// Shows uploaded micros, string inverters, or central inverters — the
+// central dropdown is a separate element (ds-inv-central-model) because
+// central + custom share the same tier-3 block.
 function populateCustomInverterDropdown() {
+  const type = DS_STATE.inverterType;
+  if (type === 'central') {
+    // Central inverters use their own dedicated dropdown which is populated
+    // by populateCentralInverterDropdown()
+    populateCentralInverterDropdown();
+    return;
+  }
   const sel = document.getElementById('ds-inv-custom-model');
   if (!sel) return;
-  const type = DS_STATE.inverterType;
   const list = type === 'micro'
     ? INVERTER_DB.custom.micro
     : INVERTER_DB.custom.stringInverter;
@@ -12734,6 +12932,37 @@ function populateCustomInverterDropdown() {
       ? `${inv.peakAC} VA`
       : `${inv.ratedAC} kW AC`;
     html += `<option value="${inv.model}">${inv.model} — ${rating}</option>`;
+  }
+  sel.innerHTML = html;
+}
+
+// Populate the central inverter dropdown. Shows BOTH verified catalog
+// entries (INVERTER_DB.central) AND uploaded entries
+// (INVERTER_DB.custom.central), grouped with optgroups so the user can
+// tell them apart. Rating is shown in kW AC at the MV secondary.
+function populateCentralInverterDropdown() {
+  const sel = document.getElementById('ds-inv-central-model');
+  if (!sel) return;
+  const catalog = INVERTER_DB.central || [];
+  const uploads = INVERTER_DB.custom.central || [];
+  if (catalog.length === 0 && uploads.length === 0) {
+    sel.innerHTML = '<option value="">— No central inverters in catalog yet — upload a datasheet below —</option>';
+    return;
+  }
+  let html = '';
+  if (catalog.length > 0) {
+    html += '<optgroup label="Solar Mason Verified Catalog">';
+    for (const inv of catalog) {
+      html += `<option value="catalog|${inv.model}">${inv.model} — ${inv.ratedAC} kW AC</option>`;
+    }
+    html += '</optgroup>';
+  }
+  if (uploads.length > 0) {
+    html += '<optgroup label="Custom Uploads (session only)">';
+    for (const inv of uploads) {
+      html += `<option value="custom|${inv.model}">${inv.model} — ${inv.ratedAC} kW AC</option>`;
+    }
+    html += '</optgroup>';
   }
   sel.innerHTML = html;
 }
@@ -12772,7 +13001,7 @@ function onInverterModelChange() {
       DS_STATE.inverterSelection.optimizer = optEl.value;
     }
     DS_STATE.inverterSelection.stringInverter = document.getElementById('ds-inv-se-inv').value;
-  } else if (DS_STATE.inverterBrand === 'custom') {
+  } else if (DS_STATE.inverterBrand === 'custom' && DS_STATE.inverterType !== 'central') {
     DS_STATE.inverterSelection.custom = document.getElementById('ds-inv-custom-model').value;
     // Mirror the custom selection into the type-appropriate slot so all
     // downstream code (computeInverterAcAmps, BOM emission, MPU check)
@@ -12781,6 +13010,17 @@ function onInverterModelChange() {
       DS_STATE.inverterSelection.micro = DS_STATE.inverterSelection.custom;
     } else {
       DS_STATE.inverterSelection.stringInverter = DS_STATE.inverterSelection.custom;
+    }
+  } else if (DS_STATE.inverterType === 'central') {
+    // Central dropdown values are "catalog|Model" or "custom|Model" so we
+    // can tell which bucket the selection came from. Store the raw model
+    // name in inverterSelection.central for BOM lookup.
+    const raw = document.getElementById('ds-inv-central-model').value;
+    if (raw) {
+      const [, modelName] = raw.split('|');
+      DS_STATE.inverterSelection.central = modelName;
+    } else {
+      DS_STATE.inverterSelection.central = null;
     }
   }
   updateInverterCompatDisplay();
@@ -12796,6 +13036,29 @@ function updateInverterCompatDisplay() {
   const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
   const activeCount = activeCountForMode();
   const totalDCkW = (activeCount * panelW) / 1000;
+
+  // Central inverters have their own dedicated compat display because the
+  // metrics are different (DC array size vs inverter capacity, not per-
+  // module compatibility like strings or micros).
+  if (DS_STATE.inverterType === 'central') {
+    const el = document.getElementById('ds-inv-central-compat');
+    if (!el) return;
+    const modelName = DS_STATE.inverterSelection.central;
+    const inv = INVERTER_DB.central.find(i => i.model === modelName)
+             || INVERTER_DB.custom.central.find(i => i.model === modelName);
+    if (!inv) { el.textContent = ''; return; }
+    el.className = 'ds-inv-compat';
+    const dcFillPct = inv.maxDCkW > 0 ? ((totalDCkW / inv.maxDCkW) * 100).toFixed(0) : 0;
+    const dcAcRatio = inv.ratedAC > 0 ? (totalDCkW / inv.ratedAC).toFixed(2) : 0;
+    const overloaded = totalDCkW > inv.maxDCkW;
+    if (overloaded) {
+      el.className = 'ds-inv-compat err';
+      el.innerHTML = `<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v4M10 14v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> <strong>Array exceeds ${inv.model} DC capacity.</strong> ${totalDCkW.toFixed(0)} kW DC > ${inv.maxDCkW} kW max. Use multiple inverters or pick a larger unit.`;
+    } else {
+      el.innerHTML = `✓ ${inv.model} · ${totalDCkW.toFixed(0)} / ${inv.maxDCkW} kW DC (${dcFillPct}%) · ${inv.ratedAC} kW AC · DC/AC ratio: <strong>${dcAcRatio}</strong>${inv.mountType ? ' · ' + inv.mountType + ' mount' : ''}`;
+    }
+    return;
+  }
 
   if (DS_STATE.inverterBrand === 'enphase') {
     const el = document.getElementById('ds-inv-ep-compat');
@@ -13047,7 +13310,7 @@ function computeBOM() {
       meta: 'Required per NEC 690.13 for string inverter systems · Warranty: passed through from disconnect manufacturer ' + WARRANTY_PARTS_ONLY,
       qty: invCount
     });
-  } else if (DS_STATE.inverterBrand === 'custom') {
+  } else if (DS_STATE.inverterBrand === 'custom' && DS_STATE.inverterType !== 'central') {
     // Custom uploaded inverter — emit a generic BOM line using the parsed
     // datasheet values. Quantity depends on type: micros scale with panel
     // count, string inverters are single units. Warranty is flagged as
@@ -13108,6 +13371,99 @@ function computeBOM() {
           qty: 1
         });
       }
+    }
+  } else if (DS_STATE.inverterType === 'central') {
+    // ───────────────────────────────────────────────────────────────
+    // CENTRAL INVERTER BOM
+    // ───────────────────────────────────────────────────────────────
+    // Utility-scale central inverter systems have a very different BOM
+    // from roof/residential projects. Typical line items:
+    //   - Central inverter unit itself (skid or pad mount)
+    //   - Integrated MV step-up transformer (usually bundled in the unit)
+    //   - DC combiner boxes — one per ~500 kW DC field
+    //   - SCADA + string monitoring system
+    //   - Grounding grid + lightning protection
+    //   - Concrete pad / skid foundation
+    //   - Access road / crane pad (noted separately as advisory)
+    //
+    // Quantities scale with the array DC size, not with module count
+    // directly — a 2.5 MW inverter with a 3 MW DC field needs ~6 combiner
+    // boxes regardless of whether the modules are 450W or 635W.
+    const modelName = DS_STATE.inverterSelection.central;
+    const inv = INVERTER_DB.central.find(i => i.model === modelName)
+             || INVERTER_DB.custom.central.find(i => i.model === modelName);
+    if (inv) {
+      const isCustomUpload = !INVERTER_DB.central.find(i => i.model === modelName);
+      // How many inverter units are needed to cover the actual array?
+      const panelWnum = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
+      const totalDCkW = (activeCount * panelWnum) / 1000;
+      const invCount = Math.max(1, Math.ceil(totalDCkW / inv.maxDCkW));
+      const uploadSuffix = isCustomUpload ? ' (custom upload)' : '';
+      const warrantySuffix = isCustomUpload
+        ? ' · custom upload — verify warranty terms directly with manufacturer ' + WARRANTY_PARTS_ONLY
+        : ' · Warranty: ' + (inv.warranty || '5 years standard, extendable to 20') + ' ' + WARRANTY_PARTS_ONLY;
+
+      items.push({
+        category: 'Central Inverter',
+        name: `${inv.model}${uploadSuffix}`,
+        meta: `${inv.ratedAC} kW AC · max ${inv.maxDCkW} kW DC · ${inv.dcVoltage || 1500} Vdc · ${inv.dcInputs} DC inputs · ${inv.mountType || 'skid'} mount · ${inv.efficiency || 98.5}% efficiency${warrantySuffix}`,
+        qty: invCount
+      });
+
+      // Integrated MV step-up transformer — usually bundled in the unit
+      // for skid-mount inverters, separately rated for pad-mount. We
+      // emit a BOM line for it either way so the customer can see the
+      // transformer rating that was sized into the system.
+      const totalXfmrKva = (inv.transformerKva || Math.round(inv.ratedAC * 1.10)) * invCount;
+      items.push({
+        category: 'MV Transformer',
+        name: `Integrated MV Step-Up Transformer (${inv.transformerKva || Math.round(inv.ratedAC * 1.10)} kVA)`,
+        meta: `${totalXfmrKva} kVA total across ${invCount} inverter unit${invCount > 1 ? 's' : ''} · MV secondary configurable (13.8 / 24.9 / 34.5 kV 3Φ typical) · utility-coordinated interconnection point · Warranty: passed through from transformer manufacturer ${WARRANTY_PARTS_ONLY}`,
+        qty: invCount
+      });
+
+      // DC combiner boxes — sized at ~500 kW per combiner, one combiner
+      // input per string. This is a conservative count; real projects may
+      // use different combiner topologies (re-combiners, smart combiners).
+      const combinerCount = Math.max(1, Math.ceil(totalDCkW / 500));
+      items.push({
+        category: 'DC Combiner',
+        name: 'DC Combiner Box (string combiner)',
+        meta: `~${(totalDCkW / combinerCount).toFixed(0)} kW DC per combiner · fused string inputs · integrated DC disconnect · NEMA 4X enclosure · ${inv.dcVoltage || 1500} Vdc rated · Warranty: passed through from combiner manufacturer ${WARRANTY_PARTS_ONLY}`,
+        qty: combinerCount
+      });
+
+      // SCADA / monitoring system — one per site regardless of inverter count
+      items.push({
+        category: 'Monitoring & SCADA',
+        name: 'SCADA + String Monitoring System',
+        meta: 'Real-time production, fault detection, string-level monitoring, remote curtailment capability, weather station integration · includes Modbus / DNP3 gateway to utility SCADA · Warranty: 5 years ' + WARRANTY_PARTS_ONLY,
+        qty: 1
+      });
+
+      // Concrete pad / skid foundation — sized per inverter
+      items.push({
+        category: 'Civil · Foundation',
+        name: `${inv.mountType === 'pad' ? 'Concrete Pad Foundation' : 'Skid Foundation'}`,
+        meta: `Reinforced ${inv.mountType === 'pad' ? 'concrete pad' : 'skid-mount steel frame'} sized for ${inv.model} unit · includes anchors, grounding lugs, cable trays · engineered per AHJ structural requirements`,
+        qty: invCount
+      });
+
+      // Grounding grid + lightning protection — one system per site
+      items.push({
+        category: 'Grounding & Lightning',
+        name: 'Grounding Grid + Lightning Protection',
+        meta: 'Site-wide grounding grid per NEC 250 + NEC 690 · copper or copper-clad-steel · lightning arrestors at inverter + combiner boxes · air terminals per NFPA 780 when required by AHJ',
+        qty: 1
+      });
+
+      // Access road / crane pad — advisory line, NOT a Solar Mason install item
+      items.push({
+        category: 'Civil · Advisory',
+        name: 'Access Road + Crane Pad (advisory)',
+        meta: 'Advisory line — typically sitework contractor scope · temporary crane pad required for inverter placement · permanent access road to inverter station for O&M · verify with sitework contractor before finalizing bid',
+        qty: 1
+      });
     }
   }
 
