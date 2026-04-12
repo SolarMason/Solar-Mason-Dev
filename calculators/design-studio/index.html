@@ -5011,22 +5011,33 @@ body.ds-mode-ground .ds-ground-only{display:block}
     <details class="ds-panel">
       <summary><h3><span class="step">8</span> Inverter Technology</h3></summary>
       <div class="ds-panel-body">
-      <!-- Inverter selection — brand switches the compatibility model below -->
+      <!-- Inverter selection — three-tier flow:
+             1. TYPE   (Microinverter vs String Inverter — fundamental architecture)
+             2. BRAND  (filtered by type — Enphase/Custom for micros, SolarEdge/Custom for string)
+             3. MODEL  (filtered by brand — the existing dropdowns)
+           Custom uploads are a first-class brand, not shoved into Enphase/SolarEdge. -->
       <div class="ds-inv-section">
-        <div class="ds-inv-label">Inverter Brand</div>
+        <!-- Tier 1: Type -->
+        <div class="ds-inv-label">Inverter Type</div>
         <div class="ds-inv-brand-row">
-          <button type="button" class="ds-inv-brand-btn active" data-brand="enphase" onclick="setInverterBrand('enphase')">
-            <span class="ds-inv-brand-name">Enphase</span>
-            <span class="ds-inv-brand-sub">Microinverter · 1 per panel</span>
+          <button type="button" class="ds-inv-brand-btn active" data-inv-type="micro" onclick="setInverterType('micro')">
+            <span class="ds-inv-brand-name">Microinverter</span>
+            <span class="ds-inv-brand-sub">1 per panel · module-level MPPT</span>
           </button>
-          <button type="button" class="ds-inv-brand-btn" data-brand="solaredge" onclick="setInverterBrand('solaredge')">
-            <span class="ds-inv-brand-name">SolarEdge</span>
-            <span class="ds-inv-brand-sub">String + Optimizers</span>
+          <button type="button" class="ds-inv-brand-btn" data-inv-type="string" onclick="setInverterType('string')">
+            <span class="ds-inv-brand-name">String Inverter</span>
+            <span class="ds-inv-brand-sub">Central inverter · with optimizers</span>
           </button>
         </div>
 
-        <!-- Enphase: microinverter picker -->
-        <div class="ds-inv-block" id="ds-inv-enphase">
+        <!-- Tier 2: Brand — dynamically populated based on selected type -->
+        <div class="ds-inv-label" style="margin-top:.8rem">Inverter Brand</div>
+        <div class="ds-inv-brand-row" id="ds-inv-brand-row">
+          <!-- Populated at runtime by renderInverterBrandButtons() -->
+        </div>
+
+        <!-- Tier 3: Enphase micros (shown when type=micro + brand=enphase) -->
+        <div class="ds-inv-block" id="ds-inv-enphase" style="display:none">
           <div class="ds-field">
             <label>Microinverter Model <span id="ds-inv-ep-rec" class="ds-inv-rec"></span></label>
             <select id="ds-inv-ep-model" onchange="onInverterModelChange()"></select>
@@ -5034,7 +5045,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
           <div class="ds-inv-compat" id="ds-inv-ep-compat"></div>
         </div>
 
-        <!-- SolarEdge: optimizer + string inverter picker -->
+        <!-- Tier 3: SolarEdge string + optimizer (shown when type=string + brand=solaredge) -->
         <div class="ds-inv-block" id="ds-inv-solaredge" style="display:none">
           <div class="ds-field">
             <label>Power Optimizer <span id="ds-inv-se-opt-rec" class="ds-inv-rec"></span></label>
@@ -5045,6 +5056,18 @@ body.ds-mode-ground .ds-ground-only{display:block}
             <select id="ds-inv-se-inv" onchange="onInverterModelChange()"></select>
           </div>
           <div class="ds-inv-compat" id="ds-inv-se-compat"></div>
+        </div>
+
+        <!-- Tier 3: Custom uploads (shown when brand=custom) — one dropdown that
+             lists all uploaded inverters matching the current type. -->
+        <div class="ds-inv-block" id="ds-inv-custom" style="display:none">
+          <div class="ds-field">
+            <label>Custom Model <span class="ds-inv-rec">uploaded this session</span></label>
+            <select id="ds-inv-custom-model" onchange="onInverterModelChange()">
+              <option value="">— No custom inverters uploaded yet —</option>
+            </select>
+          </div>
+          <div class="ds-inv-compat" id="ds-inv-custom-compat"></div>
         </div>
       </div>
 
@@ -7719,6 +7742,7 @@ async function runDesignStudio() {
       itcPct, itcAmount, macrsBenefit,
       losses,
       inverterBrand: DS_STATE.inverterBrand,
+      inverterType: DS_STATE.inverterType,
       inverterSelection: { ...DS_STATE.inverterSelection },
       incentiveUpfront, incentiveOngoingAnnual,
       incentive25yr: DS_STATE.incentive25yr || 0,
@@ -9278,9 +9302,20 @@ async function exportProposal() {
       <td class="num">$${Math.round(s.vsSolar).toLocaleString()}</td>
     </tr>`).join('');
 
-  const inverterDesc = r.inverterBrand === 'enphase'
-    ? `Enphase ${r.inverterSelection.micro || '—'} microinverter (1 per panel)`
-    : `SolarEdge ${r.inverterSelection.stringInverter || '—'} string inverter + ${r.inverterSelection.optimizer || '—'} optimizer per panel`;
+  // Inverter description for the PDF proposal. Handles all three brand
+  // paths: Enphase micros, SolarEdge string + optimizer, and custom uploads
+  // (which can be either type — check inverterType to know which).
+  let inverterDesc;
+  if (r.inverterBrand === 'enphase') {
+    inverterDesc = `Enphase ${r.inverterSelection.micro || '—'} microinverter (1 per panel)`;
+  } else if (r.inverterBrand === 'solaredge') {
+    inverterDesc = `SolarEdge ${r.inverterSelection.stringInverter || '—'} string inverter + ${r.inverterSelection.optimizer || '—'} optimizer per panel`;
+  } else {
+    // Custom uploaded inverter — show the model name with its type label
+    const customModel = r.inverterSelection.custom || '—';
+    const typeLabel = r.inverterType === 'micro' ? 'microinverter (1 per panel)' : 'string inverter';
+    inverterDesc = `${customModel} ${typeLabel} · custom upload`;
+  }
 
   // Replace the loading placeholder with the real proposal content
   w.document.open();
@@ -9715,7 +9750,7 @@ async function exportProposal() {
   <h2>Warranties &amp; Guarantees</h2>
   <div class="grid">
     <div class="box"><strong>Solar Modules</strong><span style="font-size:.85rem">25-Year Product + Performance</span><span class="sub">Manufacturer pass-through · ≥80% rated output at Year 25</span></div>
-    <div class="box"><strong>${r.inverterBrand === 'enphase' ? 'Enphase Microinverters' : 'SolarEdge Inverter'}</strong><span style="font-size:.85rem">${r.inverterBrand === 'enphase' ? '25-Year Limited' : '12-Year (extendable to 25)'}</span><span class="sub">Manufacturer pass-through · parts only</span></div>
+    <div class="box"><strong>${r.inverterBrand === 'enphase' ? 'Enphase Microinverters' : r.inverterBrand === 'solaredge' ? 'SolarEdge Inverter' : 'Inverter (Custom Upload)'}</strong><span style="font-size:.85rem">${r.inverterBrand === 'enphase' ? '25-Year Limited' : r.inverterBrand === 'solaredge' ? '12-Year (extendable to 25)' : 'Per manufacturer datasheet'}</span><span class="sub">Manufacturer pass-through · parts only</span></div>
     <div class="box"><strong>Solar Mason Workmanship</strong><span style="font-size:.85rem">10-Year Labor Warranty</span><span class="sub">Installation defects · repair-only coverage</span></div>
     <div class="box"><strong>Racking</strong><span style="font-size:.85rem">${DS_STATE.mountMode === 'ground' ? '25-Year AVANS' : '20-Year IronRidge'}</span><span class="sub">Structural components · pass-through</span></div>
   </div>
@@ -10572,7 +10607,11 @@ function populateBatteryDropdown() {
 
 // Auto-pick a battery to match the current inverter brand. Called from
 // setInverterBrand() and from initBatterySection() on page load.
+// Custom (uploaded) inverters are brand-agnostic — they don't trigger any
+// battery swap since the user may have a third-party battery already selected
+// that is perfectly compatible with the custom inverter.
 function autoSelectBatteryForInverter() {
+  if (DS_STATE.inverterBrand === 'custom') return;
   const want = DS_STATE.inverterBrand === 'enphase' ? 'enphase-iq5p' : 'se-energybank';
   // Don't override an existing user selection
   if (DS_STATE.batterySelection && DS_STATE.batterySelection.key !== want) {
@@ -11226,20 +11265,22 @@ function computeInverterAcAmps() {
   const activeCount = (typeof activeCountForMode === 'function') ? activeCountForMode() : 0;
   if (activeCount === 0) return 0;
 
-  // Resolve the selected inverter's continuous AC output in watts.
+  // Resolve the selected inverter's continuous AC output in watts. We
+  // look in the bucket that matches the user's Type+Brand selection,
+  // then fall back to the legacy panel-wattage heuristic if nothing is
+  // selected yet (the studio just loaded).
   let inverterAcW = 0;
+  const brand = DS_STATE.inverterBrand;
+  const type = DS_STATE.inverterType;
 
-  if (DS_STATE.inverterBrand === 'enphase') {
-    // Enphase: each panel has one micro. peakAC in the DB is the
-    // manufacturer's rated AC output per micro in watts.
+  if (brand === 'enphase') {
+    // Enphase micros: each panel gets one. peakAC is VA per micro.
     const modelName = DS_STATE.inverterSelection?.micro;
     const micro = INVERTER_DB.enphase.micro.find(m => m.model === modelName);
-    if (micro) {
-      inverterAcW = micro.peakAC * activeCount;
-    }
-  } else {
-    // SolarEdge: use the multi-inverter sizing result if the Calculate
-    // engine has run, otherwise look up the currently-selected model.
+    if (micro) inverterAcW = micro.peakAC * activeCount;
+  } else if (brand === 'solaredge') {
+    // SolarEdge string: use the multi-inverter sizing result if the
+    // Calculate engine has run, otherwise look up the selected model.
     const sized = DS_STATE.sizedSE;
     if (sized && sized.inverter && sized.count) {
       inverterAcW = sized.inverter.ratedAC * 1000 * sized.count;
@@ -11247,6 +11288,18 @@ function computeInverterAcAmps() {
       const modelName = DS_STATE.inverterSelection?.stringInverter;
       const inv = INVERTER_DB.solaredge.stringInverter.find(i => i.model === modelName);
       if (inv) inverterAcW = inv.ratedAC * 1000;
+    }
+  } else if (brand === 'custom') {
+    // Custom uploaded inverter — look it up in the type-appropriate
+    // bucket. Micros multiply by active panel count (one per panel);
+    // string inverters are a single unit.
+    const modelName = DS_STATE.inverterSelection?.custom;
+    if (type === 'micro') {
+      const m = INVERTER_DB.custom.micro.find(i => i.model === modelName);
+      if (m) inverterAcW = m.peakAC * activeCount;
+    } else {
+      const s = INVERTER_DB.custom.stringInverter.find(i => i.model === modelName);
+      if (s) inverterAcW = s.ratedAC * 1000;
     }
   }
 
@@ -11731,24 +11784,27 @@ async function processInverterDatasheetFile(file) {
       return;
     }
 
-    // Route to the correct inverter family based on type + active brand
+    // Route the uploaded inverter into the CUSTOM bucket (not into Enphase
+    // or SolarEdge). Custom is a first-class brand within each type.
     if (spec.type === 'micro') {
-      INVERTER_DB.enphase.micro.push(spec.entry);
-      if (DS_STATE.inverterBrand !== 'enphase') setInverterBrand('enphase');
-      const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
-      populateEnphaseMicroDropdown(panelW);
-      const sel = document.getElementById('ds-inv-ep-model');
+      INVERTER_DB.custom.micro.push(spec.entry);
+      // Flip UI to micro + custom and select the new entry
+      if (DS_STATE.inverterType !== 'micro') setInverterType('micro');
+      setInverterBrand('custom');
+      populateCustomInverterDropdown();
+      const sel = document.getElementById('ds-inv-custom-model');
       if (sel) { sel.value = spec.entry.model; onInverterModelChange(); }
     } else {
-      INVERTER_DB.solaredge.stringInverter.push(spec.entry);
-      if (DS_STATE.inverterBrand !== 'solaredge') setInverterBrand('solaredge');
-      const panelW = parseFloat(document.getElementById('ds-panel-w')?.value) || 450;
-      const activeCount = (typeof activeCountForMode === 'function') ? activeCountForMode() : 0;
-      const totalDCkW = (activeCount * panelW) / 1000;
-      populateSolarEdgeDropdowns(panelW, totalDCkW);
-      const sel = document.getElementById('ds-inv-se-inv');
+      INVERTER_DB.custom.stringInverter.push(spec.entry);
+      if (DS_STATE.inverterType !== 'string') setInverterType('string');
+      setInverterBrand('custom');
+      populateCustomInverterDropdown();
+      const sel = document.getElementById('ds-inv-custom-model');
       if (sel) { sel.value = spec.entry.model; onInverterModelChange(); }
     }
+    // Re-render brand buttons so the custom-count sub-label updates
+    renderInverterBrandButtons();
+    setInverterBrand('custom');
 
     const typeLabel = spec.type === 'micro' ? 'Microinverter' : 'String Inverter';
     const ratingLabel = spec.type === 'micro'
@@ -12200,12 +12256,20 @@ const INVERTER_DB = {
       { model: 'SE100K',   ratedAC: 100.0, maxDCkW: 150.0, dcInputs: 6, maxPerString: 50, maxStringKw: 13.5, voltage: '380/400V 3Φ', notes: 'Commercial · 3 Synergy Units, 145 Aac continuous', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
       { model: 'SE120K',   ratedAC: 120.0, maxDCkW: 180.0, dcInputs: 6, maxPerString: 50, maxStringKw: 13.5, voltage: '480V 3Φ',     notes: 'Commercial · 3 Synergy Units, 480V grid', application: 'commercial', datasheet: '/datasheets/inverters/solaredge-three-phase-synergy-commercial-inverter.pdf' },
     ]
+  },
+  // Custom uploads live in their own bucket, separated by type. Uploaded
+  // inverters are NOT shoved into Enphase or SolarEdge — they stand alone
+  // as session-only entries under the "Custom" brand.
+  custom: {
+    micro: [],        // populated by processInverterDatasheetFile (type=micro)
+    stringInverter: [] // populated by processInverterDatasheetFile (type=string)
   }
 };
 
 // DS state for inverter selection — mirrors the UI controls
-DS_STATE.inverterBrand = 'enphase';
-DS_STATE.inverterSelection = { micro: null, optimizer: null, stringInverter: null };
+DS_STATE.inverterType = 'micro';        // 'micro' | 'string' — primary decision
+DS_STATE.inverterBrand = 'enphase';     // brand within the selected type
+DS_STATE.inverterSelection = { micro: null, optimizer: null, stringInverter: null, custom: null };
 
 // Return the smallest Enphase micro that can handle a given panel wattage
 function recommendEnphaseMicro(panelW) {
@@ -12451,18 +12515,116 @@ function populateSolarEdgeDropdowns(panelW, totalDCkW) {
   updateInverterCompatDisplay();
 }
 
+// Three-tier inverter selection — Type → Brand → Model.
+//
+// TYPE is the fundamental architecture decision (microinverter vs string),
+// BRAND filters to OEM families within that type (Enphase or Custom for
+// micros; SolarEdge or Custom for strings), MODEL is the specific unit.
+//
+// Custom uploads are a first-class brand that lives in its own INVERTER_DB
+// bucket — they are NOT shoved into Enphase or SolarEdge like the old flow.
+
+function setInverterType(type) {
+  if (type !== 'micro' && type !== 'string') return;
+  DS_STATE.inverterType = type;
+  // Update type button visual state
+  document.querySelectorAll('[data-inv-type]').forEach(b => {
+    b.classList.toggle('active', b.dataset.invType === type);
+  });
+  // Default brand for the newly-selected type: OEM first, custom only if
+  // OEM has been deselected previously or has no entries in this type.
+  const defaultBrand = (type === 'micro') ? 'enphase' : 'solaredge';
+  renderInverterBrandButtons();
+  setInverterBrand(defaultBrand);
+}
+
+// Build the brand button row dynamically based on selected type. Each type
+// has its OEM plus "Custom" (always visible) so uploaded inverters are a
+// first-class sibling of the OEM brand rather than hidden inside it.
+function renderInverterBrandButtons() {
+  const row = document.getElementById('ds-inv-brand-row');
+  if (!row) return;
+  const type = DS_STATE.inverterType;
+  const customCount = type === 'micro'
+    ? INVERTER_DB.custom.micro.length
+    : INVERTER_DB.custom.stringInverter.length;
+  const customSub = customCount === 0
+    ? 'Upload a datasheet below'
+    : `${customCount} uploaded this session`;
+
+  if (type === 'micro') {
+    row.innerHTML = `
+      <button type="button" class="ds-inv-brand-btn" data-brand="enphase" onclick="setInverterBrand('enphase')">
+        <span class="ds-inv-brand-name">Enphase</span>
+        <span class="ds-inv-brand-sub">IQ8 series · OEM catalog</span>
+      </button>
+      <button type="button" class="ds-inv-brand-btn" data-brand="custom" onclick="setInverterBrand('custom')">
+        <span class="ds-inv-brand-name">Custom Upload</span>
+        <span class="ds-inv-brand-sub">${customSub}</span>
+      </button>
+    `;
+  } else {
+    row.innerHTML = `
+      <button type="button" class="ds-inv-brand-btn" data-brand="solaredge" onclick="setInverterBrand('solaredge')">
+        <span class="ds-inv-brand-name">SolarEdge</span>
+        <span class="ds-inv-brand-sub">HD-Wave + Synergy · OEM catalog</span>
+      </button>
+      <button type="button" class="ds-inv-brand-btn" data-brand="custom" onclick="setInverterBrand('custom')">
+        <span class="ds-inv-brand-name">Custom Upload</span>
+        <span class="ds-inv-brand-sub">${customSub}</span>
+      </button>
+    `;
+  }
+  // Reflect the currently-active brand visually
+  row.querySelectorAll('[data-brand]').forEach(b => {
+    b.classList.toggle('active', b.dataset.brand === DS_STATE.inverterBrand);
+  });
+}
+
 function setInverterBrand(brand) {
   DS_STATE.inverterBrand = brand;
-  document.querySelectorAll('.ds-inv-brand-btn').forEach(b => {
+  // Update brand button visual state
+  document.querySelectorAll('#ds-inv-brand-row [data-brand]').forEach(b => {
     b.classList.toggle('active', b.dataset.brand === brand);
   });
-  document.getElementById('ds-inv-enphase').style.display = (brand === 'enphase') ? 'block' : 'none';
-  document.getElementById('ds-inv-solaredge').style.display = (brand === 'solaredge') ? 'block' : 'none';
+  // Show the right model picker block. Only one is ever visible at a time.
+  const type = DS_STATE.inverterType;
+  const ep = document.getElementById('ds-inv-enphase');
+  const se = document.getElementById('ds-inv-solaredge');
+  const cu = document.getElementById('ds-inv-custom');
+  if (ep) ep.style.display = (brand === 'enphase' && type === 'micro') ? 'block' : 'none';
+  if (se) se.style.display = (brand === 'solaredge' && type === 'string') ? 'block' : 'none';
+  if (cu) cu.style.display = (brand === 'custom') ? 'block' : 'none';
   refreshInverterRecommendations();
   // If a battery is selected and it's from the OPPOSITE family, swap it to
   // the matching brand (Enphase ↔ SolarEdge). Third-party batteries (Tesla,
-  // FranklinWH, Generac) are inverter-agnostic and stay put.
-  if (typeof autoSelectBatteryForInverter === 'function') autoSelectBatteryForInverter();
+  // FranklinWH, Generac) and custom inverter brands stay put.
+  if (typeof autoSelectBatteryForInverter === 'function' && brand !== 'custom') {
+    autoSelectBatteryForInverter();
+  }
+}
+
+// Build the Custom Uploads dropdown, filtered by the current inverter type.
+// Shows either uploaded micros or uploaded string inverters, not both.
+function populateCustomInverterDropdown() {
+  const sel = document.getElementById('ds-inv-custom-model');
+  if (!sel) return;
+  const type = DS_STATE.inverterType;
+  const list = type === 'micro'
+    ? INVERTER_DB.custom.micro
+    : INVERTER_DB.custom.stringInverter;
+  if (list.length === 0) {
+    sel.innerHTML = `<option value="">— No custom ${type === 'micro' ? 'microinverters' : 'string inverters'} uploaded yet —</option>`;
+    return;
+  }
+  let html = '';
+  for (const inv of list) {
+    const rating = type === 'micro'
+      ? `${inv.peakAC} VA`
+      : `${inv.ratedAC} kW AC`;
+    html += `<option value="${inv.model}">${inv.model} — ${rating}</option>`;
+  }
+  sel.innerHTML = html;
 }
 
 function refreshInverterRecommendations() {
@@ -12471,8 +12633,10 @@ function refreshInverterRecommendations() {
   const totalDCkW = (activeCount * panelW) / 1000;
   if (DS_STATE.inverterBrand === 'enphase') {
     populateEnphaseMicroDropdown(panelW);
-  } else {
+  } else if (DS_STATE.inverterBrand === 'solaredge') {
     populateSolarEdgeDropdowns(panelW, totalDCkW);
+  } else if (DS_STATE.inverterBrand === 'custom') {
+    populateCustomInverterDropdown();
   }
 }
 
@@ -12484,11 +12648,22 @@ function onPanelWattageChange() {
 function onInverterModelChange() {
   if (DS_STATE.inverterBrand === 'enphase') {
     DS_STATE.inverterSelection.micro = document.getElementById('ds-inv-ep-model').value;
-  } else {
+  } else if (DS_STATE.inverterBrand === 'solaredge') {
     DS_STATE.inverterSelection.optimizer = document.getElementById('ds-inv-se-opt').value;
     DS_STATE.inverterSelection.stringInverter = document.getElementById('ds-inv-se-inv').value;
+  } else if (DS_STATE.inverterBrand === 'custom') {
+    DS_STATE.inverterSelection.custom = document.getElementById('ds-inv-custom-model').value;
+    // Mirror the custom selection into the type-appropriate slot so all
+    // downstream code (computeInverterAcAmps, BOM emission, MPU check)
+    // that reads inverterSelection.micro / stringInverter still works.
+    if (DS_STATE.inverterType === 'micro') {
+      DS_STATE.inverterSelection.micro = DS_STATE.inverterSelection.custom;
+    } else {
+      DS_STATE.inverterSelection.stringInverter = DS_STATE.inverterSelection.custom;
+    }
   }
   updateInverterCompatDisplay();
+  if (typeof recalcMpu === 'function') recalcMpu();
 }
 
 function updateInverterCompatDisplay() {
@@ -12511,7 +12686,28 @@ function updateInverterCompatDisplay() {
       el.className = 'ds-inv-compat';
       el.innerHTML = `✓ <strong>${activeCount}</strong> × ${micro.model} · total AC: <strong>${totalACkW.toFixed(2)} kW</strong> · DC/AC ratio: <strong>${dcAcRatio.toFixed(2)}</strong> · ${micro.notes}`;
     }
-  } else {
+  } else if (DS_STATE.inverterBrand === 'custom') {
+    // Custom uploaded inverter — do a lightweight compatibility display
+    // without the aggressive range/surge checks we apply to OEM units
+    // (those checks depend on OEM-specific spec fields we don't have
+    // from regex-extracted datasheets).
+    const el = document.getElementById('ds-inv-custom-compat');
+    if (!el) return;
+    const type = DS_STATE.inverterType;
+    const modelName = DS_STATE.inverterSelection.custom;
+    const list = type === 'micro' ? INVERTER_DB.custom.micro : INVERTER_DB.custom.stringInverter;
+    const inv = list.find(i => i.model === modelName);
+    if (!inv) { el.textContent = ''; return; }
+    el.className = 'ds-inv-compat';
+    if (type === 'micro') {
+      const totalACkW = (activeCount * inv.peakAC) / 1000;
+      const dcAcRatio = totalACkW > 0 ? (totalDCkW / totalACkW) : 0;
+      el.innerHTML = `✓ <strong>${activeCount}</strong> × ${inv.model} · total AC: <strong>${totalACkW.toFixed(2)} kW</strong> · DC/AC ratio: <strong>${dcAcRatio.toFixed(2)}</strong> · custom upload, verify compatibility`;
+    } else {
+      const dcAcRatio = inv.ratedAC > 0 ? (totalDCkW / inv.ratedAC) : 0;
+      el.innerHTML = `✓ ${inv.model} · rated AC: <strong>${inv.ratedAC} kW</strong> · max DC: <strong>${inv.maxDCkW} kW</strong> · DC/AC ratio: <strong>${dcAcRatio.toFixed(2)}</strong> · custom upload, verify compatibility`;
+    }
+  } else if (DS_STATE.inverterBrand === 'solaredge') {
     const el = document.getElementById('ds-inv-se-compat');
     if (!el) return;
     const opt = INVERTER_DB.solaredge.optimizer.find(o => o.model === DS_STATE.inverterSelection.optimizer);
@@ -12669,7 +12865,7 @@ function computeBOM() {
       meta: `Load center with 4 × 20A microinverter branch circuits · ${activeCount} ${micro.model}s ÷ ${maxPerBranch}/branch = ${branches} branches · Warranty: 5 years (parts only, labor not included)`,
       qty: combiners
     });
-  } else {
+  } else if (DS_STATE.inverterBrand === 'solaredge') {
     const opt = INVERTER_DB.solaredge.optimizer.find(o => o.model === DS_STATE.inverterSelection.optimizer);
     // Pull the full sized system from DS_STATE — this knows how many inverters
     // and how many strings the auto-balancer picked for the current panel count.
@@ -12707,6 +12903,42 @@ function computeBOM() {
       meta: 'Required per NEC 690.13 for string inverter systems · Warranty: passed through from disconnect manufacturer ' + WARRANTY_PARTS_ONLY,
       qty: invCount
     });
+  } else if (DS_STATE.inverterBrand === 'custom') {
+    // Custom uploaded inverter — emit a generic BOM line using the parsed
+    // datasheet values. Quantity depends on type: micros scale with panel
+    // count, string inverters are single units. Warranty is flagged as
+    // "per manufacturer datasheet" since we don't have verified warranty
+    // terms for arbitrary third-party equipment.
+    const type = DS_STATE.inverterType;
+    const modelName = DS_STATE.inverterSelection.custom;
+    if (type === 'micro') {
+      const m = INVERTER_DB.custom.micro.find(i => i.model === modelName);
+      if (m) {
+        items.push({
+          category: 'Microinverters',
+          name: `${m.model} (custom upload)`,
+          meta: `${m.peakAC} VA peak AC · ${m.voltage || 'per datasheet'} · custom upload — verify warranty terms directly with manufacturer ${WARRANTY_PARTS_ONLY}`,
+          qty: activeCount
+        });
+      }
+    } else {
+      const s = INVERTER_DB.custom.stringInverter.find(i => i.model === modelName);
+      if (s) {
+        items.push({
+          category: 'Inverter',
+          name: `${s.model} (custom upload)`,
+          meta: `${s.ratedAC} kW AC · max ${s.maxDCkW} kW DC · ${s.voltage || 'per datasheet'} · custom upload — verify warranty terms directly with manufacturer ${WARRANTY_PARTS_ONLY}`,
+          qty: 1
+        });
+        // DC disconnect still required per NEC 690.13 regardless of inverter brand
+        items.push({
+          category: 'Disconnect',
+          name: 'DC Disconnect (NEMA 3R)',
+          meta: 'Required per NEC 690.13 for string inverter systems · Warranty: passed through from disconnect manufacturer ' + WARRANTY_PARTS_ONLY,
+          qty: 1
+        });
+      }
+    }
   }
 
   // 3. Racking
@@ -13212,6 +13444,8 @@ refreshInverterRecommendations();
 initEvSection();                      // Populate EV + charger dropdowns, wire period tabs
 initBatterySection();                 // Populate battery dropdown, wire duration tabs
 initMpuSection();                     // Compute initial 120% rule eval (will show empty card until panels)
+renderInverterBrandButtons();         // Build Enphase/Custom brand row for default type=micro
+setInverterBrand('enphase');          // Default to Enphase micros on first load
 renderFleetList();                    // Render initial empty fleet list
 repopulateEvDropdownForClass();       // Build EV dropdown for current class (residential default)
 
