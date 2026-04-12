@@ -1,0 +1,18 @@
+# Python bytecode cache — created automatically when tools/sync-nav.py runs
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS / Windows OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local environment overrides
+.env
+.env.local
