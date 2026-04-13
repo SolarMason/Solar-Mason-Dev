@@ -556,7 +556,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: var(--white);
   letter-spacing: -.03em;
   margin-bottom: 24px;
-  animation: fadeUp .7s .08s ease both;
+  /* Typewriter: reserve layout space for 3 lines so the page
+     does not shift as characters appear. 2.85em ≈ 3 × line-height
+     (0.95). The fadeUp animation is removed for this element and
+     replaced by the JS typewriter effect below. */
+  min-height: 2.85em;
 }
 .hero-h1 .blue { color: #5bbcf7; }
 .hero-sub {
@@ -566,7 +570,39 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   line-height: 1.72;
   max-width: 480px;
   margin-bottom: 40px;
-  animation: fadeUp .7s .16s ease both;
+  /* Typewriter: reserve ~3 lines of space. 5.2em at line-height
+     1.72 ≈ 3 lines. Generous enough that the sub paragraph does
+     not push content down as it types in, but not so generous
+     that short mobile layouts get extra whitespace. */
+  min-height: 5.2em;
+}
+/* ═══ TYPEWRITER CURSOR ════════════════════════════════════════
+   Blinking block cursor that sits at the end of whichever element
+   is currently being typed. Swaps from .hero-h1 to .hero-sub
+   when h1 completes. Fades out when sub completes. */
+.tw-cursor {
+  display: inline-block;
+  color: #5bbcf7;
+  font-weight: 400;
+  margin-left: 2px;
+  vertical-align: baseline;
+  user-select: none;
+  animation: tw-blink 1.05s steps(2, start) infinite;
+}
+@keyframes tw-blink {
+  to { visibility: hidden; }
+}
+.tw-cursor-done {
+  animation: tw-fade-out .5s ease .6s forwards;
+}
+@keyframes tw-fade-out {
+  to { opacity: 0; }
+}
+/* Respect user motion preferences — no blinking cursor for users
+   who have requested reduced motion. The JS typewriter will also
+   skip its animation and show full text immediately. */
+@media (prefers-reduced-motion: reduce) {
+  .tw-cursor { animation: none; display: none; }
 }
 .hero-btns {
   display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 44px;
@@ -4476,6 +4512,172 @@ html { scroll-behavior: smooth; }
 
   tick();
   setInterval(tick, 1000);
+})();
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   HERO TYPEWRITER
+   Types the hero h1 ("Engineering. Procurement. Construction.") and
+   the hero sub paragraph one character at a time on page load.
+   ──────────────────────────────────────────────────────────────────
+   Design decisions worth documenting:
+
+   1. LAYOUT IS RESERVED IN CSS, NOT JS.
+      .hero-h1 has min-height: 2.85em and .hero-sub has 5.2em, which
+      means the page does not jump as characters are inserted. The
+      typewriter just fills pre-allocated space.
+
+   2. H1 IS SEGMENTED, NOT PLAIN-TEXT-TYPED.
+      The h1 contains a <br>-separated three-line structure with a
+      <span class="blue"> wrapping the middle line ("Procurement.").
+      Typing char-by-char into innerHTML would destroy that structure.
+      Instead we define the text as 3 segments — each with its own
+      className — and rebuild the DOM one character at a time.
+
+   3. THE CURSOR MOVES BETWEEN ELEMENTS.
+      A single .tw-cursor span starts at the end of the h1, gets
+      moved to the sub when the h1 finishes, and fades out when
+      the sub finishes. This matches the natural reading flow.
+
+   4. SUB TYPES FASTER WITH PUNCTUATION PAUSES.
+      ~42ms per character for h1 (reads punchy), ~14ms for sub
+      (fast enough to not annoy), with longer pauses on commas,
+      em dashes, and periods for a natural cadence. Total
+      animation ~4s — fast enough that users don't drum their
+      fingers, slow enough that the effect is readable.
+
+   5. prefers-reduced-motion IS RESPECTED.
+      Users with reduced motion see the full text immediately on
+      load, no animation. The cursor is also hidden via CSS
+      @media (prefers-reduced-motion: reduce).
+
+   6. TEXT IS HARDCODED IN THIS SCRIPT.
+      The <h1> and <p> in the HTML still contain the full text
+      for no-JS visitors, SEO crawlers, and screen readers. This
+      script reads them at startup, clears them, then retypes.
+      If the hero text ever needs to change, update BOTH the
+      HTML and the H1_SEGMENTS / SUB_TEXT constants below.
+
+   7. WORKS ACROSS VIEWPORTS.
+      The min-height reservations use em units that scale with
+      font-size, and the font-size responds to viewport via the
+      existing clamp() rules. Desktop / tablet / mobile all get
+      the same animation with proportionally sized text.
+   ══════════════════════════════════════════════════════════════════ */
+(function() {
+  'use strict';
+
+  // Canonical text — if you change the hero copy in the HTML
+  // above, update these to match.
+  var H1_SEGMENTS = [
+    { text: 'Engineering.',  className: null  },
+    { text: 'Procurement.',  className: 'blue' },
+    { text: 'Construction.', className: null  }
+  ];
+  var SUB_TEXT = 'Full-service solar EPC contractor serving Northeastern Pennsylvania \u2014 residential, commercial, and utility-scale projects delivered turn-key.';
+
+  // Timing knobs — tuned for readability without dragging.
+  var H1_CHAR_MS        = 42;   // per-character delay for h1
+  var H1_SEGMENT_PAUSE  = 200;  // pause between h1 segments
+  var H1_TO_SUB_PAUSE   = 280;  // pause after h1 completes, before sub starts
+  var START_DELAY_MS    = 180;  // initial delay after load
+  var SUB_CHAR_MS       = 14;   // per-character delay for sub
+  var SUB_COMMA_PAUSE   = 160;  // extra pause on , and —
+  var SUB_PERIOD_PAUSE  = 260;  // extra pause on .
+
+  function runTypewriter() {
+    var h1  = document.querySelector('.hero-h1');
+    var sub = document.querySelector('.hero-sub');
+    if (!h1 || !sub) return;
+
+    // Respect prefers-reduced-motion — show everything immediately
+    // and exit. The HTML is already in its final state, so we
+    // don't even need to re-render.
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) return;
+
+    // Clear the existing content (was populated at page-load for
+    // no-JS fallback and SEO). From here the JS owns the DOM
+    // inside these two elements.
+    h1.innerHTML = '';
+    sub.innerHTML = '';
+
+    // Build and attach the cursor to the h1 first.
+    var cursor = document.createElement('span');
+    cursor.className = 'tw-cursor';
+    cursor.setAttribute('aria-hidden', 'true');
+    cursor.textContent = '\u258D'; // ▍ Left Five Eighths Block — thin block cursor
+    h1.appendChild(cursor);
+
+    // ───── H1 TYPING STATE ─────
+    var segIdx = 0;
+    var charIdx = 0;
+    var currentSegSpan = null;
+
+    function typeH1Step() {
+      if (segIdx >= H1_SEGMENTS.length) {
+        // H1 complete — move cursor to the sub paragraph and begin typing it.
+        if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
+        sub.appendChild(cursor);
+        setTimeout(typeSubStep, H1_TO_SUB_PAUSE);
+        return;
+      }
+      var seg = H1_SEGMENTS[segIdx];
+      // First character of a new segment: create the segment's span
+      // and insert it before the cursor so the cursor stays at the end.
+      if (currentSegSpan === null) {
+        currentSegSpan = document.createElement('span');
+        if (seg.className) currentSegSpan.className = seg.className;
+        h1.insertBefore(currentSegSpan, cursor);
+      }
+      if (charIdx < seg.text.length) {
+        currentSegSpan.appendChild(document.createTextNode(seg.text.charAt(charIdx)));
+        charIdx++;
+        setTimeout(typeH1Step, H1_CHAR_MS);
+      } else {
+        // Segment finished — advance and insert a <br> before the
+        // cursor (unless this was the last segment).
+        segIdx++;
+        charIdx = 0;
+        currentSegSpan = null;
+        if (segIdx < H1_SEGMENTS.length) {
+          h1.insertBefore(document.createElement('br'), cursor);
+        }
+        setTimeout(typeH1Step, H1_SEGMENT_PAUSE);
+      }
+    }
+
+    // ───── SUB TYPING STATE ─────
+    var subIdx = 0;
+    function typeSubStep() {
+      if (subIdx >= SUB_TEXT.length) {
+        // Sub complete — fade the cursor out with the CSS class.
+        cursor.classList.add('tw-cursor-done');
+        return;
+      }
+      var ch = SUB_TEXT.charAt(subIdx);
+      sub.insertBefore(document.createTextNode(ch), cursor);
+      subIdx++;
+      // Variable cadence — small pauses on punctuation so the
+      // reader has a natural rhythm to read along with.
+      var delay = SUB_CHAR_MS;
+      if (ch === ',' || ch === '\u2014') delay = SUB_COMMA_PAUSE;
+      else if (ch === '.') delay = SUB_PERIOD_PAUSE;
+      setTimeout(typeSubStep, delay);
+    }
+
+    // Kick off with a small initial delay so the page has a moment
+    // to paint before the animation starts.
+    setTimeout(typeH1Step, START_DELAY_MS);
+  }
+
+  // Run when DOM is ready. Handle both pre- and post-DOMContentLoaded states.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runTypewriter);
+  } else {
+    runTypewriter();
+  }
 })();
 </script>
 </body>
