@@ -7296,8 +7296,27 @@ const AVANS_SECTION_LENGTH_M = 1.8;        // along the row axis; each section i
 // ─────────────────────────────────────────────────────────────
 // setAvansType — entry point for the AVANS_8 / AVANS_10 buttons
 // ─────────────────────────────────────────────────────────────
+// Two placement paths:
+//   A) First tap when no sections exist — arm the map click/dblclick
+//      listener, then the user clicks/dbl-taps the map to drop
+//      section 1. The user sees a status banner directing them to
+//      click the map.
+//   B) Subsequent taps — auto-deploy the next section adjacent to
+//      the last section in the current row. Row fills east-to-west.
+//      When a row hits 10 sections, a new row is started 25 ft
+//      south automatically.
+//
+// At every stage we console.log the state transition so the user
+// can open DevTools and see exactly what happened if a tap doesn't
+// produce visible output.
 function setAvansType(type) {
-  console.log('[DS] setAvansType', type, 'sections:', DS_STATE.groundArrays.length);
+  console.log('[AVANS] setAvansType', type, {
+    sections: DS_STATE.groundArrays.length,
+    mountMode: DS_STATE.mountMode,
+    placementActive: DS_STATE.groundPlacementActive,
+    hasMap: !!DS_STATE.map,
+    currentRowId: DS_STATE.currentAvansRowId
+  });
   DS_STATE.groundPlacementType = type;
 
   // Visual feedback on the buttons
@@ -7305,19 +7324,42 @@ function setAvansType(type) {
     b.classList.toggle('active', b.dataset.type === type);
   });
 
-  // CASE 1: No sections placed yet — arm placement mode so the user picks
-  // the anchor point on the map. First section of the first row.
+  // Safety: if we're not in ground mode, flip to it first so the map
+  // listener gets wired. Ignoring the button press when in roof mode
+  // would be confusing to the user.
+  if (DS_STATE.mountMode !== 'ground') {
+    console.log('[AVANS] not in ground mode — switching now');
+    setMountMode('ground');
+    // setMountMode auto-arms placement via toggleGroundPlacement,
+    // so the listener is now live. Continue below.
+  }
+
+  // CASE A: No sections placed yet — make sure placement is armed
+  // and tell the user to click/dbl-tap the map to drop section 1.
   if (DS_STATE.groundArrays.length === 0) {
-    if (!DS_STATE.groundPlacementActive) toggleGroundPlacement();
+    if (!DS_STATE.groundPlacementActive) {
+      console.log('[AVANS] arming map placement (first section)');
+      toggleGroundPlacement();
+    }
+    const modelLabel = type === 'AVANS_10' ? 'AVANS 10.0' : 'AVANS 8.0';
+    setStatus('ready',
+      `<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/><path d="M10 6v8M6 10h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> ${modelLabel} selected — click or double-tap the map to drop the first section`);
     return;
   }
 
-  // CASE 2: Sections already exist — auto-deploy the next section
-  // adjacent to the last section in the current row, or start a new
-  // row if the current row is at the 10-section cap.
+  // CASE B: Sections already exist — auto-deploy the next section
+  // adjacent to the last section in the current row, or start a
+  // new row if the current row is at the 10-section cap.
   const currentRow = _currentRowOrNew();
+  if (!currentRow) {
+    console.warn('[AVANS] no current row found despite existing sections — arming placement');
+    if (!DS_STATE.groundPlacementActive) toggleGroundPlacement();
+    setStatus('ready', 'Click the map to drop a new AVANS section');
+    return;
+  }
   if (currentRow.sectionIds.length >= AVANS_MAX_SECTIONS_PER_ROW) {
     // Row is full — start a new row 25 ft south
+    console.log('[AVANS] row full — starting new row south of', currentRow.id);
     const newRow = _startNewRowSouthOf(currentRow);
     if (!newRow) {
       setStatus('error', 'Could not start a new row — no anchor section');
@@ -7326,6 +7368,7 @@ function setAvansType(type) {
     _deploySectionInRow(newRow, type, 0);
   } else {
     // Append to current row at next index
+    console.log('[AVANS] appending to row', currentRow.id, 'at index', currentRow.sectionIds.length);
     _deploySectionInRow(currentRow, type, currentRow.sectionIds.length);
   }
 
@@ -7868,6 +7911,31 @@ function fitMapToGroundArrays() {
 }
 
 
+// ─────────────────────────────────────────────────────────────
+// Map-click placement logic for AVANS ground mode.
+//
+// The user has TWO ways to deploy AVANS sections, both available
+// simultaneously once ground mode is active:
+//
+//   1. Tap AVANS 8.0 or 10.0 button → auto-deploy adjacent to
+//      the last section in the current row (or start a new row
+//      if the current row is at the 10-section cap).
+//
+//   2. Click or double-click ANYWHERE on the map → drop a NEW
+//      first-section-of-row at that exact location. This starts
+//      a new row anchored at the click point, regardless of
+//      whether other rows already exist. Subsequent button taps
+//      will then extend that NEW row.
+//
+// The map click listener stays active for the ENTIRE duration
+// that the user is in ground mode — it is NOT auto-removed after
+// the first placement. Only leaving ground mode (toggling back
+// to roof) removes the listener.
+//
+// Both 'click' and 'dblclick' are wired because on touch devices
+// a double-tap is sometimes easier than a single-tap to trigger
+// intentional placement without conflicting with pan gestures.
+// ─────────────────────────────────────────────────────────────
 function toggleGroundPlacement() {
   DS_STATE.groundPlacementActive = !DS_STATE.groundPlacementActive;
   if (DS_STATE.groundPlacementActive) {
@@ -7877,19 +7945,43 @@ function toggleGroundPlacement() {
       return;
     }
     DS_STATE.map.setOptions({ draggableCursor: 'crosshair' });
+
+    // Click handler: drops a new first-section-of-row at the click point.
+    // Every map click starts a fresh row anchored at that location.
+    // The currentAvansRowId is updated inside placeAvansArray() so that
+    // subsequent button taps extend THIS new row, not a previous one.
     DS_STATE.groundMapClickListener = DS_STATE.map.addListener('click', (e) => {
       placeAvansArray(
         { latitude: e.latLng.lat(), longitude: e.latLng.lng() },
         DS_STATE.groundPlacementType || 'AVANS_8'
       );
-      // After first placement, disarm — subsequent sections auto-deploy
-      if (DS_STATE.groundPlacementActive) toggleGroundPlacement();
     });
+
+    // Double-click handler: same behavior as click, but fires on dblclick.
+    // Google Maps suppresses the default zoom-on-dblclick when a dblclick
+    // listener is registered, so users can dbl-tap without the map zooming.
+    DS_STATE.groundMapDblClickListener = DS_STATE.map.addListener('dblclick', (e) => {
+      placeAvansArray(
+        { latitude: e.latLng.lat(), longitude: e.latLng.lng() },
+        DS_STATE.groundPlacementType || 'AVANS_8'
+      );
+    });
+
+    // Suppress the dblclick zoom behavior on the map so the dbl-tap goes
+    // cleanly to our listener without the map zooming under the user's
+    // finger between the two taps.
+    DS_STATE.map.setOptions({ disableDoubleClickZoom: true });
   } else {
-    if (DS_STATE.map) DS_STATE.map.setOptions({ draggableCursor: null });
+    if (DS_STATE.map) {
+      DS_STATE.map.setOptions({ draggableCursor: null, disableDoubleClickZoom: false });
+    }
     if (DS_STATE.groundMapClickListener) {
       google.maps.event.removeListener(DS_STATE.groundMapClickListener);
       DS_STATE.groundMapClickListener = null;
+    }
+    if (DS_STATE.groundMapDblClickListener) {
+      google.maps.event.removeListener(DS_STATE.groundMapDblClickListener);
+      DS_STATE.groundMapDblClickListener = null;
     }
   }
 }
