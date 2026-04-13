@@ -7294,89 +7294,188 @@ const AVANS_SECTION_LENGTH_M = 1.8;        // along the row axis; each section i
 
 
 // ─────────────────────────────────────────────────────────────
+// DevTools debug helper — call `__AVANS_DEBUG()` in the console
+// to get a snapshot of the current AVANS state. Paste the output
+// back to us if placement isn't working.
+// ─────────────────────────────────────────────────────────────
+window.__AVANS_DEBUG = function() {
+  const state = {
+    mountMode: DS_STATE.mountMode,
+    groundPlacementActive: DS_STATE.groundPlacementActive,
+    groundPlacementType: DS_STATE.groundPlacementType,
+    hasMap: !!DS_STATE.map,
+    hasCoords: !!DS_STATE.coords,
+    cesiumMode: DS_STATE.cesiumMode,
+    mapVisible: DS_STATE.map ? (document.getElementById('ds-map').style.display !== 'none') : false,
+    mapCenter: DS_STATE.map && DS_STATE.map.getCenter() ? {
+      lat: DS_STATE.map.getCenter().lat(),
+      lng: DS_STATE.map.getCenter().lng()
+    } : null,
+    mapZoom: DS_STATE.map ? DS_STATE.map.getZoom() : null,
+    groundArraysCount: DS_STATE.groundArrays.length,
+    avansRowsCount: DS_STATE.avansRows.length,
+    currentAvansRowId: DS_STATE.currentAvansRowId,
+    avansFoundation: DS_STATE.avansFoundation,
+    clickListenerAttached: !!DS_STATE.groundMapClickListener,
+    dblclickListenerAttached: !!DS_STATE.groundMapDblClickListener,
+    allPanelsCount: DS_STATE.allPanels.length,
+    panelPolygonsCount: DS_STATE.panelPolygons.size,
+    activePanelsCount: DS_STATE.activePanels.size
+  };
+  console.log('%c[AVANS DEBUG SNAPSHOT]', 'background:#2D82BE;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold', state);
+  return state;
+};
+
+// Also expose a direct placement function that bypasses all UI —
+// if `__AVANS_DEBUG()` shows everything looks healthy but buttons
+// still don't work, call `__AVANS_PLACE_TEST()` to force-place a
+// section at the current map center. If THIS works, the bug is
+// in the button wiring. If it doesn't, the bug is in the section
+// creation itself.
+window.__AVANS_PLACE_TEST = function(type) {
+  const t = type || 'AVANS_8';
+  console.log('%c[AVANS TEST PLACEMENT]', 'background:#059669;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold', t);
+  if (!DS_STATE.map) {
+    console.error('__AVANS_PLACE_TEST: no map');
+    return null;
+  }
+  const c = DS_STATE.map.getCenter();
+  if (!c) {
+    console.error('__AVANS_PLACE_TEST: map has no center');
+    return null;
+  }
+  return placeAvansArray({ latitude: c.lat(), longitude: c.lng() }, t);
+};
+
+
+// ─────────────────────────────────────────────────────────────
 // setAvansType — entry point for the AVANS_8 / AVANS_10 buttons
 // ─────────────────────────────────────────────────────────────
-// Two placement paths:
-//   A) First tap when no sections exist — arm the map click/dblclick
-//      listener, then the user clicks/dbl-taps the map to drop
-//      section 1. The user sees a status banner directing them to
-//      click the map.
-//   B) Subsequent taps — auto-deploy the next section adjacent to
-//      the last section in the current row. Row fills east-to-west.
-//      When a row hits 10 sections, a new row is started 25 ft
-//      south automatically.
+// CORE PRINCIPLE: tapping an AVANS button should produce VISIBLE
+// OUTPUT IMMEDIATELY. No "click the map first" two-step. The user
+// taps AVANS 8.0, a section appears at the current map center
+// (for the very first section) or adjacent to the last placed
+// section (for every subsequent tap). Map clicks remain as an
+// OPTIONAL secondary path for placing a section at a specific
+// location, but they are never required.
 //
-// At every stage we console.log the state transition so the user
-// can open DevTools and see exactly what happened if a tap doesn't
-// produce visible output.
+// Three placement paths, all active simultaneously:
+//
+//   1. Tap AVANS button with NO sections placed yet
+//      → drop the first section at the current map viewport center
+//
+//   2. Tap AVANS button with sections already placed
+//      → auto-deploy adjacent to the last section in the current
+//        row (or start a new row if the current row is at cap)
+//
+//   3. Click or double-click anywhere on the map
+//      → drop a NEW first-section-of-row at the exact click point
+//
+// Every stage logs to DevTools so if something fails the user
+// can paste us the log lines. Every exception is caught and
+// loudly reported instead of silently failing.
 function setAvansType(type) {
-  console.log('[AVANS] setAvansType', type, {
-    sections: DS_STATE.groundArrays.length,
-    mountMode: DS_STATE.mountMode,
-    placementActive: DS_STATE.groundPlacementActive,
-    hasMap: !!DS_STATE.map,
-    currentRowId: DS_STATE.currentAvansRowId
-  });
-  DS_STATE.groundPlacementType = type;
+  try {
+    console.log('[AVANS] setAvansType', type, {
+      sections: DS_STATE.groundArrays.length,
+      mountMode: DS_STATE.mountMode,
+      placementActive: DS_STATE.groundPlacementActive,
+      hasMap: !!DS_STATE.map,
+      hasCoords: !!DS_STATE.coords,
+      currentRowId: DS_STATE.currentAvansRowId
+    });
 
-  // Visual feedback on the buttons
-  document.querySelectorAll('.ds-avans-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.type === type);
-  });
+    DS_STATE.groundPlacementType = type;
 
-  // Safety: if we're not in ground mode, flip to it first so the map
-  // listener gets wired. Ignoring the button press when in roof mode
-  // would be confusing to the user.
-  if (DS_STATE.mountMode !== 'ground') {
-    console.log('[AVANS] not in ground mode — switching now');
-    setMountMode('ground');
-    // setMountMode auto-arms placement via toggleGroundPlacement,
-    // so the listener is now live. Continue below.
-  }
+    // Visual feedback on the buttons — active highlight
+    document.querySelectorAll('.ds-avans-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.type === type);
+    });
 
-  // CASE A: No sections placed yet — make sure placement is armed
-  // and tell the user to click/dbl-tap the map to drop section 1.
-  if (DS_STATE.groundArrays.length === 0) {
-    if (!DS_STATE.groundPlacementActive) {
-      console.log('[AVANS] arming map placement (first section)');
-      toggleGroundPlacement();
+    // Safety: if we're not in ground mode, flip to it first so
+    // the map listener gets wired. Ignoring the button press
+    // when in roof mode would be confusing to the user.
+    if (DS_STATE.mountMode !== 'ground') {
+      console.log('[AVANS] not in ground mode — switching now');
+      setMountMode('ground');
     }
-    const modelLabel = type === 'AVANS_10' ? 'AVANS 10.0' : 'AVANS 8.0';
-    setStatus('ready',
-      `<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/><path d="M10 6v8M6 10h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> ${modelLabel} selected — click or double-tap the map to drop the first section`);
-    return;
-  }
 
-  // CASE B: Sections already exist — auto-deploy the next section
-  // adjacent to the last section in the current row, or start a
-  // new row if the current row is at the 10-section cap.
-  const currentRow = _currentRowOrNew();
-  if (!currentRow) {
-    console.warn('[AVANS] no current row found despite existing sections — arming placement');
-    if (!DS_STATE.groundPlacementActive) toggleGroundPlacement();
-    setStatus('ready', 'Click the map to drop a new AVANS section');
-    return;
-  }
-  if (currentRow.sectionIds.length >= AVANS_MAX_SECTIONS_PER_ROW) {
-    // Row is full — start a new row 25 ft south
-    console.log('[AVANS] row full — starting new row south of', currentRow.id);
-    const newRow = _startNewRowSouthOf(currentRow);
-    if (!newRow) {
-      setStatus('error', 'Could not start a new row — no anchor section');
+    // Safety: if the map isn't ready yet, tell the user explicitly
+    // instead of silently doing nothing.
+    if (!DS_STATE.map) {
+      console.warn('[AVANS] DS_STATE.map is null — user needs to load an address first');
+      setStatus('error', 'Enter a project address first so the map can load');
       return;
     }
-    _deploySectionInRow(newRow, type, 0);
-  } else {
-    // Append to current row at next index
-    console.log('[AVANS] appending to row', currentRow.id, 'at index', currentRow.sectionIds.length);
-    _deploySectionInRow(currentRow, type, currentRow.sectionIds.length);
-  }
 
-  fitMapToGroundArrays();
-  const totalSections = DS_STATE.groundArrays.length;
-  const totalRows = DS_STATE.avansRows.length;
-  setStatus('ready',
-    `<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> AVANS section #${totalSections} deployed · ${totalRows} row${totalRows !== 1 ? 's' : ''}`);
+    // CASE 1: No sections placed yet — drop the first section at
+    // the current map viewport center. This gives instant visible
+    // feedback without requiring the user to click the map.
+    // (Map click/dblclick is still wired as a parallel path so
+    // users who WANT to place at a specific location still can.)
+    if (DS_STATE.groundArrays.length === 0) {
+      console.log('[AVANS] first section — dropping at map center');
+      const mapCenter = DS_STATE.map.getCenter();
+      if (!mapCenter) {
+        console.warn('[AVANS] map.getCenter() returned null — falling back to DS_STATE.coords');
+        if (!DS_STATE.coords) {
+          setStatus('error', 'Map has no center — enter an address first');
+          return;
+        }
+        placeAvansArray({ latitude: DS_STATE.coords.lat, longitude: DS_STATE.coords.lng }, type);
+      } else {
+        placeAvansArray({ latitude: mapCenter.lat(), longitude: mapCenter.lng() }, type);
+      }
+
+      // Also ensure the map click listener is armed, so the user
+      // can click elsewhere to drop additional sections at specific
+      // locations if they want.
+      if (!DS_STATE.groundPlacementActive) {
+        console.log('[AVANS] arming map click listener for secondary placement');
+        toggleGroundPlacement();
+      }
+
+      const totalSections = DS_STATE.groundArrays.length;
+      const modelLabel = type === 'AVANS_10' ? 'AVANS 10.0' : 'AVANS 8.0';
+      setStatus('ready',
+        `<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> ${modelLabel} section #${totalSections} placed at map center · tap again for more, or click map to place at a specific location`);
+      return;
+    }
+
+    // CASE 2: Sections already exist — auto-deploy the next
+    // section adjacent to the last section in the current row,
+    // or start a new row if the current row is at the 10-section cap.
+    const currentRow = _currentRowOrNew();
+    if (!currentRow) {
+      console.warn('[AVANS] no current row despite existing sections — dropping at map center');
+      const mapCenter = DS_STATE.map.getCenter();
+      if (mapCenter) {
+        placeAvansArray({ latitude: mapCenter.lat(), longitude: mapCenter.lng() }, type);
+      }
+      return;
+    }
+    if (currentRow.sectionIds.length >= AVANS_MAX_SECTIONS_PER_ROW) {
+      console.log('[AVANS] row full — starting new row south of', currentRow.id);
+      const newRow = _startNewRowSouthOf(currentRow);
+      if (!newRow) {
+        setStatus('error', 'Could not start a new row — no anchor section');
+        return;
+      }
+      _deploySectionInRow(newRow, type, 0);
+    } else {
+      console.log('[AVANS] appending to row', currentRow.id, 'at index', currentRow.sectionIds.length);
+      _deploySectionInRow(currentRow, type, currentRow.sectionIds.length);
+    }
+
+    fitMapToGroundArrays();
+    const totalSections = DS_STATE.groundArrays.length;
+    const totalRows = DS_STATE.avansRows.length;
+    setStatus('ready',
+      `<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> AVANS section #${totalSections} deployed · ${totalRows} row${totalRows !== 1 ? 's' : ''}`);
+  } catch (err) {
+    console.error('[AVANS] setAvansType threw:', err);
+    setStatus('error', 'AVANS placement failed — ' + (err && err.message || 'unknown error') + ' · see browser console for details');
+  }
 }
 
 
@@ -7542,7 +7641,17 @@ function _deploySectionInRow(row, type, sectionIdx) {
 // This is the primitive used by both _deploySectionInRow and the first-section
 // placement handler.
 function _createSectionAtCenter(center, type, tilt, az, rowId, sectionIdxInRow) {
-  const cols = type === 'AVANS_10' ? 5 : 4;
+  try {
+    console.log('[AVANS] _createSectionAtCenter', { type, tilt, az, rowId, sectionIdxInRow });
+    if (!DS_STATE.map) {
+      console.error('[AVANS] _createSectionAtCenter: DS_STATE.map is null');
+      return null;
+    }
+    if (typeof google === 'undefined' || !google.maps || !google.maps.Polygon) {
+      console.error('[AVANS] _createSectionAtCenter: google.maps.Polygon not available');
+      return null;
+    }
+    const cols = type === 'AVANS_10' ? 5 : 4;
   const rows = AVANS_ROWS_PER_SECTION;  // always 2
   const panelW = DS_STATE.panelWidthM || 1.045;
   const panelH = DS_STATE.panelHeightM || 1.879;
@@ -7729,31 +7838,62 @@ function _createSectionAtCenter(center, type, tilt, az, rowId, sectionIdxInRow) 
   if (typeof updateAvansLoadsPreview === 'function') updateAvansLoadsPreview();
   refresh3DIfActive();
 
+  console.log('[AVANS] _createSectionAtCenter SUCCESS — section', sectionId, 'with', panelIds.length, 'panels');
   return section;
+  } catch (err) {
+    console.error('[AVANS] _createSectionAtCenter threw:', err, err && err.stack);
+    setStatus('error', 'AVANS section creation failed — ' + (err && err.message || 'unknown') + ' · see console');
+    return null;
+  }
 }
 
 
 // First-click placement: user taps the map to drop section #1 of row #1.
 // Creates the row, then the section at that anchor.
+// Also called directly from setAvansType() when the user taps the AVANS
+// button with no sections placed yet (drops at map center).
 function placeAvansArray(center, type) {
-  const tilt = parseFloat(document.getElementById('ds-ground-tilt').value) || AVANS_TILT_DEFAULT;
-  const az   = parseFloat(document.getElementById('ds-ground-az').value)   || 180;
+  try {
+    console.log('[AVANS] placeAvansArray', { center, type });
+    if (!DS_STATE.map) {
+      console.warn('[AVANS] placeAvansArray called but DS_STATE.map is null');
+      return null;
+    }
+    if (!center || typeof center.latitude !== 'number' || typeof center.longitude !== 'number') {
+      console.error('[AVANS] placeAvansArray called with invalid center:', center);
+      return null;
+    }
+    const tiltInput = document.getElementById('ds-ground-tilt');
+    const azInput = document.getElementById('ds-ground-az');
+    const tilt = (tiltInput && parseFloat(tiltInput.value)) || AVANS_TILT_DEFAULT;
+    const az = (azInput && parseFloat(azInput.value)) || 180;
 
-  // Create a new row anchored at the click point
-  const rowId = DS_STATE.nextRowId++;
-  const row = {
-    id: rowId,
-    sectionIds: [],
-    azimuth: az,
-    tilt,
-    anchorCenter: { ...center }
-  };
-  DS_STATE.avansRows.push(row);
-  DS_STATE.currentAvansRowId = rowId;
+    // Create a new row anchored at the click point
+    const rowId = DS_STATE.nextRowId++;
+    const row = {
+      id: rowId,
+      sectionIds: [],
+      azimuth: az,
+      tilt,
+      anchorCenter: { ...center }
+    };
+    DS_STATE.avansRows.push(row);
+    DS_STATE.currentAvansRowId = rowId;
 
-  // Deploy section 0 at the anchor
-  const section = _createSectionAtCenter(center, type, tilt, az, rowId, 0);
-  row.sectionIds.push(section.id);
+    // Deploy section 0 at the anchor
+    const section = _createSectionAtCenter(center, type, tilt, az, rowId, 0);
+    if (section) {
+      row.sectionIds.push(section.id);
+      console.log('[AVANS] placeAvansArray SUCCESS — section', section.id, 'in row', rowId);
+    } else {
+      console.error('[AVANS] _createSectionAtCenter returned null');
+    }
+    return section;
+  } catch (err) {
+    console.error('[AVANS] placeAvansArray threw:', err);
+    setStatus('error', 'AVANS section placement failed — ' + (err && err.message || 'unknown') + ' · see console');
+    return null;
+  }
 }
 
 
