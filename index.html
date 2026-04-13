@@ -589,6 +589,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   user-select: none;
   animation: tw-blink 1.05s steps(2, start) infinite;
 }
+/* Section-title cursor variant — uses currentColor so the cursor
+   adapts to the title's own text color. Section titles appear in
+   mixed contexts (dark charcoal text on light bg, white text on
+   dark bg), so a single fixed color would look wrong in half of
+   them. Using currentColor means the cursor is always the same
+   color as the text it follows. */
+.tw-cursor-section {
+  color: currentColor;
+}
 @keyframes tw-blink {
   to { visibility: hidden; }
 }
@@ -4677,6 +4686,276 @@ html { scroll-behavior: smooth; }
     document.addEventListener('DOMContentLoaded', runTypewriter);
   } else {
     runTypewriter();
+  }
+})();
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   SECTION TITLE TYPEWRITER
+   Applies a character-by-character typewriter animation to every
+   section title on the homepage, triggered by IntersectionObserver
+   as each title scrolls into view. Each title animates once and
+   only once — scrolling back up does NOT replay the animation.
+   ──────────────────────────────────────────────────────────────────
+   Design decisions worth documenting:
+
+   1. GENERIC PARSER INSTEAD OF HARDCODED SEGMENTS.
+      Unlike the hero typewriter which hardcodes its segments,
+      this system walks the actual DOM of each matched title at
+      page load and extracts a flat instruction stream of the
+      form [{text, className, style}, {type:'br'}, ...]. That
+      lets it handle any h2 structure — text with an inline
+      <span class="blue">, text before AND after a span, <br>s
+      in any position, inline style attributes — without needing
+      per-title configuration.
+
+   2. WORKS FOR HETEROGENEOUS TITLE STRUCTURES.
+      The nine homepage section titles have six different
+      structures between them:
+        - "Complete Solar<br><span class='blue'>Engineering</span>"
+        - "Industrial <span class='blue'>Racking</span><br>Systems"
+          (note: text BEFORE and after the span)
+        - "U.S. Blackout &amp;<br><span class='blue'>Solar News</span>"
+          (note: HTML entity in text)
+        - "NEPA's Most Experienced<br><span style='color:#5bbcf7;'>Installation Teams</span>"
+          (note: inline style instead of class)
+        - "Next Rate Change <span class='blue'>Countdown</span>"
+          (note: single-line, no <br>)
+        - etc.
+      The parser handles all of these via the generic "walk
+      childNodes, preserve element attributes" approach.
+
+   3. LAYOUT RESERVATION IS DYNAMIC, NOT STATIC.
+      Unlike the hero which uses a CSS em-based min-height, the
+      section titles measure their own offsetHeight at page load
+      (while still fully rendered) and set that as an inline
+      min-height on the element before clearing. This is more
+      accurate than a CSS rule because it captures exactly how
+      the text wraps at the current viewport width — no risk of
+      over-reserving space or under-reserving space.
+
+      If the user resizes the window after page load, the
+      reservation stays at the original pixel value. For the
+      titles that have already played their animation, this is
+      fine (the real text is back). For titles that haven't
+      played yet, minor over/under-reservation might happen at
+      new widths — acceptable trade-off for simplicity.
+
+   4. INTERSECTION OBSERVER WITH 40% THRESHOLD.
+      Titles fire when at least 40% of their height intersects
+      the viewport. This is a natural "it's on screen and the
+      user is reading it" moment. Lower thresholds feel premature
+      (typing starts when just the top edge peeks above the fold).
+      Higher thresholds feel laggy (user has to scroll past most
+      of the title before it starts animating).
+
+   5. EACH TITLE ANIMATES EXACTLY ONCE.
+      The observer unobserves each element after triggering. No
+      replay on scroll-back-up. Replaying on every scroll would
+      be visually noisy and would also re-clear the title at a
+      point where the user might be mid-reading.
+
+   6. RESPECTS prefers-reduced-motion.
+      If the user has requested reduced motion, this entire
+      module is a no-op — the observer is never created, titles
+      are never cleared, and everything renders as static HTML.
+
+   7. FALLBACK FOR OLD BROWSERS.
+      If IntersectionObserver is undefined (ancient browsers),
+      this module is also a no-op. Titles render as static HTML.
+      No polyfill — old browsers just miss the enhancement.
+
+   8. FASTER CADENCE THAN THE HERO.
+      The hero typewriter uses 42ms/char for dramatic effect on
+      first load. The section titles use 32ms/char because there
+      are nine of them and the user is actively scrolling — a
+      slower pace would feel laggy relative to scroll speed.
+
+   9. REUSES THE EXISTING .tw-cursor CLASS WITH A SECTION VARIANT.
+      The cursor element gets both .tw-cursor (for blink animation
+      and layout) and .tw-cursor-section (for currentColor text
+      color). Section titles appear in mixed contexts (charcoal
+      on light bg, white on dark bg), so a single fixed cursor
+      color would look wrong in half of them.
+
+  10. KEEPS THE SEGMENT STREAM IN A WEAKMAP.
+      Parsed segment data is stored in a module-level WeakMap
+      keyed by element, not in data- attributes on the DOM. This
+      is cleaner (no stringified JSON in the DOM), faster (no
+      parsing per trigger), and garbage-collects with the
+      element if it's ever removed.
+   ══════════════════════════════════════════════════════════════════ */
+(function() {
+  'use strict';
+
+  // Selector that matches every homepage title we want to animate.
+  // - .section-h2 covers the 8 main-page section titles
+  // - .rate-countdown h2 covers the one-off "Next Rate Change
+  //   Countdown" title that doesn't use the section-h2 class
+  var SELECTOR = '.section-h2, .rate-countdown h2';
+
+  // Timing knobs.
+  var CHAR_MS       = 32;  // per-character delay
+  var SEG_PAUSE_MS  = 80;  // pause between segments (e.g., after a <br>)
+  var START_MS      = 60;  // delay after trigger before first character
+  var OBS_THRESHOLD = 0.4; // fire when 40% of title is visible
+
+  // Per-element segment cache. Using a WeakMap so entries are
+  // garbage-collected if elements are ever removed from the DOM.
+  var segmentCache = new WeakMap();
+
+  function parseElement(el) {
+    // Walk childNodes of el and build a flat instruction stream.
+    // Each instruction is one of:
+    //   { type: 'text', text, className, styleAttr }
+    //   { type: 'br' }
+    // Only handles text nodes, <br>, and nested single-level <span>
+    // elements with optional class/style. That covers every title
+    // on the homepage. Nested deeper structures or other element
+    // types are not expected and would be silently skipped.
+    var instructions = [];
+    var children = el.childNodes;
+    for (var i = 0; i < children.length; i++) {
+      var node = children[i];
+      if (node.nodeType === 3 /* TEXT_NODE */) {
+        var t = node.textContent;
+        // Skip whitespace-only text nodes that appear as HTML
+        // indentation artifacts (don't want to type a blank "   ").
+        if (t && t.trim() !== '') {
+          instructions.push({
+            type: 'text',
+            text: t,
+            className: null,
+            styleAttr: null
+          });
+        }
+      } else if (node.nodeType === 1 /* ELEMENT_NODE */) {
+        if (node.tagName === 'BR') {
+          instructions.push({ type: 'br' });
+        } else if (node.tagName === 'SPAN') {
+          instructions.push({
+            type: 'text',
+            text: node.textContent,
+            className: node.className || null,
+            styleAttr: node.getAttribute('style') || null
+          });
+        }
+      }
+    }
+    return instructions;
+  }
+
+  function typeInstructions(el, instructions) {
+    // Build a cursor and append to el. The cursor is always at
+    // the end — new characters are inserted before it.
+    var cursor = document.createElement('span');
+    cursor.className = 'tw-cursor tw-cursor-section';
+    cursor.setAttribute('aria-hidden', 'true');
+    cursor.textContent = '\u258D';
+    el.appendChild(cursor);
+
+    var idx = 0;
+    var charIdx = 0;
+    var currentSpan = null;
+
+    function step() {
+      if (idx >= instructions.length) {
+        // All instructions processed — fade cursor out.
+        cursor.classList.add('tw-cursor-done');
+        return;
+      }
+      var inst = instructions[idx];
+      if (inst.type === 'br') {
+        el.insertBefore(document.createElement('br'), cursor);
+        idx++;
+        charIdx = 0;
+        currentSpan = null;
+        setTimeout(step, SEG_PAUSE_MS);
+        return;
+      }
+      // inst.type === 'text'
+      if (currentSpan === null) {
+        currentSpan = document.createElement('span');
+        if (inst.className)  currentSpan.className = inst.className;
+        if (inst.styleAttr)  currentSpan.setAttribute('style', inst.styleAttr);
+        el.insertBefore(currentSpan, cursor);
+      }
+      if (charIdx < inst.text.length) {
+        currentSpan.appendChild(document.createTextNode(inst.text.charAt(charIdx)));
+        charIdx++;
+        setTimeout(step, CHAR_MS);
+      } else {
+        // Text segment finished — advance
+        idx++;
+        charIdx = 0;
+        currentSpan = null;
+        setTimeout(step, SEG_PAUSE_MS);
+      }
+    }
+    setTimeout(step, START_MS);
+  }
+
+  function init() {
+    // Bail out on reduced-motion users.
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+    // Bail out on browsers without IntersectionObserver.
+    if (!('IntersectionObserver' in window)) {
+      return;
+    }
+
+    var titles = document.querySelectorAll(SELECTOR);
+    if (titles.length === 0) return;
+
+    // Pre-pass: parse each title's current DOM into segments,
+    // measure its rendered height, reserve that height as
+    // min-height, then clear the element's contents.
+    for (var i = 0; i < titles.length; i++) {
+      var el = titles[i];
+      var segs = parseElement(el);
+      if (segs.length === 0) continue;
+      segmentCache.set(el, segs);
+
+      // Layout reservation — measure BEFORE clearing
+      var h = el.offsetHeight;
+      if (h > 0) {
+        el.style.minHeight = h + 'px';
+      }
+      el.innerHTML = '';
+    }
+
+    // Set up the IntersectionObserver.
+    var observer = new IntersectionObserver(function(entries) {
+      for (var j = 0; j < entries.length; j++) {
+        var entry = entries[j];
+        if (!entry.isIntersecting) continue;
+        var el = entry.target;
+        var segs = segmentCache.get(el);
+        if (!segs) continue;
+        segmentCache.delete(el);  // prevent re-trigger
+        typeInstructions(el, segs);
+        observer.unobserve(el);
+      }
+    }, {
+      threshold: OBS_THRESHOLD
+    });
+
+    // Observe each title. Titles already in view at page load
+    // will fire their callback immediately on next tick.
+    for (var k = 0; k < titles.length; k++) {
+      if (segmentCache.has(titles[k])) {
+        observer.observe(titles[k]);
+      }
+    }
+  }
+
+  // Run when DOM is ready.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
 })();
 </script>
