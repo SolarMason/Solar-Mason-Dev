@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────
+# Solar Mason — pre-commit hook
+# ─────────────────────────────────────────────────────────────────
+# Blocks commits where the canonical site chrome (nav + footer) in
+# _templates/ has drifted from what's actually inlined in the HTML
+# pages. Protects the repo from the class of bug where someone edits
+# _templates/_nav-desktop.html, forgets to run sync-nav.py, and
+# pushes a commit where the canonical disagrees with every page.
+#
+# How it works:
+#   - Runs `python3 tools/sync-nav.py --dry-run` against the working tree
+#   - Exit 0 from dry-run = everything matches = allow commit
+#   - Exit 2 from dry-run = drift detected = block commit with an
+#     explanatory message telling the user what to do
+#   - Exit 1 from dry-run = script error (missing templates etc.) =
+#     block commit with the script's error message
+#
+# The hook runs against the WORKING TREE, not the git index. If you
+# stage some files but the working tree has unrelated changes, the
+# hook will still catch drift from those unrelated files. This is
+# intentional — you want to know about drift before committing, even
+# if this specific commit isn't the thing introducing it.
+#
+# INSTALLATION
+#
+#   One-time per clone:
+#     git config core.hooksPath .githooks
+#
+#   This tells git to use .githooks/ instead of .git/hooks/. The
+#   hook is versioned in the repo, so all clones that run this
+#   command get the same hook enforcement.
+#
+#   To verify the hook is installed:
+#     git config --get core.hooksPath       # should print .githooks
+#     ls -l .githooks/pre-commit            # should exist and be executable
+#
+# BYPASSING (when you really need to)
+#
+#   If you need to commit without running this check (e.g. fixing
+#   a broken template and you have unrelated WIP changes):
+#     git commit --no-verify -m "..."
+#
+#   Use sparingly. The hook exists to catch real bugs.
+# ─────────────────────────────────────────────────────────────────
+
+set -e
+
+# Locate the repo root relative to this script's location
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+# Quick sanity: is python3 available?
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "pre-commit: python3 not found — skipping chrome sync check" >&2
+    echo "pre-commit: install python3 or bypass with --no-verify" >&2
+    exit 0
+fi
+
+# Run the sync check in dry-run mode
+if [ ! -f tools/sync-nav.py ]; then
+    echo "pre-commit: tools/sync-nav.py not found — skipping chrome sync check" >&2
+    exit 0
+fi
+
+# Capture stdout so we can suppress it unless drift is detected
+output=$(python3 tools/sync-nav.py --dry-run 2>&1) || exit_code=$?
+exit_code=${exit_code:-0}
+
+if [ "$exit_code" -eq 0 ]; then
+    # No drift — commit may proceed
+    exit 0
+fi
+
+if [ "$exit_code" -eq 2 ]; then
+    # Drift detected — block the commit and tell the user what to do
+    echo "" >&2
+    echo "══════════════════════════════════════════════════════════════" >&2
+    echo "  PRE-COMMIT BLOCKED: site chrome is out of sync with canonical" >&2
+    echo "══════════════════════════════════════════════════════════════" >&2
+    echo "" >&2
+    echo "$output" >&2
+    echo "" >&2
+    echo "To fix: run the sync script, review the diff, and commit everything:" >&2
+    echo "" >&2
+    echo "    python3 tools/sync-nav.py" >&2
+    echo "    git add -A" >&2
+    echo "    git commit     # re-run your original commit command" >&2
+    echo "" >&2
+    echo "To bypass this check (not recommended):" >&2
+    echo "" >&2
+    echo "    git commit --no-verify" >&2
+    echo "" >&2
+    exit 1
+fi
+
+# exit_code == 1 — sync-nav.py itself errored (missing template,
+# broken canonical, etc.). The user needs to fix it before committing.
+echo "" >&2
+echo "pre-commit: tools/sync-nav.py errored with exit $exit_code:" >&2
+echo "$output" >&2
+echo "" >&2
+echo "Fix the error above, or bypass with: git commit --no-verify" >&2
+exit 1

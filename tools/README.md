@@ -4,14 +4,22 @@ Developer utilities for maintaining the Solar Mason website.
 
 ## sync-nav.py
 
-Single source of truth for the site-wide navigation. Propagates the canonical
-nav HTML from `_templates/_nav-desktop.html` and `_templates/_nav-mobile.html`
-into every HTML page in the repo that uses the standard site chrome.
+Single source of truth for the site-wide navigation **and footer**.
+Propagates the canonical site chrome from `_templates/_nav-desktop.html`,
+`_templates/_nav-mobile.html`, and `_templates/_footer.html` into every
+HTML page in the repo.
+
+(The script is named `sync-nav.py` for historical reasons — originally
+it only handled the nav. It was extended to also handle the footer
+since the two have identical drift problems and identical solutions.
+Renaming would churn every reference in the repo and CI configs
+without meaningful benefit.)
 
 ### When to run it
 
-Run this whenever you change anything about the navigation:
+Run this whenever you change anything about the site chrome:
 
+**Navigation**
 - Adding, removing, renaming, or reordering a top-level nav item
 - Editing a mega-menu dropdown (the grouped link lists inside each nav item)
 - Changing the logo image, link target, or ALT text
@@ -19,6 +27,16 @@ Run this whenever you change anything about the navigation:
 - Updating login/register buttons in the mobile drawer footer
 - Editing contact info in the mobile drawer footer
 - Any other nav-level change
+
+**Footer**
+- Adding, removing, or renaming footer link columns (Engineering,
+  Procurement, Construction, Incentives, Shop, Calculators, Company)
+- Editing the links inside any footer column
+- Updating the featured Bill Analyzer / Engineering Program links
+- Changing brand text, address, phone, or social media links
+- Updating the referral program URL
+- Editing the legal / copyright line at the bottom
+- Any other footer-level change
 
 ### How to run it
 
@@ -101,6 +119,93 @@ This script gives us a **single source of truth** (the files in
 `_templates/`) that gets **propagated** into every page on demand. It's
 the middle ground between "build a real templating engine" (overkill for
 this site) and "hand-edit every page" (obviously unsustainable).
+
+---
+
+## Pre-commit hook (recommended)
+
+A versioned pre-commit hook is shipped with the repo at
+`.githooks/pre-commit`. It automatically runs `sync-nav.py --dry-run`
+before every commit. If the hook detects that `_templates/` has drifted
+from what's in the pages (someone edited a template but forgot to run
+the sync), the commit is **blocked** with an explanation of how to fix
+it. This catches the entire class of bug where a template edit lands
+without its corresponding page-level propagation.
+
+### Installing the hook
+
+One-time per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+That's it. From now on, every `git commit` runs the check automatically.
+The hook lives in the versioned `.githooks/` directory so every clone
+that runs the command above gets the same enforcement.
+
+### What it does on each commit
+
+- **If everything is in sync:** silent, commit proceeds normally
+- **If drift is detected:** commit is blocked with a banner explaining
+  which files would be updated and telling you exactly how to fix it:
+
+  ```
+  ══════════════════════════════════════════════════════════════
+    PRE-COMMIT BLOCKED: site chrome is out of sync with canonical
+  ══════════════════════════════════════════════════════════════
+
+  [...sync-nav.py --dry-run output listing drifted files...]
+
+  To fix: run the sync script, review the diff, and commit everything:
+
+      python3 tools/sync-nav.py
+      git add -A
+      git commit     # re-run your original commit command
+
+  To bypass this check (not recommended):
+
+      git commit --no-verify
+  ```
+
+- **If sync-nav.py itself errors** (missing template, broken canonical,
+  Python not installed): the hook blocks with the error message so you
+  can fix the underlying problem before committing.
+
+### Graceful degradation
+
+The hook does **not** hard-fail if `python3` or `tools/sync-nav.py` is
+missing — it logs a warning to stderr and allows the commit through.
+This prevents "broken clone" situations on machines without Python 3 or
+on branches that don't yet have the sync script.
+
+### Bypassing the hook
+
+If you need to commit without running the check (e.g., committing a
+WIP on an unrelated branch while the template is intentionally broken):
+
+```bash
+git commit --no-verify -m "WIP: broken template, will fix next commit"
+```
+
+Use this sparingly. The hook exists to catch real bugs.
+
+### Verifying the hook is installed
+
+```bash
+git config --get core.hooksPath      # should print: .githooks
+ls -l .githooks/pre-commit           # should show an executable file
+```
+
+### Why the hook runs against the working tree, not the index
+
+The hook runs `sync-nav.py --dry-run` against the entire working tree,
+not just the files staged for commit. This catches drift from unrelated
+files too — if someone edited a template three commits ago and never
+ran the sync, the hook blocks the NEXT commit regardless of what that
+commit is for. This feels slightly aggressive but is the right behavior:
+you want to know about drift as soon as possible, not when you
+eventually happen to touch a template again.
 
 ---
 
