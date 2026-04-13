@@ -4430,6 +4430,61 @@ function calculateSizing(){
   var roiBase=isCommercial?netCostAfterITC:estCost;
   var roi25adj=Math.round((savings25-roiBase)/roiBase*100);
   var paybackAdj=roiBase/(estProd*utilityRate);
+
+  // ═══ MACRS DEPRECIATION (commercial only) ════════════════════════
+  // Commercial solar PV is classified as 5-year MACRS property under
+  // IRC §168(e)(3)(B)(vi). Owners can depreciate the system over 5
+  // years using the Modified Accelerated Cost Recovery System, which
+  // uses the 200% declining balance method with half-year convention.
+  //
+  // IMPORTANT: the depreciable basis is REDUCED by 50% of the ITC
+  // value under IRC §50(c)(3). So for a 30% ITC, the depreciable
+  // basis is 85% of the gross system cost, not 100%.
+  //
+  //   depreciable_basis = estCost - (itcValue × 0.5)
+  //                     = estCost - (estCost × 0.30 × 0.5)
+  //                     = estCost × 0.85
+  //
+  // The standard MACRS 5-year half-year convention schedule:
+  //   Year 1: 20.00%   Year 4: 11.52%
+  //   Year 2: 32.00%   Year 5: 11.52%
+  //   Year 3: 19.20%   Year 6:  5.76%   (half-year convention tail)
+  //   ────────────────────────────────
+  //                 Total: 100.00%
+  //
+  // Tax savings at each year = depreciation × marginal tax rate.
+  // We use 30% as a conservative effective marginal rate that
+  // approximates the combined federal + PA state burden for typical
+  // commercial owners:
+  //   - C-corps:         21% federal + 9.99% PA corporate ≈ 31%
+  //   - Pass-throughs:   24-37% federal + 3.07% PA personal ≈ 27-40%
+  // 30% is the midpoint and explicitly labeled as an assumption in
+  // the proposal with a recommendation to consult a CPA. Bonus
+  // depreciation (which can accelerate year 1 substantially) is
+  // mentioned in the disclaimer but NOT included in these numbers —
+  // it depends on current tax law and the customer's placed-in-service
+  // date, which varies too much to assume a specific value.
+  var MACRS_SCHEDULE = [0.2000, 0.3200, 0.1920, 0.1152, 0.1152, 0.0576];
+  var MACRS_ASSUMED_TAX_RATE = 0.30;
+  var macrsDepreciableBasis = 0;
+  var macrsYearAmounts = [];
+  var macrsYearTaxSavings = [];
+  var macrsTotalTaxSavings = 0;
+  var combinedFederalBenefit = 0;
+  var netCostAfterAllBenefits = estCost;
+  var solarLCOEafterAllBenefits = solarLCOE;
+  if(isCommercial && itcValue > 0){
+    // IRC §50(c)(3) basis reduction: basis reduced by half the ITC
+    macrsDepreciableBasis = Math.round(estCost - (itcValue * 0.5));
+    macrsYearAmounts = MACRS_SCHEDULE.map(function(p){ return Math.round(macrsDepreciableBasis * p); });
+    macrsYearTaxSavings = macrsYearAmounts.map(function(a){ return Math.round(a * MACRS_ASSUMED_TAX_RATE); });
+    macrsTotalTaxSavings = macrsYearTaxSavings.reduce(function(a,b){ return a+b; }, 0);
+    combinedFederalBenefit = itcValue + macrsTotalTaxSavings;
+    netCostAfterAllBenefits = estCost - combinedFederalBenefit;
+    // Proportional LCOE after all federal benefits: the effective
+    // LCOE scales linearly with the net cost ratio.
+    solarLCOEafterAllBenefits = solarLCOE * (netCostAfterAllBenefits / estCost);
+  }
   // Build year-over-year data
   var yearData=[];for(var y=0;y<25;y++){var yr=new Date().getFullYear()+y;var uRate=utilityRate*Math.pow(1+annualEsc,y);var prod=estProd*Math.pow(0.995,y);var uCost=Math.round(prod*uRate);var sCost=y===0?roiBase:0;yearData.push({year:yr,utilRate:uRate,solarLCOE:solarLCOEafterITC,utilityCost:uCost,solarCost:sCost,cumUtil:0,cumSolar:0});}
   var cu=0,cs=roiBase;for(var y=0;y<25;y++){cu+=yearData[y].utilityCost;yearData[y].cumUtil=cu;yearData[y].cumSolar=cs;yearData[y].cumSavings=cu-cs;}
@@ -4457,6 +4512,11 @@ function calculateSizing(){
     solarLCOE:solarLCOE,solarLCOEafterITC:solarLCOEafterITC,utilityRate:utilityRate,savings25yr:Math.round(savings25),
     simplePayback:Math.round(paybackAdj*10)/10,roi25:roi25adj,totalProd25:Math.round(totalProd25),
     isCommercial:isCommercial,itcRate:itcRate,itcValue:itcValue,netCostAfterITC:netCostAfterITC,
+    macrsSchedule:MACRS_SCHEDULE,macrsAssumedTaxRate:MACRS_ASSUMED_TAX_RATE,
+    macrsDepreciableBasis:macrsDepreciableBasis,macrsYearAmounts:macrsYearAmounts,
+    macrsYearTaxSavings:macrsYearTaxSavings,macrsTotalTaxSavings:macrsTotalTaxSavings,
+    combinedFederalBenefit:combinedFederalBenefit,netCostAfterAllBenefits:Math.round(netCostAfterAllBenefits),
+    solarLCOEafterAllBenefits:solarLCOEafterAllBenefits,
     yearData:yearData,annualEsc:annualEsc,
     co2PerYear:co2PerYear,co2Lifetime:co2Lifetime,treesEquiv:treesEquiv,carsEquiv:carsEquiv,homesEquiv:homesEquiv,
     annualSRECs:annualSRECs,srecPrice:srecPrice,annualSRECincome:annualSRECincome,srecIncome25:srecIncome25,
@@ -4928,6 +4988,59 @@ function generateProposal(){
   // ═══ ITC SECTION (commercial) ═══
   if(s.isCommercial&&s.itcValue>0){
     h+=sect('Federal Tax Credit (Section 48E)','<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 8l7-5 7 5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M4 17h12M5 8v7M8 8v7M12 8v7M15 8v7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',[['ITC Rate','30% (with prevailing wage)',true],['ITC Value','-$'+s.itcValue.toLocaleString(),true],['Gross Cost','$'+s.estCost.toLocaleString()],['Net Cost After ITC','$'+s.netCostAfterITC.toLocaleString(),true],['LCOE After ITC','$'+s.solarLCOEafterITC.toFixed(4)+'/kWh',true],['Deadline','Begin construction before July 4, 2026']]);
+  }
+
+  // ═══ MACRS DEPRECIATION SCHEDULE (commercial) ═══
+  // Full year-by-year depreciation table with tax savings at an
+  // assumed 30% effective marginal rate. Displayed only for
+  // commercial systems since MACRS does not apply to residential
+  // solar. Immediately follows the ITC section so all federal tax
+  // benefits are grouped together before the 25-year projection.
+  if(s.isCommercial && s.macrsDepreciableBasis > 0){
+    h+='<div class="prop-section prop-macrs" style="padding:1.5rem 2rem;border-bottom:1px solid #f1f5f9">';
+    h+='<div class="prop-section-title" style="font-size:1.05rem;font-weight:700;color:#0B2545;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e0efff"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 17h14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M6 14v-4M10 14v-7M14 14v-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 6l4-2 4 3 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> MACRS Depreciation Schedule</div>';
+    // Explainer paragraph
+    h+='<p style="font-size:.82rem;color:#475569;line-height:1.6;margin:0 0 1rem">Commercial solar PV is classified as <strong>5-year MACRS property</strong> under IRC §168(e)(3)(B)(vi). As the system owner, you can depreciate the system on an accelerated schedule for significant tax savings on top of the Section 48E ITC above. The depreciable basis is reduced by half the ITC value under IRC §50(c)(3), which produces an 85% basis for a 30% ITC system.</p>';
+    // Schedule table
+    h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:440px">';
+    h+='<thead><tr style="background:#0B2545;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact">';
+    h+='<th style="padding:.5rem .6rem;text-align:left">Year</th>';
+    h+='<th style="padding:.5rem .6rem;text-align:right">MACRS %</th>';
+    h+='<th style="padding:.5rem .6rem;text-align:right">Depreciation</th>';
+    h+='<th style="padding:.5rem .6rem;text-align:right">Tax Savings @ 30%</th>';
+    h+='</tr></thead><tbody>';
+    for(var mi=0;mi<s.macrsSchedule.length;mi++){
+      var bg=mi%2?'#f8fafc':'#fff';
+      h+='<tr style="background:'+bg+';-webkit-print-color-adjust:exact;print-color-adjust:exact">';
+      h+='<td style="padding:.45rem .6rem;border-bottom:1px solid #f1f5f9">Year '+(mi+1)+'</td>';
+      h+='<td style="padding:.45rem .6rem;text-align:right;border-bottom:1px solid #f1f5f9;color:#64748B">'+(s.macrsSchedule[mi]*100).toFixed(2)+'%</td>';
+      h+='<td style="padding:.45rem .6rem;text-align:right;border-bottom:1px solid #f1f5f9;color:#0B2545;font-weight:600">$'+s.macrsYearAmounts[mi].toLocaleString()+'</td>';
+      h+='<td style="padding:.45rem .6rem;text-align:right;border-bottom:1px solid #f1f5f9;color:#2D82BE;font-weight:700">$'+s.macrsYearTaxSavings[mi].toLocaleString()+'</td>';
+      h+='</tr>';
+    }
+    // Totals row
+    h+='<tr class="prop-hl" style="background:#f0f7ff;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-weight:800">';
+    h+='<td style="padding:.55rem .6rem;border-top:2px solid #2D82BE">Total</td>';
+    h+='<td style="padding:.55rem .6rem;text-align:right;border-top:2px solid #2D82BE">100.00%</td>';
+    h+='<td style="padding:.55rem .6rem;text-align:right;border-top:2px solid #2D82BE;color:#0B2545">$'+s.macrsDepreciableBasis.toLocaleString()+'</td>';
+    h+='<td style="padding:.55rem .6rem;text-align:right;border-top:2px solid #2D82BE;color:#2D82BE">$'+s.macrsTotalTaxSavings.toLocaleString()+'</td>';
+    h+='</tr>';
+    h+='</tbody></table></div>';
+    // Key metrics callout
+    h+='<div style="margin-top:1.25rem;padding:1rem 1.25rem;background:#f0f7ff;border-left:4px solid #2D82BE;border-radius:0 10px 10px 0;-webkit-print-color-adjust:exact;print-color-adjust:exact">';
+    h+='<div style="font-size:.82rem;color:#334155;line-height:1.8">';
+    h+='<div style="display:flex;justify-content:space-between;padding:.15rem 0"><span>Gross System Cost</span><strong style="color:#0B2545">$'+s.estCost.toLocaleString()+'</strong></div>';
+    h+='<div style="display:flex;justify-content:space-between;padding:.15rem 0"><span>Depreciable Basis (85%)</span><strong style="color:#0B2545">$'+s.macrsDepreciableBasis.toLocaleString()+'</strong></div>';
+    h+='<div style="display:flex;justify-content:space-between;padding:.15rem 0"><span>Total MACRS Tax Savings</span><strong style="color:#2D82BE">$'+s.macrsTotalTaxSavings.toLocaleString()+'</strong></div>';
+    h+='<div style="display:flex;justify-content:space-between;padding:.15rem 0;border-top:1px dashed #cbd5e1;margin-top:.4rem;padding-top:.5rem"><span>ITC (Section 48E)</span><strong style="color:#2D82BE">−$'+s.itcValue.toLocaleString()+'</strong></div>';
+    h+='<div style="display:flex;justify-content:space-between;padding:.15rem 0"><span>MACRS Tax Savings</span><strong style="color:#2D82BE">−$'+s.macrsTotalTaxSavings.toLocaleString()+'</strong></div>';
+    h+='<div style="display:flex;justify-content:space-between;padding:.35rem 0 .15rem;border-top:2px solid #2D82BE;margin-top:.4rem;font-size:.92rem"><span style="color:#0B2545;font-weight:700">Combined Federal Benefit</span><strong style="color:#2D82BE">$'+s.combinedFederalBenefit.toLocaleString()+'</strong></div>';
+    h+='<div style="display:flex;justify-content:space-between;padding:.15rem 0;font-size:.92rem"><span style="color:#0B2545;font-weight:700">Net Cost After All Federal Benefits</span><strong style="color:#0B2545">$'+s.netCostAfterAllBenefits.toLocaleString()+'</strong></div>';
+    h+='<div style="display:flex;justify-content:space-between;padding:.15rem 0"><span>Effective LCOE (ITC + MACRS)</span><strong style="color:#0B2545">$'+s.solarLCOEafterAllBenefits.toFixed(4)+'/kWh</strong></div>';
+    h+='</div></div>';
+    // Disclaimer
+    h+='<div style="margin-top:1rem;padding:.85rem 1rem;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;font-size:.74rem;color:#78350f;line-height:1.6;-webkit-print-color-adjust:exact;print-color-adjust:exact"><strong>Important:</strong> The 30% effective marginal tax rate used above is an approximation combining typical federal and Pennsylvania state tax burdens for commercial owners (C-corp: 21% federal + 9.99% PA corporate; pass-through: 24-37% federal + 3.07% PA personal). Actual tax savings depend on your specific tax situation, tax liability, and filing status. <strong>Bonus depreciation</strong> may allow additional first-year deduction depending on when the system is placed in service and current IRS rules — consult a qualified CPA to determine the exact tax benefits for your situation. This is not tax advice and does not constitute a tax opinion.</div>';
+    h+='</div>';
   }
   // ═══ 25-YEAR CHART ═══
   if(s.yearData){
