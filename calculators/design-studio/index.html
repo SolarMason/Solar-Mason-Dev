@@ -4059,53 +4059,83 @@ html, body { background-attachment: scroll !important; }
 .ds-tools-overlay.collapsed .ds-tools-body{visibility:hidden}
 
 .ds-rail-btn{
+  /* The button itself is now a transparent wrapper. The visual
+     "app icon" is the SVG inside, which gets the blue gradient
+     background treatment via the rule below. The label sits
+     under the icon. This makes the rail visually match the
+     panel headers in the open menu, where each step has a blue
+     gradient circle with a white SVG glyph inside.  */
   flex:0 0 auto;
-  width:42px;
-  padding:.35rem 0 .3rem;
-  background:#fff;
-  border:1px solid rgba(0,0,0,.06);
-  border-radius:10px;
+  width:46px;
+  padding:.4rem 0 .3rem;
+  background:transparent;
+  border:none;
   cursor:pointer;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:.12rem;
+  gap:.28rem;
   color:#0B2545;
-  transition:background .15s,border-color .15s,transform .15s,color .15s,box-shadow .15s;
+  transition:transform .15s;
 }
 .ds-rail-btn svg{
-  width:18px;
-  height:18px;
-  color:#2D82BE;
-  transition:color .15s;
+  /* APP ICON TREATMENT — matches the panel header .step.step-icon
+     visual but sized for tap/click in the rail. The SVG gets
+     padding (which adds space outside the viewBox), a gradient
+     background, rounded full-circle radius, white stroke color
+     for the glyph, and a soft drop shadow for depth.
+
+     box-sizing: border-box is critical — without it, the padding
+     would push the SVG's actual rendered width past the declared
+     width and the icons would overflow the rail.
+
+     display:block overrides the .gc-ico inline-block display so
+     the SVG sits flush in the column without baseline alignment
+     gaps, and margin:0 overrides the .gc-ico margin-right that
+     would otherwise push the SVG off-center. */
+  width:38px;
+  height:38px;
+  padding:9px;
+  box-sizing:border-box;
+  display:block;
+  margin:0;
+  border-radius:50%;
+  background:linear-gradient(135deg,#2D82BE,#1B5E8A);
+  color:#fff;
+  box-shadow:0 2px 6px rgba(45,130,190,.25);
+  transition:transform .18s,box-shadow .18s,background .18s;
+  flex-shrink:0;
 }
 .ds-rail-btn .ds-rail-label{
-  font-size:.5rem;
+  font-size:.55rem;
   font-weight:700;
   letter-spacing:.02em;
   color:#64748B;
   line-height:1.1;
   text-align:center;
-  max-width:40px;
+  max-width:46px;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+  transition:color .15s;
 }
-.ds-rail-btn:hover{
-  background:linear-gradient(135deg,#2D82BE,#1B5E8A);
-  border-color:#1B5E8A;
-  color:#fff;
-  transform:translateX(-2px);
-  box-shadow:0 4px 12px rgba(45,130,190,.3);
+.ds-rail-btn:hover svg{
+  /* On hover, the icon lifts slightly with a brighter gradient
+     and a stronger shadow — same style as iOS/macOS app icons
+     when hovered/long-pressed. The button wrapper stays static
+     so only the icon itself animates, which matches the user's
+     mental model of "the app icon is the interactive thing." */
+  transform:scale(1.08);
+  background:linear-gradient(135deg,#3a9be0,#2473ae);
+  box-shadow:0 6px 16px rgba(45,130,190,.45);
 }
-.ds-rail-btn:hover svg{color:#fff}
-.ds-rail-btn:hover .ds-rail-label{color:rgba(255,255,255,.9)}
-.ds-rail-btn:active{transform:translateX(-1px) scale(.97)}
-.ds-rail-btn:focus-visible{
+.ds-rail-btn:hover .ds-rail-label{color:#0B2545}
+.ds-rail-btn:active svg{transform:scale(.96)}
+.ds-rail-btn:focus-visible{outline:none}
+.ds-rail-btn:focus-visible svg{
   outline:none;
-  border-color:#2D82BE;
-  box-shadow:0 0 0 3px rgba(45,130,190,.25);
+  box-shadow:0 0 0 3px rgba(45,130,190,.35),0 4px 12px rgba(45,130,190,.35);
 }
 
 /* Inside the overlay, panels are tight for density */
