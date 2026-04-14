@@ -5035,146 +5035,116 @@ body.ds-mode-ground .ds-ground-only{display:block}
     </details>
 
     <!-- Mount Mode Toggle -->
-    <details class="ds-panel" data-sec="step3">
-      <summary><h3><span class="step step-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 10l7-6 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v8h10V9" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 17v-4h4v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Mount Type</h3></summary>
-      <div class="ds-panel-body">
-      <div class="ds-mode-toggle">
-        <button class="ds-mode-btn active" id="ds-mode-roof" onclick="setMountMode('roof')"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 10l7-7 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v7h10V9" stroke="currentColor" stroke-width="1.4"/><path d="M8 16v-4h4v4" stroke="currentColor" stroke-width="1.3"/></svg> Roof</button>
-        <button class="ds-mode-btn" id="ds-mode-ground" onclick="setMountMode('ground')"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 18V10M10 10c0-4 4-7 7-7-1 4-4 7-7 7zM10 12c0-3-3-6-6-6 1 3 3 6 6 6z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Ground</button>
-      </div>
-      </div>
-    </details>
+    <!-- ════════════════════════════════════════════════════════════════
+         CONSOLIDATED: Mount Type + Panel Layout + Racking System
+         ════════════════════════════════════════════════════════════════
+         Per Noel: these three were previously separate accordions, which
+         made the roof↔ground toggle behavior unclear (the user had to
+         open three different sections to see what changed). Now they're
+         in ONE panel with three labeled subsections, so the user can see
+         all the elements that toggle between roof and ground at the
+         same time.
 
-    <!-- Obstructions & Keep-Out Zones -->
-    <details class="ds-panel" data-sec="step4">
-      <summary><h3><span class="step step-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2.5 16h15L10 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 8v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14" r=".7" fill="currentColor"/></svg></span> Obstructions</h3></summary>
-      <div class="ds-panel-body">
-      <div class="ds-obst-buttons">
-        <button class="ds-mini-btn" id="ds-draw-obst" onclick="toggleDrawObstruction()"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 14l8-8 3 3-8 8H3v-3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M11 6l3 3" stroke="currentColor" stroke-width="1.3"/></svg>️ Draw</button>
-        <button class="ds-mini-btn ds-mini-btn-danger" onclick="clearObstructions()"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M5 6h10l-1 12H6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M3 6h14M8 3h4v3H8z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Clear</button>
-      </div>
-      <div class="ds-obst-list" id="ds-obst-list"><em>None drawn</em></div>
-      </div>
-    </details>
+         Internal order (top to bottom):
+           1. Mount Type — Roof / Ground toggle
+           2. Panel Layout — slider+presets (roof) | tilt/az+AVANS (ground)
+           3. Racking System — IronRidge (roof) | SEMS AVANS foundation (ground)
 
-    <!-- Panel Layout -->
-    <details class="ds-panel" data-sec="step5">
-      <summary><h3><span class="step step-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.4"/><rect x="9.5" y="4" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.4"/><rect x="3" y="10.5" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.4"/><rect x="9.5" y="10.5" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.4"/></svg></span> Panel Layout</h3></summary>
+         Every ID, class, and onclick handler from the original three
+         sections is preserved verbatim because the JS reads them by
+         ID. The .ds-roof-only / .ds-ground-only CSS classes still
+         control visibility based on body.ds-mode-ground, so the
+         toggle behavior is unchanged — only the visual grouping
+         changed.
+         ════════════════════════════════════════════════════════════════ -->
+    <details class="ds-panel" data-sec="step3" open>
+      <summary><h3><span class="step step-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 10l7-6 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v8h10V9" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 17v-4h4v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Mount, Layout &amp; Racking</h3></summary>
       <div class="ds-panel-body">
-      <div class="ds-status waiting" id="ds-seg-status">Awaiting roof analysis</div>
 
-      <!-- Offset presets (only visible when a utility bill has been uploaded) -->
-      <div class="ds-preset-wrap ds-roof-only" id="ds-preset-wrap" style="display:none">
-        <div class="ds-preset-label">Offset <span id="ds-preset-sub" style="font-weight:600;color:#94a3b8;font-size:.62rem"></span></div>
-        <div class="ds-preset-row">
-          <button class="ds-preset-btn" data-pct="80" onclick="selectOffsetPreset(80)">
-            <div class="ds-preset-pct">80%</div>
-            <div class="ds-preset-meta" id="ds-preset-80">—</div>
-          </button>
-          <button class="ds-preset-btn active" data-pct="100" onclick="selectOffsetPreset(100)">
-            <div class="ds-preset-pct">100%</div>
-            <div class="ds-preset-meta" id="ds-preset-100">—</div>
-          </button>
-          <button class="ds-preset-btn" data-pct="120" onclick="selectOffsetPreset(120)">
-            <div class="ds-preset-pct">120%</div>
-            <div class="ds-preset-meta" id="ds-preset-120">—</div>
-          </button>
+        <!-- ─── 1. MOUNT TYPE ─── -->
+        <div class="ds-inv-label">Mount Type</div>
+        <div class="ds-mode-toggle">
+          <button class="ds-mode-btn active" id="ds-mode-roof" onclick="setMountMode('roof')"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 10l7-7 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v7h10V9" stroke="currentColor" stroke-width="1.4"/><path d="M8 16v-4h4v4" stroke="currentColor" stroke-width="1.3"/></svg> Roof</button>
+          <button class="ds-mode-btn" id="ds-mode-ground" onclick="setMountMode('ground')"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 18V10M10 10c0-4 4-7 7-7-1 4-4 7-7 7zM10 12c0-3-3-6-6-6 1 3 3 6 6 6z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Ground</button>
         </div>
-        <!-- Custom offset input — type any whole number, e.g. 95% or 150% -->
-        <div class="ds-custom-offset-row">
-          <label for="ds-custom-offset">Custom offset:</label>
-          <div class="ds-custom-offset-input-wrap">
-            <input type="number" id="ds-custom-offset" min="1" max="500" step="1" placeholder="e.g. 95" oninput="onCustomOffsetInput()" onkeydown="if(event.key==='Enter')applyCustomOffset()">
-            <span class="ds-custom-offset-suffix">%</span>
+        <div id="ds-mode-hint" style="margin-top:.4rem;font-size:.62rem;color:#64748B;line-height:1.4">Roof mode: auto-detects segments from Google Solar API and places panels on detected roof faces.</div>
+
+        <!-- ─── 2. PANEL LAYOUT ─── -->
+        <div class="ds-inv-label" style="margin-top:1rem">Panel Layout</div>
+        <div class="ds-status waiting" id="ds-seg-status">Awaiting roof analysis</div>
+
+        <!-- Offset presets (only visible when a utility bill has been uploaded) -->
+        <div class="ds-preset-wrap ds-roof-only" id="ds-preset-wrap" style="display:none">
+          <div class="ds-preset-label">Offset <span id="ds-preset-sub" style="font-weight:600;color:#94a3b8;font-size:.62rem"></span></div>
+          <div class="ds-preset-row">
+            <button class="ds-preset-btn" data-pct="80" onclick="selectOffsetPreset(80)">
+              <div class="ds-preset-pct">80%</div>
+              <div class="ds-preset-meta" id="ds-preset-80">—</div>
+            </button>
+            <button class="ds-preset-btn active" data-pct="100" onclick="selectOffsetPreset(100)">
+              <div class="ds-preset-pct">100%</div>
+              <div class="ds-preset-meta" id="ds-preset-100">—</div>
+            </button>
+            <button class="ds-preset-btn" data-pct="120" onclick="selectOffsetPreset(120)">
+              <div class="ds-preset-pct">120%</div>
+              <div class="ds-preset-meta" id="ds-preset-120">—</div>
+            </button>
           </div>
-          <button class="ds-custom-offset-go" type="button" onclick="applyCustomOffset()">Apply</button>
+          <!-- Custom offset input — type any whole number, e.g. 95% or 150% -->
+          <div class="ds-custom-offset-row">
+            <label for="ds-custom-offset">Custom offset:</label>
+            <div class="ds-custom-offset-input-wrap">
+              <input type="number" id="ds-custom-offset" min="1" max="500" step="1" placeholder="e.g. 95" oninput="onCustomOffsetInput()" onkeydown="if(event.key==='Enter')applyCustomOffset()">
+              <span class="ds-custom-offset-suffix">%</span>
+            </div>
+            <button class="ds-custom-offset-go" type="button" onclick="applyCustomOffset()">Apply</button>
+          </div>
+          <div class="ds-custom-offset-meta" id="ds-custom-offset-meta"></div>
         </div>
-        <div class="ds-custom-offset-meta" id="ds-custom-offset-meta"></div>
-      </div>
 
-      <div class="ds-slider-wrap ds-roof-only">
-        <div class="ds-slider-head">
-          <label>Panels</label>
-          <div class="ds-slider-val"><span id="ds-slider-val">0</span><span class="unit">of <span id="ds-slider-max">0</span></span></div>
+        <!-- Roof panel slider -->
+        <div class="ds-slider-wrap ds-roof-only">
+          <div class="ds-slider-head">
+            <label>Panels</label>
+            <div class="ds-slider-val"><span id="ds-slider-val">0</span><span class="unit">of <span id="ds-slider-max">0</span></span></div>
+          </div>
+          <input type="range" class="ds-slider" id="ds-slider" min="0" max="0" value="0">
+          <div class="ds-slider-meta">
+            <span>0</span>
+            <span id="ds-slider-pct">—</span>
+            <span id="ds-slider-maxlabel">0</span>
+          </div>
+          <button class="ds-ground-btn" style="margin-top:.5rem" onclick="clearRoofPanels()"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M5 6h10l-1 12H6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M3 6h14M8 3h4v3H8z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Clear All</button>
         </div>
-        <input type="range" class="ds-slider" id="ds-slider" min="0" max="0" value="0">
-        <div class="ds-slider-meta">
-          <span>0</span>
-          <span id="ds-slider-pct">—</span>
-          <span id="ds-slider-maxlabel">0</span>
+
+        <!-- Ground Mode Controls -->
+        <div class="ds-ground-only">
+          <div class="ds-row" style="margin-top:0">
+            <div class="ds-field"><label>Tilt (°)</label><input type="number" id="ds-ground-tilt" value="30" min="0" max="60"></div>
+            <div class="ds-field"><label>Azimuth (°)</label><input type="number" id="ds-ground-az" value="180" min="0" max="360"></div>
+          </div>
+          <div class="ds-ground-btn-row">
+            <button class="ds-ground-btn ds-avans-btn active" data-type="AVANS_8" onclick="setAvansType('AVANS_8')">AVANS 8.0 <span style="opacity:.6;font-size:.62rem">2×4</span></button>
+            <button class="ds-ground-btn ds-avans-btn" data-type="AVANS_10" onclick="setAvansType('AVANS_10')">AVANS 10.0 <span style="opacity:.6;font-size:.62rem">2×5</span></button>
+          </div>
+          <div class="ds-ground-btn-row" style="margin-top:.35rem">
+            <button class="ds-ground-btn" onclick="clearGroundPanels()"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M5 6h10l-1 12H6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M3 6h14M8 3h4v3H8z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Clear All</button>
+          </div>
+          <div class="ds-array-list" id="ds-array-list" style="margin-top:.55rem">
+            <em style="font-size:.7rem;color:#94a3b8">No arrays placed</em>
+          </div>
         </div>
-        <button class="ds-ground-btn" style="margin-top:.5rem" onclick="clearRoofPanels()"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M5 6h10l-1 12H6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M3 6h14M8 3h4v3H8z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Clear All</button>
-      </div>
 
-      <!-- Ground Mode Controls -->
-      <div class="ds-ground-only">
-        <div class="ds-row" style="margin-top:0">
-          <div class="ds-field"><label>Tilt (°)</label><input type="number" id="ds-ground-tilt" value="30" min="0" max="60"></div>
-          <div class="ds-field"><label>Azimuth (°)</label><input type="number" id="ds-ground-az" value="180" min="0" max="360"></div>
+        <!-- Roof segments list (auto-populated from Google Solar API) -->
+        <div class="ds-segments ds-roof-only" id="ds-segments">
+          <div style="text-align:center;padding:1rem;color:#94a3b8;font-size:.82rem">Select an address to analyze roof segments.</div>
         </div>
-        <div class="ds-ground-btn-row">
-          <button class="ds-ground-btn ds-avans-btn active" data-type="AVANS_8" onclick="setAvansType('AVANS_8')">AVANS 8.0 <span style="opacity:.6;font-size:.62rem">2×4</span></button>
-          <button class="ds-ground-btn ds-avans-btn" data-type="AVANS_10" onclick="setAvansType('AVANS_10')">AVANS 10.0 <span style="opacity:.6;font-size:.62rem">2×5</span></button>
-        </div>
-        <div class="ds-ground-btn-row" style="margin-top:.35rem">
-          <button class="ds-ground-btn" onclick="clearGroundPanels()"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M5 6h10l-1 12H6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M3 6h14M8 3h4v3H8z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Clear All</button>
-        </div>
-        <div class="ds-array-list" id="ds-array-list" style="margin-top:.55rem">
-          <em style="font-size:.7rem;color:#94a3b8">No arrays placed</em>
-        </div>
-      </div>
 
-      <div class="ds-segments ds-roof-only" id="ds-segments">
-        <div style="text-align:center;padding:1rem;color:#94a3b8;font-size:.82rem">Select an address to analyze roof segments.</div>
-      </div>
-      </div>
-    </details>
+        <!-- ─── 3. RACKING SYSTEM ─── -->
+        <div class="ds-inv-label" style="margin-top:1rem">Racking System</div>
 
-    <!-- Step 7: Panel Model — module selection, orientation, losses -->
-    <details class="ds-panel" data-sec="step6">
-      <summary><h3><span class="step step-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M3 8h14M3 12h14M10 4v12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span> Panel Model</h3></summary>
-      <div class="ds-panel-body">
-      <!-- Panel Model picker — populated from PANEL_DB on boot, grouped by brand -->
-      <div class="ds-field">
-        <label>Panel Model <span id="ds-panel-count-badge" class="ds-inv-rec"></span></label>
-        <select id="ds-panel-model" onchange="onPanelModelChange()"></select>
-      </div>
-      <div class="ds-panel-specs" id="ds-panel-specs"></div>
-
-      <!-- Upload a custom panel datasheet (PDF) — auto-extracts Voc/Vmp/Isc/Imp/wattage
-           and adds the panel to the active session (not persisted). -->
-      <div style="margin-top:.45rem;padding:.45rem .55rem;background:rgba(45,130,190,.04);border:1px dashed rgba(45,130,190,.28);border-radius:7px;font-size:.6rem;color:#64748B;line-height:1.4">
-        Don't see your panel? <a href="#" onclick="document.getElementById('ds-datasheet-input').click();return false;" style="color:#2D82BE;font-weight:800;text-decoration:none">Upload Module Datasheet (PDF)</a> — we'll auto-extract specs for this session.
-        <input type="file" id="ds-datasheet-input" accept="application/pdf" style="display:none" onchange="if(this.files[0])processDatasheetFile(this.files[0]).catch(function(e){console.error('[DS] Datasheet error:',e)})">
-        <div style="margin-top:.2rem;font-size:.55rem;font-style:italic">To permanently add a panel to our catalog, email the datasheet to <a href="mailto:engineering@solarmason.com" style="color:#2D82BE;font-weight:700">engineering@solarmason.com</a>.</div>
-        <div id="ds-datasheet-status" style="margin-top:.25rem;font-weight:700;display:none"></div>
-      </div>
-      <!-- Hidden legacy input so all downstream code that reads ds-panel-w still works -->
-      <input type="hidden" id="ds-panel-w" value="440">
-
-      <div class="ds-row" style="margin-top:.55rem">
-        <div class="ds-field"><label>Tilt (°)</label><input type="number" id="ds-tilt" value="25" min="0" max="60"></div>
-        <div class="ds-field"><label>Azimuth (°)</label><input type="number" id="ds-azimuth" value="180" min="0" max="360"></div>
-      </div>
-      <div class="ds-row">
-        <div class="ds-field"><label>Losses (%)</label><input type="number" id="ds-losses" value="14" min="0" max="30" step="0.5"></div>
-        <div class="ds-field" style="visibility:hidden"><label>—</label><input type="number" disabled></div>
-      </div>
-
-      <div class="ds-stats">
-        <div class="ds-stat"><div class="ds-stat-label">System Size</div><div class="ds-stat-value" id="ds-kw">0.00<span class="ds-stat-unit">kW DC</span></div></div>
-        <div class="ds-stat"><div class="ds-stat-label">Active Panels</div><div class="ds-stat-value" id="ds-active-count">0<span class="ds-stat-unit">panels</span></div></div>
-      </div>
-      </div>
-    </details>
-
-    <!-- Step 8: Racking System — roof (IronRidge XR) or ground (AVANS, auto) -->
-    <details class="ds-panel" data-sec="step7">
-      <summary><h3><span class="step step-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M2 7h16M2 13h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M5 4v12M10 4v12M15 4v12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span> Racking System</h3></summary>
-      <div class="ds-panel-body">
         <!-- IronRidge racking series (roof mode only — ground uses AVANS) -->
         <div class="ds-ir-section ds-roof-only" id="ds-ir-section">
-          <div class="ds-inv-label">IronRidge Racking Series</div>
           <div class="ds-ir-row">
             <button type="button" class="ds-ir-btn" data-series="XR10" onclick="setIronRidgeSeries('XR10')">
               <span class="ds-ir-name">XR10</span>
@@ -5191,6 +5161,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
           </div>
           <div class="ds-inv-hint" id="ds-ir-auto-hint" style="margin-top:.4rem;font-size:.62rem;color:#64748B;line-height:1.4">Auto-selects based on site location (wind / snow load)</div>
         </div>
+
         <!-- ────────────────────────────────────────────────────────────
              SEMS AVANS Ground-Mount Foundation Picker — shown only when
              mountMode === 'ground'. Lets the user pick the foundation
@@ -5201,7 +5172,6 @@ body.ds-mode-ground .ds-ground-only{display:block}
              forces that the BOM will use to size the selected foundation.
              ──────────────────────────────────────────────────────────── -->
         <div class="ds-avans-fdn ds-ground-only" id="ds-avans-fdn-section">
-          <div class="ds-inv-label">SEMS AVANS Foundation Type</div>
           <div class="ds-fdn-grid">
             <button type="button" class="ds-fdn-card active" data-fdn="driven_ibeam" onclick="setAvansFoundation('driven_ibeam')">
               <span class="ds-fdn-name">Driven I-Beam</span>
@@ -5285,8 +5255,64 @@ body.ds-mode-ground .ds-ground-only{display:block}
 
         <!-- Legacy ground-mount note (kept hidden — replaced by picker above) -->
         <div style="display:none" id="ds-racking-ground-note">Ground-mount projects use the <strong>SEMS AVANS</strong> racking system.</div>
+
       </div>
     </details>
+
+    <!-- Obstructions & Keep-Out Zones -->
+    <details class="ds-panel" data-sec="step4">
+      <summary><h3><span class="step step-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2.5 16h15L10 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 8v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14" r=".7" fill="currentColor"/></svg></span> Obstructions</h3></summary>
+      <div class="ds-panel-body">
+      <div class="ds-obst-buttons">
+        <button class="ds-mini-btn" id="ds-draw-obst" onclick="toggleDrawObstruction()"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 14l8-8 3 3-8 8H3v-3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M11 6l3 3" stroke="currentColor" stroke-width="1.3"/></svg>️ Draw</button>
+        <button class="ds-mini-btn ds-mini-btn-danger" onclick="clearObstructions()"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M5 6h10l-1 12H6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M3 6h14M8 3h4v3H8z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Clear</button>
+      </div>
+      <div class="ds-obst-list" id="ds-obst-list"><em>None drawn</em></div>
+      </div>
+    </details>
+
+    <!-- Panel Layout was here — content merged into the consolidated
+         "Mount, Layout & Racking" panel above (step3). -->
+    <!-- Step 7: Panel Model — module selection, orientation, losses -->
+    <details class="ds-panel" data-sec="step6">
+      <summary><h3><span class="step step-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M3 8h14M3 12h14M10 4v12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span> Panel Model</h3></summary>
+      <div class="ds-panel-body">
+      <!-- Panel Model picker — populated from PANEL_DB on boot, grouped by brand -->
+      <div class="ds-field">
+        <label>Panel Model <span id="ds-panel-count-badge" class="ds-inv-rec"></span></label>
+        <select id="ds-panel-model" onchange="onPanelModelChange()"></select>
+      </div>
+      <div class="ds-panel-specs" id="ds-panel-specs"></div>
+
+      <!-- Upload a custom panel datasheet (PDF) — auto-extracts Voc/Vmp/Isc/Imp/wattage
+           and adds the panel to the active session (not persisted). -->
+      <div style="margin-top:.45rem;padding:.45rem .55rem;background:rgba(45,130,190,.04);border:1px dashed rgba(45,130,190,.28);border-radius:7px;font-size:.6rem;color:#64748B;line-height:1.4">
+        Don't see your panel? <a href="#" onclick="document.getElementById('ds-datasheet-input').click();return false;" style="color:#2D82BE;font-weight:800;text-decoration:none">Upload Module Datasheet (PDF)</a> — we'll auto-extract specs for this session.
+        <input type="file" id="ds-datasheet-input" accept="application/pdf" style="display:none" onchange="if(this.files[0])processDatasheetFile(this.files[0]).catch(function(e){console.error('[DS] Datasheet error:',e)})">
+        <div style="margin-top:.2rem;font-size:.55rem;font-style:italic">To permanently add a panel to our catalog, email the datasheet to <a href="mailto:engineering@solarmason.com" style="color:#2D82BE;font-weight:700">engineering@solarmason.com</a>.</div>
+        <div id="ds-datasheet-status" style="margin-top:.25rem;font-weight:700;display:none"></div>
+      </div>
+      <!-- Hidden legacy input so all downstream code that reads ds-panel-w still works -->
+      <input type="hidden" id="ds-panel-w" value="440">
+
+      <div class="ds-row" style="margin-top:.55rem">
+        <div class="ds-field"><label>Tilt (°)</label><input type="number" id="ds-tilt" value="25" min="0" max="60"></div>
+        <div class="ds-field"><label>Azimuth (°)</label><input type="number" id="ds-azimuth" value="180" min="0" max="360"></div>
+      </div>
+      <div class="ds-row">
+        <div class="ds-field"><label>Losses (%)</label><input type="number" id="ds-losses" value="14" min="0" max="30" step="0.5"></div>
+        <div class="ds-field" style="visibility:hidden"><label>—</label><input type="number" disabled></div>
+      </div>
+
+      <div class="ds-stats">
+        <div class="ds-stat"><div class="ds-stat-label">System Size</div><div class="ds-stat-value" id="ds-kw">0.00<span class="ds-stat-unit">kW DC</span></div></div>
+        <div class="ds-stat"><div class="ds-stat-label">Active Panels</div><div class="ds-stat-value" id="ds-active-count">0<span class="ds-stat-unit">panels</span></div></div>
+      </div>
+      </div>
+    </details>
+
+    <!-- Racking System was here — content merged into the consolidated
+         "Mount, Layout & Racking" panel above (step3). -->
 
     <!-- Step 9: Inverter Technology — Enphase micros vs SolarEdge string + optimizers -->
     <details class="ds-panel" data-sec="step8">
@@ -5830,11 +5856,9 @@ body.ds-mode-ground .ds-ground-only{display:block}
     <div class="ds-tools-rail" id="ds-tools-rail" aria-label="Section quick-jump">
       <button type="button" class="ds-rail-btn" data-target-sec="step1" onclick="openToolsSection('step1')" title="Customer & Project Info" aria-label="Open Customer & Project Info"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="ds-rail-label">Customer</span></button>
       <button type="button" class="ds-rail-btn" data-target-sec="step2" onclick="openToolsSection('step2')" title="Project Address" aria-label="Open Project Address"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 2c-3.3 0-6 2.5-6 5.8 0 4.2 6 10.2 6 10.2s6-6 6-10.2C16 4.5 13.3 2 10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="10" cy="7.8" r="2" stroke="currentColor" stroke-width="1.4"/></svg><span class="ds-rail-label">Address</span></button>
-      <button type="button" class="ds-rail-btn" data-target-sec="step3" onclick="openToolsSection('step3')" title="Mount Type" aria-label="Open Mount Type"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 10l7-6 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v8h10V9" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 17v-4h4v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ds-rail-label">Mount</span></button>
+      <button type="button" class="ds-rail-btn" data-target-sec="step3" onclick="openToolsSection('step3')" title="Mount, Layout & Racking" aria-label="Open Mount, Layout & Racking"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 10l7-6 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v8h10V9" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 17v-4h4v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ds-rail-label">Site Setup</span></button>
       <button type="button" class="ds-rail-btn" data-target-sec="step4" onclick="openToolsSection('step4')" title="Obstructions" aria-label="Open Obstructions"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2.5 16h15L10 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 8v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14" r=".7" fill="currentColor"/></svg><span class="ds-rail-label">Obstructions</span></button>
-      <button type="button" class="ds-rail-btn" data-target-sec="step5" onclick="openToolsSection('step5')" title="Panel Layout" aria-label="Open Panel Layout"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.4"/><rect x="9.5" y="4" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.4"/><rect x="3" y="10.5" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.4"/><rect x="9.5" y="10.5" width="5" height="5" rx=".5" stroke="currentColor" stroke-width="1.4"/></svg><span class="ds-rail-label">Layout</span></button>
       <button type="button" class="ds-rail-btn" data-target-sec="step6" onclick="openToolsSection('step6')" title="Panel Model" aria-label="Open Panel Model"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M3 8h14M3 12h14M10 4v12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span class="ds-rail-label">Panel Model</span></button>
-      <button type="button" class="ds-rail-btn" data-target-sec="step7" onclick="openToolsSection('step7')" title="Racking System" aria-label="Open Racking System"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M2 7h16M2 13h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M5 4v12M10 4v12M15 4v12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span class="ds-rail-label">Racking</span></button>
       <button type="button" class="ds-rail-btn" data-target-sec="step8" onclick="openToolsSection('step8')" title="Inverter Technology" aria-label="Open Inverter Technology"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M11 6l-3 5h2l-1 3 3-5h-2l1-3z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/></svg><span class="ds-rail-label">Inverter</span></button>
       <button type="button" class="ds-rail-btn" data-target-sec="step9" onclick="openToolsSection('step9')" title="EV Charging" aria-label="Open EV Charging"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M4 13v-2.5L5.2 7h7.6L14 10.5V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="6" cy="13" r="1.3" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="13" r="1.3" stroke="currentColor" stroke-width="1.3"/><path d="M15 9v4a2 2 0 002 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span class="ds-rail-label">EV</span></button>
       <button type="button" class="ds-rail-btn" data-target-sec="step10" onclick="openToolsSection('step10')" title="Battery Backup" aria-label="Open Battery Backup"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="6" width="13.5" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="16.5" y="8" width="1.5" height="4" rx=".3" fill="currentColor"/><rect x="4.5" y="8" width="2" height="4" rx=".3" fill="currentColor"/><rect x="7.5" y="8" width="2" height="4" rx=".3" fill="currentColor"/><rect x="10.5" y="8" width="2" height="4" rx=".3" fill="currentColor"/></svg><span class="ds-rail-label">Battery</span></button>
