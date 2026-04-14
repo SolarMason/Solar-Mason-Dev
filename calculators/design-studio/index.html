@@ -5074,7 +5074,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
         <div class="ds-status waiting" id="ds-seg-status">Awaiting roof analysis</div>
 
         <!-- Offset presets (only visible when a utility bill has been uploaded) -->
-        <div class="ds-preset-wrap ds-roof-only" id="ds-preset-wrap" style="display:none">
+        <div class="ds-preset-wrap" id="ds-preset-wrap" style="display:none">
           <div class="ds-preset-label">Offset <span id="ds-preset-sub" style="font-weight:600;color:#94a3b8;font-size:.62rem"></span></div>
           <div class="ds-preset-row">
             <button class="ds-preset-btn" data-pct="80" onclick="selectOffsetPreset(80)">
@@ -7241,6 +7241,10 @@ function setMountMode(mode) {
   updateSliderDisplay(activeCountForMode());
   updateSystemStats();
   renderArrayList();
+  // The offset preset labels switch units between modes (panels vs sections),
+  // and the wrap is shown/hidden based on whether the current mode has the
+  // necessary data. Refresh on every mode toggle.
+  if (typeof refreshOffsetPresets === 'function') refreshOffsetPresets();
 }
 
 // Force the 2D map back into view without touching the user's view preference.
@@ -7415,6 +7419,11 @@ function setAvansType(type) {
     document.querySelectorAll('.ds-avans-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.type === type);
     });
+
+    // The offset preset labels show section counts based on the currently
+    // selected AVANS type (8.0 vs 10.0). When the type changes, the same
+    // target % needs a different number of sections — refresh the labels.
+    if (typeof refreshOffsetPresets === 'function') refreshOffsetPresets();
 
     // Safety: if we're not in ground mode, flip to it first so
     // the map listener gets wired. Ignoring the button press
@@ -10187,8 +10196,99 @@ function panelCountForOffset(offsetPct) {
   return roofPanels.length; // couldn't reach target — return max available
 }
 
-// Activate the top-N highest-energy panels (mirrors slider behavior)
+// ─────────────────────────────────────────────────────────────
+// Ground-mode offset sizing
+// ─────────────────────────────────────────────────────────────
+// In roof mode, panelCountForOffset() iterates the ACTUAL placed panels
+// (which have realistic per-panel yearlyEnergyDcKwh values from Google
+// Solar API). In ground mode, panels are placeholder estimates and may
+// not even be placed yet — so we estimate per-panel yield from the
+// picked panel wattage × PA-typical specific yield, then convert to
+// AVANS sections.
+//
+// PA specific yield used: 1300 kWh/kW/year for fixed-tilt 30° south
+// (PVWatts gives ~1280-1320 for the Scranton metro area at this tilt
+// and azimuth).
+function _estimatedGroundPanelDcKwhPerYear() {
+  const panelW = DS_STATE.panelCapacityW || parseFloat(document.getElementById('ds-panel-w')?.value) || 440;
+  const specificYieldKwhPerKw = 1300;
+  return (panelW / 1000) * specificYieldKwhPerKw;
+}
+
+// How many AVANS panels (across all sections) are needed to hit the
+// target offset? Returns null if no bill is uploaded.
+function groundPanelCountForOffset(offsetPct) {
+  if (!DS_STATE.billData || !DS_STATE.billData.annualKwh) return null;
+  const lossesPct = parseFloat(document.getElementById('ds-losses')?.value) || 14;
+  const acFactor = 1 - lossesPct / 100;
+  const baseKwh  = DS_STATE.billData.annualKwh;
+  const evKwh    = (DS_STATE.evLoad && DS_STATE.evLoad.annualKwh) || 0;
+  const fleetKwh = (DS_STATE.fleetLoad && DS_STATE.fleetLoad.totalAnnualKwh) || 0;
+  const targetKwh = (baseKwh + evKwh + fleetKwh) * (offsetPct / 100);
+  const perPanelAcKwh = _estimatedGroundPanelDcKwhPerYear() * acFactor;
+  if (perPanelAcKwh <= 0) return null;
+  return Math.ceil(targetKwh / perPanelAcKwh);
+}
+
+// Convert a raw panel count to the number of AVANS sections of the
+// given type needed to hold them (rounds up — a 9-panel target needs
+// 2 AVANS_8 sections, not 1.125).
+function sectionsForPanelCount(panelCount, sectionType) {
+  if (panelCount == null || panelCount <= 0) return 0;
+  const perSection = sectionType === 'AVANS_10' ? 10 : 8;
+  return Math.ceil(panelCount / perSection);
+}
+
+// Activate the top-N highest-energy panels (mirrors slider behavior).
+// In roof mode, this sets the slider and applies top-N panels.
+// In ground mode, this auto-deploys AVANS sections to reach the target.
 function selectOffsetPreset(offsetPct) {
+  // ─── GROUND MODE BRANCH ─────────────────────────────────────
+  if (DS_STATE.mountMode === 'ground') {
+    const panelsNeeded = groundPanelCountForOffset(offsetPct);
+    if (panelsNeeded == null) {
+      const meta = document.getElementById('ds-custom-offset-meta');
+      if (meta) meta.innerHTML = '<span style="color:#94a3b8">Upload a utility bill first.</span>';
+      return;
+    }
+    const sectionType = DS_STATE.groundPlacementType || 'AVANS_8';
+    const sectionsNeeded = sectionsForPanelCount(panelsNeeded, sectionType);
+    const have = DS_STATE.groundArrays.length;
+    const delta = sectionsNeeded - have;
+
+    // Highlight the active preset button
+    document.querySelectorAll('.ds-preset-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.pct) === offsetPct);
+    });
+
+    if (delta > 0) {
+      // Auto-deploy delta sections. Each setAvansType call either drops
+      // the first section at map center (CASE A) or appends to the
+      // current row (CASE B, including auto-starting a new row when
+      // the current row is at the 10-section cap).
+      console.log('[OFFSET] ground deploy:', { offsetPct, panelsNeeded, sectionsNeeded, have, delta, sectionType });
+      for (let i = 0; i < delta; i++) {
+        setAvansType(sectionType);
+      }
+    }
+
+    const meta = document.getElementById('ds-custom-offset-meta');
+    if (meta) {
+      const totalNow = DS_STATE.groundArrays.length;
+      if (delta > 0) {
+        const label = sectionType === 'AVANS_10' ? 'AVANS 10.0' : 'AVANS 8.0';
+        meta.innerHTML = `Deployed ${delta} ${label} section${delta !== 1 ? 's' : ''} · total <strong>${totalNow}</strong> on site for <strong>${offsetPct}%</strong> offset`;
+      } else if (delta === 0) {
+        meta.innerHTML = `Already at <strong>${offsetPct}%</strong> offset (${totalNow} sections placed)`;
+      } else {
+        meta.innerHTML = `<span style="color:#f59e0b">You have ${-delta} more section${-delta !== 1 ? 's' : ''} than needed for ${offsetPct}% — clear and redeploy if you want to downsize</span>`;
+      }
+    }
+    updateSystemStats();
+    return;
+  }
+
+  // ─── ROOF MODE (original behavior) ──────────────────────────
   if (DS_STATE.mountMode !== 'roof') setMountMode('roof');
   const count = panelCountForOffset(offsetPct);
   if (count == null) return;
@@ -10213,6 +10313,7 @@ function selectOffsetPreset(offsetPct) {
 // Live preview as the user types into the custom offset field — shows the
 // resulting panel count and kW size without actually applying the change yet.
 // Apply only happens when they press Enter or click the Apply button.
+// In ground mode, shows section count using the currently selected AVANS type.
 function onCustomOffsetInput() {
   const inp = document.getElementById('ds-custom-offset');
   const meta = document.getElementById('ds-custom-offset-meta');
@@ -10226,6 +10327,22 @@ function onCustomOffsetInput() {
     meta.innerHTML = '<span style="color:#dc2626">Cap is 500%. Real world is rarely above 130%.</span>';
     return;
   }
+
+  if (DS_STATE.mountMode === 'ground') {
+    const panelsNeeded = groundPanelCountForOffset(pct);
+    if (panelsNeeded == null) {
+      meta.innerHTML = '<span style="color:#94a3b8">Upload a utility bill first.</span>';
+      return;
+    }
+    const sectionType = DS_STATE.groundPlacementType || 'AVANS_8';
+    const sectionsNeeded = sectionsForPanelCount(panelsNeeded, sectionType);
+    const panelW = (DS_STATE.panelCapacityW || 440) / 1000;
+    const kwOnSite = panelsNeeded * panelW;
+    const label = sectionType === 'AVANS_10' ? 'AVANS 10.0' : 'AVANS 8.0';
+    meta.innerHTML = `Preview: <strong>${sectionsNeeded} ${label} section${sectionsNeeded !== 1 ? 's' : ''} · ${kwOnSite.toFixed(1)} kW</strong> — press Enter or Apply`;
+    return;
+  }
+
   const n = panelCountForOffset(pct);
   if (n == null) {
     meta.innerHTML = '<span style="color:#94a3b8">Upload a utility bill first.</span>';
@@ -10236,7 +10353,8 @@ function onCustomOffsetInput() {
 }
 
 // Apply the user-entered custom offset percentage. Uses the same plumbing
-// as the preset buttons so EV-load-aware sizing carries through automatically.
+// as the preset buttons so EV-load-aware sizing carries through automatically
+// in BOTH roof and ground modes.
 function applyCustomOffset() {
   const inp = document.getElementById('ds-custom-offset');
   if (!inp) return;
@@ -10248,25 +10366,42 @@ function applyCustomOffset() {
   selectOffsetPreset(pct);
   // Custom offset wins — clear any active preset highlight
   document.querySelectorAll('.ds-preset-btn').forEach(b => b.classList.remove('active'));
-  // Update meta to reflect the applied state
-  const meta = document.getElementById('ds-custom-offset-meta');
-  const panelKw = (DS_STATE.panelCapacityW || 400) / 1000;
-  const n = panelCountForOffset(pct);
-  if (meta && n != null) {
-    meta.innerHTML = `Applied: <strong>${pct}% offset · ${n} panels · ${(n * panelKw).toFixed(1)} kW</strong>`;
+  // Update meta to reflect the applied state (only override for roof mode;
+  // ground mode meta is set inside selectOffsetPreset already).
+  if (DS_STATE.mountMode === 'roof') {
+    const meta = document.getElementById('ds-custom-offset-meta');
+    const panelKw = (DS_STATE.panelCapacityW || 400) / 1000;
+    const n = panelCountForOffset(pct);
+    if (meta && n != null) {
+      meta.innerHTML = `Applied: <strong>${pct}% offset · ${n} panels · ${(n * panelKw).toFixed(1)} kW</strong>`;
+    }
   }
 }
 
-// Recalculate preset labels (panel count + kW size for each target)
+// Recalculate preset labels (panel count + kW size for each target).
+// In roof mode, shows actual panel counts based on placed roof panels.
+// In ground mode, shows AVANS section counts based on the currently
+// selected ground placement type and the estimated specific yield.
 function refreshOffsetPresets() {
   const wrap = document.getElementById('ds-preset-wrap');
   if (!wrap) return;
   const hasBill = DS_STATE.billData && DS_STATE.billData.annualKwh;
-  const hasPanels = DS_STATE.allPanels && DS_STATE.allPanels.length;
-  if (!hasBill || !hasPanels) {
+  if (!hasBill) {
     wrap.style.display = 'none';
     return;
   }
+
+  // Roof mode requires actual placed panels. Ground mode just needs a bill
+  // (the section count is computed from estimated per-panel yield, not
+  // from placed panels — the user wants to see the target BEFORE placing).
+  if (DS_STATE.mountMode === 'roof') {
+    const hasRoofPanels = DS_STATE.allPanels && DS_STATE.allPanels.some(p => !p.isGround);
+    if (!hasRoofPanels) {
+      wrap.style.display = 'none';
+      return;
+    }
+  }
+
   wrap.style.display = '';
   const sub = document.getElementById('ds-preset-sub');
   if (sub) {
@@ -10277,21 +10412,36 @@ function refreshOffsetPresets() {
     const parts = [`${baseKwh.toLocaleString()}`];
     if (evKwh > 0) parts.push(`${Math.round(evKwh).toLocaleString()} EV`);
     if (fleetKwh > 0) parts.push(`${Math.round(fleetKwh).toLocaleString()} fleet`);
+    let baseLabel;
     if (parts.length === 1) {
-      sub.textContent = `(${baseKwh.toLocaleString()} kWh / yr)`;
+      baseLabel = `(${baseKwh.toLocaleString()} kWh / yr)`;
     } else {
-      sub.innerHTML = `(${parts.join(' + ')} = <strong>${Math.round(total).toLocaleString()}</strong> kWh / yr)`;
+      baseLabel = `(${parts.join(' + ')} = <strong>${Math.round(total).toLocaleString()}</strong> kWh / yr)`;
+    }
+    // Append a mode tag so the user knows which sizing math is in effect
+    if (DS_STATE.mountMode === 'ground') {
+      const sectionType = DS_STATE.groundPlacementType || 'AVANS_8';
+      const label = sectionType === 'AVANS_10' ? 'AVANS 10.0' : 'AVANS 8.0';
+      sub.innerHTML = baseLabel + ` · <em style="color:#2D82BE">${label} sections</em>`;
+    } else {
+      sub.innerHTML = baseLabel;
     }
   }
 
   const panelKw = (DS_STATE.panelCapacityW || 400) / 1000;
   [80, 100, 120].forEach(pct => {
-    const n = panelCountForOffset(pct);
     const el = document.getElementById('ds-preset-' + pct);
-    if (el && n != null) {
+    if (!el) return;
+    if (DS_STATE.mountMode === 'ground') {
+      const panelsNeeded = groundPanelCountForOffset(pct);
+      if (panelsNeeded == null) { el.textContent = '—'; return; }
+      const sectionType = DS_STATE.groundPlacementType || 'AVANS_8';
+      const sectionsNeeded = sectionsForPanelCount(panelsNeeded, sectionType);
+      el.textContent = `${sectionsNeeded} sec · ${(panelsNeeded * panelKw).toFixed(1)} kW`;
+    } else {
+      const n = panelCountForOffset(pct);
+      if (n == null) { el.textContent = '—'; return; }
       el.textContent = `${n} panels · ${(n * panelKw).toFixed(1)} kW`;
-    } else if (el) {
-      el.textContent = '—';
     }
   });
 }
