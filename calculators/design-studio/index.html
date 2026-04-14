@@ -7438,7 +7438,7 @@ function setAvansType(type) {
       const totalSections = DS_STATE.groundArrays.length;
       const modelLabel = type === 'AVANS_10' ? 'AVANS 10.0' : 'AVANS 8.0';
       setStatus('ready',
-        `<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> ${modelLabel} section #${totalSections} placed at map center · tap again for more, or click map to place at a specific location`);
+        `✓ ${modelLabel} section #${totalSections} placed at map center · tap again for more, or click map to place at a specific location`);
       return;
     }
 
@@ -7471,7 +7471,7 @@ function setAvansType(type) {
     const totalSections = DS_STATE.groundArrays.length;
     const totalRows = DS_STATE.avansRows.length;
     setStatus('ready',
-      `<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> AVANS section #${totalSections} deployed · ${totalRows} row${totalRows !== 1 ? 's' : ''}`);
+      `✓ AVANS section #${totalSections} deployed · ${totalRows} row${totalRows !== 1 ? 's' : ''}`);
   } catch (err) {
     console.error('[AVANS] setAvansType threw:', err);
     setStatus('error', 'AVANS placement failed — ' + (err && err.message || 'unknown error') + ' · see browser console for details');
