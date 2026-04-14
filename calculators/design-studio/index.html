@@ -16194,21 +16194,15 @@ document.querySelectorAll('.ds-tools-body details.ds-panel').forEach(d => {
       // Genuine user-initiated close. Find the next .ds-panel in
       // document order and open it. If there's nothing after, we're
       // at the end of the workflow — do nothing.
+      // We do NOT scroll the new panel into view (removed per user
+      // request — the auto-scroll was moving the page too much).
+      // The user stays wherever they are and the next panel just
+      // opens underneath.
       const all = Array.from(document.querySelectorAll('.ds-tools-body details.ds-panel'));
       const idx = all.indexOf(this);
       const next = (idx >= 0 && idx < all.length - 1) ? all[idx + 1] : null;
       if (next && !next.open) {
-        // Open the next panel. Its toggle handler will fire and the
-        // single-open logic will see no other panels open (we just
-        // closed ourselves), so nothing additional to clean up.
-        // Smooth scroll the user's view to land on it.
         next.open = true;
-        try {
-          next.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } catch (e) {
-          // Safari fallback for older versions
-          next.scrollIntoView();
-        }
       }
     }
   });
