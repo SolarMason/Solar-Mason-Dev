@@ -4963,11 +4963,42 @@ body.ds-mode-ground .ds-ground-only{display:block}
     </div>
     <div class="ds-tools-body" id="ds-tools-body">
     <!-- Step 1: Customer & Project Info — bill upload, contact, class, phase -->
+    <!-- ════════════════════════════════════════════════════════════════
+         CUSTOMER PANEL — merged step1 (Customer & Project Info)
+                         + step2 (Project Address)
+         ════════════════════════════════════════════════════════════════
+         Per Noel: merged the two sections into one called "Customer".
+         Removed the redundant "Project Site (if different from billing)"
+         contact field — per the user, address details come from either
+         (a) the uploaded utility bill's auto-extracted address, or
+         (b) the manual address input. No third redundant field needed.
+
+         Element preservation: every ID and onclick handler from the
+         original two panels is preserved verbatim so the JS reads
+         still work — ds-addr-input, ds-addr-status, ds-addr-go,
+         ds-bill-upload, ds-bill-input, ds-bill-result, ds-manual-kwh,
+         ds-class-res-top, ds-class-com-top, ds-phase-1ph, ds-phase-3ph,
+         ds-contact-name, ds-contact-phone, ds-contact-email,
+         ds-contact-notes.
+
+         Deleted: ds-contact-site (was only written by onContactChange,
+         never read anywhere — confirmed via grep on all of
+         contact.site / contact\[\"site\"\]). Dead code.
+
+         Layout order (top to bottom):
+           1. Bill upload dropzone  (auto-fills address + usage + rate)
+           2. Manual entry fallback — Address input + Annual kWh input
+           3. Bill result display (shown after successful parse)
+           4. Project Class toggle (residential / commercial)
+           5. Electrical Service toggle (1Φ / 3Φ)
+           6. Contact fields (name, phone, email, notes)
+         ════════════════════════════════════════════════════════════════ -->
     <details class="ds-panel" data-sec="step1" open>
-      <summary><h3><span class="step step-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span> Customer &amp; Project Info</h3></summary>
+      <summary><h3><span class="step step-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span> Customer</h3></summary>
       <div class="ds-panel-body">
-        <!-- Utility bill upload — FIRST so the auto-extracted address, usage,
-             and rate populate everything else in this section automatically. -->
+        <!-- Utility bill upload — FIRST so the auto-extracted address,
+             usage, and rate populate everything else in this section
+             automatically. -->
         <div class="ds-bill-upload" id="ds-bill-upload" onclick="document.getElementById('ds-bill-input').click()">
           <input type="file" id="ds-bill-input" accept="application/pdf" style="display:none"
             onchange="if(this.files[0])processBillFile(this.files[0]).catch(function(e){console.error('[DS] Bill error:',e)})">
@@ -4975,8 +5006,21 @@ body.ds-mode-ground .ds-ground-only{display:block}
           <div class="ds-bill-title">Upload Your Utility Bill</div>
           <div class="ds-bill-sub">Tap here or drag a PDF. Auto-fills address, usage &amp; rate. Processed in-browser.</div>
         </div>
+
+        <!-- Manual entry fallback — used when no bill is available, or
+             to override the auto-extracted values. One canonical address
+             field (was previously duplicated in step2); the Go button
+             triggers the same geocoder as pressing Enter in the field. -->
         <div style="margin-top:.45rem;padding-top:.45rem;border-top:1px dashed rgba(0,0,0,.08)">
-          <div class="ds-row" style="margin-bottom:0">
+          <div class="ds-field">
+            <label>Project Address</label>
+            <div style="display:flex;gap:.5rem">
+              <input type="text" id="ds-addr-input" placeholder="Type an address and press Enter" autocomplete="off" style="flex:1">
+              <button class="ds-btn" id="ds-addr-go" onclick="manualGeocode()" style="white-space:nowrap;padding:.55rem 1rem;font-size:.82rem">Go</button>
+            </div>
+            <div id="ds-addr-status" style="font-size:.78rem;color:#94a3b8;margin-top:.35rem;display:none"></div>
+          </div>
+          <div class="ds-row" style="margin-bottom:0;margin-top:.55rem">
             <div class="ds-field"><label>Or enter annual kWh</label><input type="number" id="ds-manual-kwh" placeholder="12000" min="0" max="500000" step="100"></div>
             <div class="ds-field" style="display:flex;align-items:flex-end"><button class="ds-btn ds-btn-sec" style="width:100%" onclick="applyManualBill()">Apply</button></div>
           </div>
@@ -5008,31 +5052,25 @@ body.ds-mode-ground .ds-ground-only{display:block}
           </div>
         </div>
 
-        <!-- Contact info — flows into the PDF cover page -->
+        <!-- Contact info — flows into the PDF cover page.
+             NOTE: the old "Project Site (if different from billing)" field
+             was removed as redundant — project address comes from either
+             the uploaded bill or the manual address input above. -->
         <div class="ds-field">
           <label>Contact</label>
           <div class="ds-contact-grid">
             <div class="full"><span class="ds-contact-label">Customer / Company Name</span><input type="text" id="ds-contact-name" placeholder="John Smith / Acme Corp" oninput="onContactChange()"></div>
             <div><span class="ds-contact-label">Phone</span><input type="tel" id="ds-contact-phone" placeholder="(570) 555-0123" oninput="onContactChange()"></div>
             <div><span class="ds-contact-label">Email</span><input type="email" id="ds-contact-email" placeholder="customer@example.com" oninput="onContactChange()"></div>
-            <div class="full"><span class="ds-contact-label">Project Site (if different from billing)</span><input type="text" id="ds-contact-site" placeholder="Optional — defaults to address in next step" oninput="onContactChange()"></div>
             <div class="full"><span class="ds-contact-label">Project Notes</span><textarea id="ds-contact-notes" rows="2" placeholder="Optional internal notes — appears on the proposal cover" oninput="onContactChange()"></textarea></div>
           </div>
         </div>
       </div>
     </details>
 
-    <!-- Address -->
-    <details class="ds-panel" data-sec="step2">
-      <summary><h3><span class="step step-icon"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 2c-3.3 0-6 2.5-6 5.8 0 4.2 6 10.2 6 10.2s6-6 6-10.2C16 4.5 13.3 2 10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="10" cy="7.8" r="2" stroke="currentColor" stroke-width="1.4"/></svg></span> Project Address</h3></summary>
-      <div class="ds-panel-body">
-      <div class="ds-addr" style="display:flex;gap:.5rem">
-        <input type="text" id="ds-addr-input" placeholder="Type an address and press Enter" autocomplete="off" style="flex:1">
-        <button class="ds-btn" id="ds-addr-go" onclick="manualGeocode()" style="white-space:nowrap;padding:.55rem 1rem;font-size:.82rem">Go</button>
-      </div>
-      <div id="ds-addr-status" style="font-size:.78rem;color:#94a3b8;margin-top:.35rem;display:none"></div>
-      </div>
-    </details>
+    <!-- Project Address was here (step2) — merged into the Customer
+         panel above. The single ds-addr-input field at the top of
+         that panel is the canonical project address field. -->
 
     <!-- Mount Mode Toggle -->
     <!-- ════════════════════════════════════════════════════════════════
@@ -5854,8 +5892,7 @@ body.ds-mode-ground .ds-ground-only{display:block}
          rail shares the same icon vocabulary as the step badges
          inside each section header. -->
     <div class="ds-tools-rail" id="ds-tools-rail" aria-label="Section quick-jump">
-      <button type="button" class="ds-rail-btn" data-target-sec="step1" onclick="openToolsSection('step1')" title="Customer & Project Info" aria-label="Open Customer & Project Info"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="ds-rail-label">Customer</span></button>
-      <button type="button" class="ds-rail-btn" data-target-sec="step2" onclick="openToolsSection('step2')" title="Project Address" aria-label="Open Project Address"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 2c-3.3 0-6 2.5-6 5.8 0 4.2 6 10.2 6 10.2s6-6 6-10.2C16 4.5 13.3 2 10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="10" cy="7.8" r="2" stroke="currentColor" stroke-width="1.4"/></svg><span class="ds-rail-label">Address</span></button>
+      <button type="button" class="ds-rail-btn" data-target-sec="step1" onclick="openToolsSection('step1')" title="Customer" aria-label="Open Customer"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="ds-rail-label">Customer</span></button>
       <button type="button" class="ds-rail-btn" data-target-sec="step3" onclick="openToolsSection('step3')" title="Configuration" aria-label="Open Configuration"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 10l7-6 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v8h10V9" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 17v-4h4v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ds-rail-label">Configuration</span></button>
       <button type="button" class="ds-rail-btn" data-target-sec="step4" onclick="openToolsSection('step4')" title="Obstructions" aria-label="Open Obstructions"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M10 3L2.5 16h15L10 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 8v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14" r=".7" fill="currentColor"/></svg><span class="ds-rail-label">Obstructions</span></button>
       <button type="button" class="ds-rail-btn" data-target-sec="step6" onclick="openToolsSection('step6')" title="Panel Model" aria-label="Open Panel Model"><svg class="gc-ico" viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M3 8h14M3 12h14M10 4v12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span class="ds-rail-label">Panel Model</span></button>
@@ -13028,7 +13065,7 @@ function initBatterySection() {
 // dropdowns to 1Φ split-phase or 3Φ commercial models.
 
 DS_STATE.contact = {
-  name: '', phone: '', email: '', site: '', notes: ''
+  name: '', phone: '', email: '', notes: ''
 };
 DS_STATE.servicePhase = '1ph';   // '1ph' | '3ph'
 
@@ -13037,7 +13074,6 @@ function onContactChange() {
     name:  document.getElementById('ds-contact-name')?.value.trim()  || '',
     phone: document.getElementById('ds-contact-phone')?.value.trim() || '',
     email: document.getElementById('ds-contact-email')?.value.trim() || '',
-    site:  document.getElementById('ds-contact-site')?.value.trim()  || '',
     notes: document.getElementById('ds-contact-notes')?.value.trim() || ''
   };
 }
