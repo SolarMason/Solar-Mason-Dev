@@ -5291,9 +5291,6 @@ body.ds-mode-ground .ds-ground-only{display:block}
           </div>
         </div>
 
-        <!-- Legacy ground-mount note (kept hidden — replaced by picker above) -->
-        <div style="display:none" id="ds-racking-ground-note">Ground-mount projects use the <strong>SEMS AVANS</strong> racking system.</div>
-
       </div>
     </details>
 
@@ -7283,11 +7280,6 @@ function setMountMode(mode) {
   } else {
     hint.textContent = 'Ground mode: drop AVANS 8.0 or AVANS 10.0 arrays. All panels portrait, 30° tilt, 6 ft above ground. Drag any panel to move the entire array.';
   }
-
-  // Step 8 Racking — show the ground-mount note when not in roof mode.
-  // The IronRidge picker itself is handled by the .ds-roof-only CSS rule.
-  const rackGround = document.getElementById('ds-racking-ground-note');
-  if (rackGround) rackGround.style.display = (mode === 'ground') ? 'block' : 'none';
 
   // Ground mode requires the 2D map for placement clicks/taps. If we're currently
   // in 3D, drop back to 2D first — but DON'T touch userViewPreference, so 3D will
