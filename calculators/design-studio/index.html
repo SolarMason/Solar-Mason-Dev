@@ -6862,10 +6862,16 @@ async function fetchSolarInsights() {
   slider.value = suggestedCount;
   DS_STATE.selectedCount = suggestedCount;
 
-  // Initialize activePanels to top N panels by energy (excluding obstructed ones)
-  DS_STATE.activePanels.clear();
+  // Initialize activePanels to top N ROOF panels by energy (excluding obstructed
+  // ones). We do a roof-scoped reset rather than activePanels.clear() so that
+  // any ground panels currently in activePanels (and any ground selection
+  // restored from cache by a prior setMountMode toggle) are preserved.
+  for (const p of DS_STATE.allPanels) {
+    if (!p.isGround) DS_STATE.activePanels.delete(p.idx);
+  }
   let added = 0;
   for (const p of DS_STATE.allPanels) {
+    if (p.isGround) continue;
     if (added >= suggestedCount) break;
     if (DS_STATE.disabledPanels.has(p.idx)) continue;
     DS_STATE.activePanels.add(p.idx);
@@ -7164,7 +7170,7 @@ function togglePanel(idx) {
   }
   applyPanelStyle(idx);
   syncSliderToActive();
-  updateSliderDisplay(DS_STATE.activePanels.size);
+  updateSliderDisplay(activeCountForMode());
   updateSystemStats();
   refresh3DIfActive();
 }
@@ -7179,7 +7185,12 @@ function refresh3DIfActive() {
 
 function syncSliderToActive() {
   const slider = document.getElementById('ds-slider');
-  if (slider) slider.value = DS_STATE.activePanels.size;
+  // Use activeCountForMode() so the slider value reflects ONLY the
+  // currently-visible mode's panels, not the union with the cached
+  // inactive-mode selection. (With the cache approach in setMountMode
+  // these are equivalent in practice, but using the mode-aware count
+  // here documents the intent and prevents future regressions.)
+  if (slider) slider.value = activeCountForMode();
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -7216,6 +7227,51 @@ function panelInCurrentMode(panel) {
 
 function setMountMode(mode) {
   if (DS_STATE.mountMode === mode) return;
+  // ─────────────────────────────────────────────────────────────
+  // Snapshot the OUTGOING mode's active panels into the cache,
+  // then prune activePanels to only the INCOMING mode's panels.
+  // This is what isolates the slider count, BOM count, system
+  // stats, and every other activePanels.size consumer to the
+  // currently-visible mode without rewriting each call site.
+  //
+  // On switch BACK to the original mode, the cache is restored
+  // verbatim, preserving the user's previous panel selection.
+  // ─────────────────────────────────────────────────────────────
+  const oldMode = DS_STATE.mountMode;
+  if (oldMode === 'roof') {
+    // Snapshot all currently-active ROOF panels, then strip them
+    // from activePanels. (We snapshot specifically the roof ones
+    // by checking !p.isGround — never trust mode alone.)
+    DS_STATE.cachedRoofActivePanels = new Set();
+    for (const p of DS_STATE.allPanels) {
+      if (!p.isGround && DS_STATE.activePanels.has(p.idx)) {
+        DS_STATE.cachedRoofActivePanels.add(p.idx);
+        DS_STATE.activePanels.delete(p.idx);
+      }
+    }
+  } else if (oldMode === 'ground') {
+    DS_STATE.cachedGroundActivePanels = new Set();
+    for (const p of DS_STATE.allPanels) {
+      if (p.isGround && DS_STATE.activePanels.has(p.idx)) {
+        DS_STATE.cachedGroundActivePanels.add(p.idx);
+        DS_STATE.activePanels.delete(p.idx);
+      }
+    }
+  }
+  // Restore the incoming mode's previously-cached selection (if any).
+  // Filter the cached idx values against the current allPanels list
+  // to avoid restoring stale idxs from a deleted panel set (e.g.,
+  // after Clear All on the other mode).
+  const incomingCache = (mode === 'roof')
+    ? DS_STATE.cachedRoofActivePanels
+    : DS_STATE.cachedGroundActivePanels;
+  if (incomingCache && incomingCache.size > 0) {
+    const validIdxs = new Set(DS_STATE.allPanels.map(p => p.idx));
+    for (const idx of incomingCache) {
+      if (validIdxs.has(idx)) DS_STATE.activePanels.add(idx);
+    }
+  }
+
   DS_STATE.mountMode = mode;
   document.body.classList.toggle('ds-mode-ground', mode === 'ground');
   document.getElementById('ds-mode-roof').classList.toggle('active', mode === 'roof');
@@ -9247,6 +9303,9 @@ function clearGroundPanels() {
   DS_STATE.avansRows = [];
   DS_STATE.currentAvansRowId = null;
   DS_STATE.selectedGroundPanel = null;
+  // Clear the cached ground active-panel snapshot so a future
+  // mode toggle doesn't try to restore stale idxs from a deleted panel set.
+  if (DS_STATE.cachedGroundActivePanels) DS_STATE.cachedGroundActivePanels.clear();
   _closeAvansContextMenu();
   const selPanelEl = document.getElementById('ds-selected-panel'); if (selPanelEl) selPanelEl.textContent = 'None';
   syncSliderToActive();
@@ -9398,7 +9457,7 @@ function renderPanels() {
   document.getElementById('ds-legend-max').textContent = Math.round(DS_STATE.energyMax);
 
   syncSliderToActive();
-  updateSliderDisplay(DS_STATE.activePanels.size);
+  updateSliderDisplay(activeCountForMode());
   updateSystemStats();
 }
 
@@ -9450,7 +9509,7 @@ function applyObstructions() {
     applyPanelStyle(idx);
   }
   syncSliderToActive();
-  updateSliderDisplay(DS_STATE.activePanels.size);
+  updateSliderDisplay(activeCountForMode());
   updateSystemStats();
 }
 
@@ -9463,7 +9522,7 @@ function clearObstructions() {
   for (const idx of DS_STATE.panelPolygons.keys()) {
     applyPanelStyle(idx);
   }
-  updateSliderDisplay(DS_STATE.activePanels.size);
+  updateSliderDisplay(activeCountForMode());
   updateSystemStats();
 }
 
@@ -13069,6 +13128,24 @@ DS_STATE.contact = {
 };
 DS_STATE.servicePhase = '1ph';   // '1ph' | '3ph'
 
+// ─────────────────────────────────────────────────────────────
+// Mode-cached active-panel snapshots
+// ─────────────────────────────────────────────────────────────
+// DS_STATE.activePanels is a Set of ALL active panel idx values across
+// both roof and ground modes. Without isolation, the slider count and
+// every other consumer that reads activePanels.size would double-count
+// the inactive mode's panels.
+//
+// To fix this without rewriting every read site, we snapshot the
+// outgoing mode's active panels into a per-mode cache when the user
+// toggles modes, then prune activePanels so it ONLY contains the
+// incoming mode's panels. On switch back, the cache is restored
+// verbatim — the user's previous selection is preserved bit-for-bit.
+//
+// See setMountMode() for the snapshot/restore logic.
+DS_STATE.cachedRoofActivePanels = new Set();      // roof panel idx values cached when in ground mode
+DS_STATE.cachedGroundActivePanels = new Set();    // ground panel idx values cached when in roof mode
+
 function onContactChange() {
   DS_STATE.contact = {
     name:  document.getElementById('ds-contact-name')?.value.trim()  || '',
@@ -16101,6 +16178,9 @@ function applyTopNPanels(target) {
 // Deactivate every roof panel (mirror of clearGroundPanels for roof mode). Ground panels are untouched.
 function clearRoofPanels() {
   applyTopNPanels(0);
+  // Clear the cached roof active-panel snapshot so a future mode toggle
+  // doesn't restore stale roof selections after the user explicitly cleared.
+  if (DS_STATE.cachedRoofActivePanels) DS_STATE.cachedRoofActivePanels.clear();
   const slider = document.getElementById('ds-slider');
   if (slider) slider.value = 0;
   updateSliderDisplay(activeCountForMode());
