@@ -4409,12 +4409,9 @@ html, body { background-attachment: scroll !important; }
 .ds-compass button{width:38px;height:38px;border-radius:50%;border:none;background:transparent;color:#0B2545;font-weight:800;font-size:.88rem;cursor:pointer;transition:all .15s}
 .ds-compass button:hover{background:rgba(45,130,190,.12)}
 .ds-compass button.active{background:linear-gradient(135deg,#2D82BE,#1B5E8A);color:#fff;box-shadow:0 2px 8px rgba(45,130,190,.4)}
-/* Vertical divider between compass groups (N/E/S/W | Earth/CAD | Reset) */
+/* Vertical divider between compass groups (N/E/S/W | Reset) */
 .ds-compass-divider{display:inline-block;width:1px;align-self:stretch;margin:6px 2px;background:rgba(0,0,0,.08)}
-/* Earth / CAD pill toggle — wider than compass buttons (text label, not letter) */
-.ds-compass .ds-cammode-btn{width:auto;padding:0 11px;border-radius:18px;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;height:30px;align-self:center}
-.ds-compass .ds-cammode-btn.active{background:linear-gradient(135deg,#2D82BE,#1B5E8A);color:#fff;box-shadow:0 2px 8px rgba(45,130,190,.4)}
-/* Reset (Home) button — same size as compass buttons but with ⟲ glyph */
+/* Reset (Home) button */
 .ds-compass .ds-cammode-reset{width:32px;height:32px;font-size:1rem;align-self:center}
 .ds-compass .ds-cammode-reset:hover{background:rgba(45,130,190,.12);transform:rotate(-90deg)}
 .ds-compass-label{font-size:.62rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.06em;padding:0 10px;display:flex;align-items:center}
@@ -4925,9 +4922,6 @@ body.ds-mode-ground .ds-ground-only{display:block}
         <button data-dir="E" onclick="flyToCompass('E')" title="From the east — shows the EAST face">E</button>
         <button data-dir="S" onclick="flyToCompass('S')" title="From the south — shows the SOUTH face">S</button>
         <button data-dir="W" onclick="flyToCompass('W')" title="From the west — shows the WEST face">W</button>
-        <span class="ds-compass-divider" aria-hidden="true"></span>
-        <button class="ds-cammode-btn" data-cammode="earth" onclick="setCameraMode('earth')" title="Google Earth controls — left-drag pan, right-drag orbit, ctrl+left tilt, scroll zoom">Earth</button>
-        <button class="ds-cammode-btn" data-cammode="cad" onclick="setCameraMode('cad')" title="CAD controls (Fusion / SketchUp / Rhino) — middle-drag pan, right-drag orbit, shift+middle tilt, scroll zoom. Mac trackpad: alt+left = middle">CAD</button>
         <span class="ds-compass-divider" aria-hidden="true"></span>
         <button class="ds-cammode-reset" onclick="resetCameraView()" title="Reset camera to default view (Home key)" aria-label="Reset 3D camera">⟲</button>
       </div>
@@ -6539,100 +6533,64 @@ async function initCesium() {
   }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
   DS_STATE.cesiumClickHandler = handler;
 
-  // Apply user-selected camera control bindings (Earth or CAD), wire
-  // up keyboard navigation, and update the toggle button styling to
-  // match the persisted mode.
-  applyCameraControls(viewer, DS_STATE.cameraMode);
+  // Apply camera control bindings (right-drag to rotate, left-drag
+  // to pan, middle/ctrl+left to tilt, scroll to zoom) and wire up
+  // keyboard navigation (WASD/QE/RF/+-/Home).
+  applyCameraControls(viewer);
   _wireCameraKeyboard(viewer);
-  document.querySelectorAll('.ds-cammode-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.cammode === DS_STATE.cameraMode);
-  });
 }
 
 // ═════════════════════════════════════════════════════════════
 // 3D CAMERA CONTROLS — Earth vs CAD bindings + touch + keyboard
 // ═════════════════════════════════════════════════════════════
 // Rebinds Cesium's ScreenSpaceCameraController for one of the two
-// supported control schemes. Called by initCesium() at viewer
-// construction time, and again by setCameraMode() when the user
-// taps the Earth/CAD pill toggle in the compass cluster.
+// supported control scheme. Called once by initCesium() at viewer
+// construction time.
 //
-// Cesium accepts arrays of "event modifiers" for each action. Each
-// entry is either a CameraEventType enum value (LEFT_DRAG,
-// MIDDLE_DRAG, RIGHT_DRAG, WHEEL, PINCH) or an object combining
-// a type with a keyboard modifier (CTRL, SHIFT, ALT). Multiple
-// entries OR together — any of them triggers the action.
-function applyCameraControls(viewer, mode) {
+// One universal scheme — no toggle:
+//   Left-drag          → pan
+//   Right-drag         → rotate / orbit (right-click hold + drag)
+//   Middle-drag        → tilt (with Ctrl+Left for trackpads)
+//   Scroll             → zoom
+//   Touch: 1-finger pan, 2-finger pinch zoom, 2-finger twist rotate,
+//          2-finger drag tilt
+function applyCameraControls(viewer) {
   if (!viewer || !viewer.scene || !viewer.scene.screenSpaceCameraController) return;
   const c = viewer.scene.screenSpaceCameraController;
   const E = Cesium.CameraEventType;
   const M = Cesium.KeyboardEventModifier;
 
   // Inertia tuning — Cesium defaults (0.9) feel mushy. ~0.7 is snappier
-  // without being jarring. Same in both modes — touch gestures benefit too.
+  // without being jarring. Touch gestures benefit too.
   c.inertiaSpin = 0.7;
   c.inertiaTranslate = 0.7;
   c.inertiaZoom = 0.7;
 
-  // Always allow touch zoom + pinch + spin. Cesium handles the touch
-  // event types (PINCH for two-finger zoom+rotate, plus internal
-  // single/two/three-finger drag). The mode toggle ONLY changes mouse
-  // bindings — touch gestures stay constant so iPad muscle memory
-  // doesn't break when the user toggles modes.
   c.enableTilt = true;
   c.enableRotate = true;
   c.enableZoom = true;
   c.enableTranslate = true;
-  c.enableLook = false;            // first-person look — disabled (disorienting for CAD/Earth users)
+  c.enableLook = false;            // first-person look — disabled (disorienting)
 
-  if (mode === 'cad') {
-    // CAD CONVENTION (Fusion 360 / SketchUp / Rhino)
-    //   Middle-drag             → pan        (with Alt+Left as substitute for trackpads)
-    //   Right-drag              → orbit
-    //   Shift+Middle-drag       → tilt       (with Shift+Alt+Left as substitute)
-    //   Scroll                  → zoom
-    c.translateEventTypes = [E.MIDDLE_DRAG, { eventType: E.LEFT_DRAG, modifier: M.ALT }];
-    c.rotateEventTypes    = [E.RIGHT_DRAG];
-    c.tiltEventTypes      = [
-      { eventType: E.MIDDLE_DRAG, modifier: M.SHIFT },
-      { eventType: E.LEFT_DRAG, modifier: M.SHIFT },          // also Shift+Left so it's reachable
-      E.PINCH                                                  // 2-finger touch tilt
-    ];
-    c.zoomEventTypes      = [E.WHEEL, E.PINCH];
-  } else {
-    // EARTH CONVENTION (Google Earth)
-    //   Left-drag               → pan
-    //   Right-drag              → orbit
-    //   Ctrl+Left-drag          → tilt
-    //   Scroll                  → zoom
-    c.translateEventTypes = [E.LEFT_DRAG];
-    c.rotateEventTypes    = [E.RIGHT_DRAG, { eventType: E.LEFT_DRAG, modifier: M.SHIFT }];  // shift+left also orbits
-    c.tiltEventTypes      = [
-      { eventType: E.LEFT_DRAG, modifier: M.CTRL },
-      { eventType: E.MIDDLE_DRAG },
-      E.PINCH
-    ];
-    c.zoomEventTypes      = [E.WHEEL, E.PINCH];
-  }
+  // Left-drag → pan
+  c.translateEventTypes = [E.LEFT_DRAG];
 
-  console.log('[CAM] camera controls applied:', mode);
-}
+  // Right-drag → rotate / orbit (the primary rotate control)
+  c.rotateEventTypes = [E.RIGHT_DRAG];
 
-// Toggle camera mode — flip the user's preference, persist it, and
-// re-bind the controller. Updates the toggle button styling.
-function setCameraMode(mode) {
-  if (mode !== 'earth' && mode !== 'cad') return;
-  DS_STATE.cameraMode = mode;
-  _saveCameraMode(mode);
-  if (DS_STATE.cesiumViewer) applyCameraControls(DS_STATE.cesiumViewer, mode);
-  // Update the pill toggle styling
-  document.querySelectorAll('.ds-cammode-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.cammode === mode);
-  });
-  // User-visible status
-  const label = mode === 'cad' ? 'CAD mode' : 'Google Earth mode';
-  console.log('[CAM] mode set to', mode);
-  if (typeof setStatus === 'function') setStatus('ready', 'Camera: ' + label);
+  // Middle-drag → tilt (pitch). Ctrl+Left as fallback for Mac trackpads
+  // and any device without a middle button. Two-finger touch drag (PINCH)
+  // also tilts for iPad.
+  c.tiltEventTypes = [
+    E.MIDDLE_DRAG,
+    { eventType: E.LEFT_DRAG, modifier: M.CTRL },
+    E.PINCH
+  ];
+
+  // Scroll + pinch → zoom
+  c.zoomEventTypes = [E.WHEEL, E.PINCH];
+
+  console.log('[CAM] camera controls applied');
 }
 
 // Reset the 3D camera to the default heading/pitch from the address load.
@@ -6709,7 +6667,6 @@ window.__CAM_DEBUG = function() {
   const c = v.camera;
   const carto = c.positionCartographic;
   const snap = {
-    cameraMode: DS_STATE.cameraMode,
     cesiumMode: DS_STATE.cesiumMode,
     position: {
       lat: Cesium.Math.toDegrees(carto.latitude),
@@ -13348,49 +13305,6 @@ DS_STATE.servicePhase = '1ph';   // '1ph' | '3ph'
 // See setMountMode() for the snapshot/restore logic.
 DS_STATE.cachedRoofActivePanels = new Set();      // roof panel idx values cached when in ground mode
 DS_STATE.cachedGroundActivePanels = new Set();    // ground panel idx values cached when in roof mode
-
-// ─────────────────────────────────────────────────────────────
-// 3D camera control mode — 'earth' | 'cad'
-// ─────────────────────────────────────────────────────────────
-// User-toggleable scheme for mouse bindings on the Cesium 3D
-// viewer. Two presets:
-//
-//   EARTH (Google Earth conventions):
-//     • Left-drag:        pan camera horizontally
-//     • Right-drag:       orbit / rotate around target
-//     • Ctrl+Left-drag:   tilt (pitch)
-//     • Scroll wheel:     zoom in/out
-//     • Double-click:     re-center on point
-//
-//   CAD (Fusion 360 / SketchUp / Rhino conventions):
-//     • Middle-drag:      pan camera horizontally
-//     • Right-drag:       orbit / rotate around target
-//     • Shift+Middle-drag: tilt (pitch)
-//     • Scroll wheel:     zoom in/out
-//     • Double-click:     re-center on point
-//     • Alt+Left-drag:    middle-drag substitute (for Mac trackpads
-//                         and other devices without a middle button)
-//
-// Touch gestures DO NOT change between modes — they're shared:
-//     • One finger drag:        pan
-//     • Two finger pinch:       zoom
-//     • Two finger twist:       rotate
-//     • Two finger drag U/D:    tilt
-//     • Double tap:             zoom in
-//
-// Persisted in localStorage as 'ds3d_camera_mode' so the user's
-// choice carries across sessions. Default is 'earth'.
-function _loadCameraMode() {
-  try {
-    const v = localStorage.getItem('ds3d_camera_mode');
-    if (v === 'cad' || v === 'earth') return v;
-  } catch (e) { /* localStorage may be blocked in private browsing */ }
-  return 'earth';
-}
-function _saveCameraMode(m) {
-  try { localStorage.setItem('ds3d_camera_mode', m); } catch (e) {}
-}
-DS_STATE.cameraMode = _loadCameraMode();
 
 function onContactChange() {
   DS_STATE.contact = {
