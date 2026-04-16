@@ -6538,6 +6538,12 @@ async function initCesium() {
   // keyboard navigation (WASD/QE/RF/+-/Home).
   applyCameraControls(viewer);
   _wireCameraKeyboard(viewer);
+
+  // Suppress the browser's right-click context menu on the Cesium
+  // canvas so right-click-hold-drag cleanly triggers the rotate/orbit
+  // action without the menu popping up and stealing the gesture.
+  viewer.scene.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  document.getElementById('ds-cesium').addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
 // ═════════════════════════════════════════════════════════════
