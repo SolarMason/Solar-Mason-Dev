@@ -6332,7 +6332,7 @@ function show3DToast(text) {
 async function enterCesium3D(opts = {}) {
   const silent = !!opts.silent;
   if (!DS_STATE.coords) {
-    if (!silent) alert('Load an address first');
+    if (!silent) setStatus('error', 'Enter a project address before switching to 3D');
     return;
   }
   const mapDiv = document.getElementById('ds-map');
@@ -7016,9 +7016,6 @@ async function fetchSolarInsights() {
     DS_STATE.obstructions.forEach(o => o.setMap(null));
     DS_STATE.obstructions = [];
   }
-  const dr = document.getElementById('ds-dup-row'); if (dr) dr.disabled = true;
-  const dc = document.getElementById('ds-dup-col'); if (dc) dc.disabled = true;
-  const selPanelEl = document.getElementById('ds-selected-panel'); if (selPanelEl) selPanelEl.textContent = 'None';
 
   // Also pre-compute a "best config" count from solarPanelConfigs
   const configs = sp.solarPanelConfigs || [];
@@ -8373,7 +8370,7 @@ function toggleGroundPlacement() {
   DS_STATE.groundPlacementActive = !DS_STATE.groundPlacementActive;
   if (DS_STATE.groundPlacementActive) {
     if (!DS_STATE.map) {
-      alert('Load an address first to see the map');
+      setStatus('error', 'Enter a project address first so the map can load');
       DS_STATE.groundPlacementActive = false;
       return;
     }
@@ -9446,7 +9443,6 @@ function placeGroundPanel(center) {
 
 function selectGroundPanel(idx) {
   DS_STATE.selectedGroundPanel = idx;
-  const selPanelEl = document.getElementById('ds-selected-panel'); if (selPanelEl) selPanelEl.textContent = `Panel #${idx - 99999}`;
   // Highlight selected
   for (const pidx of DS_STATE.panelPolygons.keys()) applyPanelStyle(pidx);
   const poly = DS_STATE.panelPolygons.get(idx);
@@ -9475,7 +9471,6 @@ function clearGroundPanels() {
   // mode toggle doesn't try to restore stale idxs from a deleted panel set.
   if (DS_STATE.cachedGroundActivePanels) DS_STATE.cachedGroundActivePanels.clear();
   _closeAvansContextMenu();
-  const selPanelEl = document.getElementById('ds-selected-panel'); if (selPanelEl) selPanelEl.textContent = 'None';
   syncSliderToActive();
   updateSliderDisplay(activeCountForMode());
   updateSystemStats();
@@ -9491,7 +9486,7 @@ function duplicateCol() {
 }
 
 function _duplicateDirection(direction) {
-  if (DS_STATE.selectedGroundPanel === null) { alert('Click a panel to select it first'); return; }
+  if (DS_STATE.selectedGroundPanel === null) { setStatus('error', 'Click a panel to select it first'); return; }
   const source = DS_STATE.allPanels.find(p => p.idx === DS_STATE.selectedGroundPanel);
   if (!source) return;
 
@@ -9644,7 +9639,7 @@ function showLegend() {
 // ═════════════════════════════════════════════════════════════
 function toggleDrawObstruction() {
   if (!DS_STATE.drawingManager) {
-    alert('Load an address first');
+    setStatus('error', 'Enter a project address first');
     return;
   }
   const btn = document.getElementById('ds-draw-obst');
@@ -11454,7 +11449,7 @@ function buildMapSnapshotUrl(width = 640, height = 400) {
 }
 
 async function exportProposal() {
-  if (!DS_STATE.results) { alert('Run calculation first'); return; }
+  if (!DS_STATE.results) { setStatus('error', 'Run Calculate & Model first to generate results'); return; }
   const r = DS_STATE.results;
   const shade = computeShadeAnalysis();
   const bom = computeBOM();
