@@ -8506,9 +8506,6 @@ function reorientArray(arrayId, newTilt, newAz) {
   refresh3DIfActive();
 }
 
-// Backwards-compat shim
-function rotateArray(arrayId, newAz) { reorientArray(arrayId, undefined, newAz); }
-
 
 // ═════════════════════════════════════════════════════════════
 // SEMS AVANS FOUNDATION ENGINEERING — ASCE 7, ACI 318, Broms, Meyerhof
@@ -9478,13 +9475,6 @@ function clearGroundPanels() {
   refresh3DIfActive();
 }
 
-function duplicateRow() {
-  _duplicateDirection('row');
-}
-function duplicateCol() {
-  _duplicateDirection('col');
-}
-
 function _duplicateDirection(direction) {
   if (DS_STATE.selectedGroundPanel === null) { setStatus('error', 'Click a panel to select it first'); return; }
   const source = DS_STATE.allPanels.find(p => p.idx === DS_STATE.selectedGroundPanel);
@@ -10110,12 +10100,14 @@ function renderMonthlyChart(monthly) {
   }
 }
 
-// Re-render the production-vs-consumption chart using cached results.
-// Called after EV/fleet load changes so the stacked bars update live
-// without requiring the user to re-run Calculate & Model.
+// Re-render the production-vs-consumption chart AND monthly table
+// using cached results. Called after EV/fleet load changes so the
+// stacked bars and consumption figures update live without requiring
+// the user to re-run Calculate & Model.
 function refreshChartIfReady() {
   if (DS_STATE.results && DS_STATE.results.monthly) {
     renderMonthlyChart(DS_STATE.results.monthly);
+    renderMonthlyTable(DS_STATE.results.monthly, DS_STATE.results.rate);
   }
 }
 
