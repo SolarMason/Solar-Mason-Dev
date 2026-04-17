@@ -7029,7 +7029,6 @@ async function fetchSolarInsights() {
   slider.min = 0;
   slider.max = DS_STATE.maxPanels;
   slider.value = suggestedCount;
-  DS_STATE.selectedCount = suggestedCount;
 
   // Initialize activePanels to top N ROOF panels by energy (excluding obstructed
   // ones). We do a roof-scoped reset rather than activePanels.clear() so that
@@ -9699,7 +9698,6 @@ function updateSystemStats() {
   const systemKw = (panelW * count) / 1000;
   document.getElementById('ds-kw').innerHTML = systemKw.toFixed(2) + '<span class="ds-stat-unit">kW DC</span>';
   document.getElementById('ds-active-count').innerHTML = count.toLocaleString() + '<span class="ds-stat-unit">panels</span>';
-  DS_STATE.selectedCount = count;
   // Keep inverter recommendations + compatibility display in sync as panel count changes.
   // Guarded because updateSystemStats is called during very early init before the inverter UI exists.
   if (document.getElementById('ds-inv-ep-model')) {
@@ -9912,7 +9910,10 @@ async function runDesignStudio() {
     // Annual offset card — only shown when a bill has been uploaded/entered
     const offsetCard = document.getElementById('r-offset-card');
     if (DS_STATE.billData && DS_STATE.billData.annualKwh) {
-      const offset = (annualProd / DS_STATE.billData.annualKwh) * 100;
+      const evKwh = (DS_STATE.evLoad && DS_STATE.evLoad.annualKwh) || 0;
+      const fleetKwh = (DS_STATE.fleetLoad && DS_STATE.fleetLoad.totalAnnualKwh) || 0;
+      const totalConsKwh = DS_STATE.billData.annualKwh + evKwh + fleetKwh;
+      const offset = (annualProd / totalConsKwh) * 100;
       const offsetEl = document.getElementById('r-offset');
       offsetEl.textContent = offset.toFixed(0) + '%';
       offsetEl.style.color = offset >= 100 ? '#059669' : (offset >= 80 ? '#0B2545' : '#dc2626');
