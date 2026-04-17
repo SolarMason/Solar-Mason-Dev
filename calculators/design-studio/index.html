@@ -6041,7 +6041,6 @@ const DS_STATE = {
   panelWidthM: 1.045,
   panelHeightM: 1.879,
   maxPanels: 0,
-  selectedCount: 0,
   results: null
 };
 
@@ -11501,9 +11500,13 @@ async function exportProposal() {
   const gasolineGal = Math.round(lifetimeKwh * 0.0924);         // 0.0924 gal equiv per kWh
 
   // --- Utility-without-solar scenario (25 years at escalating rate) ---
+  // Total consumption includes EV + fleet because without solar the
+  // customer would still pay the utility for all EV charging.
   const utilityOnly25 = [];
   let cumUtility = 0;
-  const annualKwh = DS_STATE.billData?.annualKwh || r.annualProd;
+  const pdfEvKwh = (DS_STATE.evLoad && DS_STATE.evLoad.annualKwh) || 0;
+  const pdfFleetKwh = (DS_STATE.fleetLoad && DS_STATE.fleetLoad.totalAnnualKwh) || 0;
+  const annualKwh = (DS_STATE.billData?.annualKwh || r.annualProd) + pdfEvKwh + pdfFleetKwh;
   for (let y = 1; y <= 25; y++) {
     const yearRate = r.rate * Math.pow(1 + r.esc, y - 1);
     const yearCost = annualKwh * yearRate;
