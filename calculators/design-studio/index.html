@@ -10110,6 +10110,15 @@ function renderMonthlyChart(monthly) {
   }
 }
 
+// Re-render the production-vs-consumption chart using cached results.
+// Called after EV/fleet load changes so the stacked bars update live
+// without requiring the user to re-run Calculate & Model.
+function refreshChartIfReady() {
+  if (DS_STATE.results && DS_STATE.results.monthly) {
+    renderMonthlyChart(DS_STATE.results.monthly);
+  }
+}
+
 function renderMonthlyTable(monthly, rate) {
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const total = monthly.reduce((a,b) => a+b, 0);
@@ -12771,6 +12780,7 @@ function onEvModelChange() {
       selectOffsetPreset(DS_STATE.activeOffsetPct);
     }
     syncChargerQtyToVehicles();  // vehicle removed — adjust charger count
+    refreshChartIfReady();  // update chart bars
     if (typeof updateV2hCallout === 'function') updateV2hCallout();
     renderBOM();
     return;
@@ -12832,6 +12842,7 @@ function recalcEvLoad() {
       selectOffsetPreset(DS_STATE.activeOffsetPct);
     }
     syncChargerQtyToVehicles();  // vehicle removed — adjust charger count
+    refreshChartIfReady();  // update chart bars
     return;
   }
   const ev = EV_DB[idx];
@@ -12854,6 +12865,7 @@ function recalcEvLoad() {
     selectOffsetPreset(DS_STATE.activeOffsetPct);
   }
   syncChargerQtyToVehicles();  // 1:1 charger-to-vehicle ratio
+  refreshChartIfReady();  // update stacked EV/fleet bars in chart
   if (typeof updateV2hCallout === 'function') updateV2hCallout();
 }
 
@@ -13706,6 +13718,7 @@ function recalcFleetLoad() {
     selectOffsetPreset(DS_STATE.activeOffsetPct);
   }
   syncChargerQtyToVehicles();  // fleet changed — adjust charger count to 1:1
+  refreshChartIfReady();  // update stacked fleet bars in chart
 }
 
 function updateFleetSummary() {
