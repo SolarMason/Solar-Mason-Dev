@@ -9469,6 +9469,7 @@ function clearGroundPanels() {
   DS_STATE.avansRows = [];
   DS_STATE.currentAvansRowId = null;
   DS_STATE.selectedGroundPanel = null;
+  DS_STATE.activeOffsetPct = null;  // user cleared everything — no preset is active
   // Clear the cached ground active-panel snapshot so a future
   // mode toggle doesn't try to restore stale idxs from a deleted panel set.
   if (DS_STATE.cachedGroundActivePanels) DS_STATE.cachedGroundActivePanels.clear();
@@ -10505,6 +10506,9 @@ function sectionsForPanelCount(panelCount, sectionType) {
 // In roof mode, this sets the slider and applies top-N panels.
 // In ground mode, this auto-deploys AVANS sections to reach the target.
 function selectOffsetPreset(offsetPct) {
+  // Track the active preset so we can auto-readjust when EV/fleet load changes
+  DS_STATE.activeOffsetPct = offsetPct;
+
   // ─── GROUND MODE BRANCH ─────────────────────────────────────
   if (DS_STATE.mountMode === 'ground') {
     const panelsNeeded = groundPanelCountForOffset(offsetPct);
@@ -12535,6 +12539,8 @@ const EV_CHARGER_DB = [
 
 // ─── EV state ──────────────────────────────────────────────
 DS_STATE.evLoad     = null;  // { evIndex, whPerMi, miles, period, annualKwh } or null
+DS_STATE.activeOffsetPct = null; // tracks the currently-active offset preset (80/100/120/custom)
+                                 // so we can auto-readjust sections when EV/fleet load changes
 DS_STATE.evCharger  = null;  // selected EV_CHARGER_DB entry or null
 DS_STATE.evChargerQty = 1;   // commercial fleets often install multiple dispensers
 DS_STATE.evPeriod   = 'day'; // 'day' | 'week' | 'month' | 'year'
@@ -12626,6 +12632,11 @@ function onEvModelChange() {
     metaEl.innerHTML = 'Select a vehicle to estimate annual charging load';
     updateEvResultCard();
     refreshOffsetPresets();
+    // Auto-readjust sections — removing an EV lowers the total load,
+    // so the active offset preset now needs fewer sections.
+    if (DS_STATE.activeOffsetPct != null) {
+      selectOffsetPreset(DS_STATE.activeOffsetPct);
+    }
     if (typeof updateV2hCallout === 'function') updateV2hCallout();
     renderBOM();
     return;
@@ -12682,6 +12693,10 @@ function recalcEvLoad() {
   if (idx < 0) {
     DS_STATE.evLoad = null;
     updateEvResultCard();
+    refreshOffsetPresets();
+    if (DS_STATE.activeOffsetPct != null) {
+      selectOffsetPreset(DS_STATE.activeOffsetPct);
+    }
     return;
   }
   const ev = EV_DB[idx];
@@ -12697,6 +12712,12 @@ function recalcEvLoad() {
   DS_STATE.evLoad = { evIndex: idx, whPerMi, miles, period: DS_STATE.evPeriod, milesAnnual, annualKwh };
   updateEvResultCard();
   refreshOffsetPresets();  // offset targets now include EV load
+  // Auto-readjust sections on the map if user has an active offset preset.
+  // Adding an EV while at "100% offset" should deploy extra sections to
+  // maintain the 100% target against the new higher total load.
+  if (DS_STATE.activeOffsetPct != null) {
+    selectOffsetPreset(DS_STATE.activeOffsetPct);
+  }
   if (typeof updateV2hCallout === 'function') updateV2hCallout();
 }
 
@@ -13534,6 +13555,12 @@ function recalcFleetLoad() {
   DS_STATE.fleetLoad = { totalAnnualKwh, totalVehicles };
   updateFleetSummary();
   if (typeof refreshOffsetPresets === 'function') refreshOffsetPresets();
+  // Auto-readjust sections on the map if user has an active offset preset.
+  // Adding fleet vehicles while at "100% offset" should deploy extra sections
+  // to maintain the 100% target against the new higher total load.
+  if (DS_STATE.activeOffsetPct != null) {
+    selectOffsetPreset(DS_STATE.activeOffsetPct);
+  }
 }
 
 function updateFleetSummary() {
@@ -16363,6 +16390,7 @@ function clearRoofPanels() {
   updateSystemStats();
   refresh3DIfActive();
   document.querySelectorAll('.ds-preset-btn').forEach(b => b.classList.remove('active'));
+  DS_STATE.activeOffsetPct = null;  // user cleared — no preset is active
   setStatus('ready', 'All roof panels cleared — use the slider, presets, or tap individual panels to add them back');
 }
 
@@ -16374,6 +16402,7 @@ document.getElementById('ds-slider').addEventListener('input', function() {
   refresh3DIfActive();
   // Deactivate any preset highlight if user drags the slider manually
   document.querySelectorAll('.ds-preset-btn').forEach(b => b.classList.remove('active'));
+  DS_STATE.activeOffsetPct = null;  // manual slider override — no preset is active
 });
 
 // Live rotation — adjusting the ground tilt or azimuth rotates the selected array
