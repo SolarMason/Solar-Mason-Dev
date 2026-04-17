@@ -10524,29 +10524,39 @@ function selectOffsetPreset(offsetPct) {
     });
 
     if (delta > 0) {
-      // Auto-deploy delta sections. Each setAvansType call either drops
-      // the first section at map center (CASE A) or appends to the
-      // current row (CASE B, including auto-starting a new row when
-      // the current row is at the 10-section cap).
+      // Need more sections — auto-deploy the delta
       console.log('[OFFSET] ground deploy:', { offsetPct, panelsNeeded, sectionsNeeded, have, delta, sectionType });
       for (let i = 0; i < delta; i++) {
         setAvansType(sectionType);
+      }
+    } else if (delta < 0) {
+      // Have too many sections — remove from the end (last deployed first).
+      // This gives the user clean auto-adjustment: clicking 80% after
+      // deploying for 120% trims the excess sections automatically.
+      console.log('[OFFSET] ground trim:', { offsetPct, panelsNeeded, sectionsNeeded, have, removing: -delta, sectionType });
+      const toRemove = -delta;
+      for (let i = 0; i < toRemove; i++) {
+        // Always delete the LAST section in groundArrays — most recently
+        // deployed, least likely to have been manually repositioned.
+        const last = DS_STATE.groundArrays[DS_STATE.groundArrays.length - 1];
+        if (last) deleteAvansArray(last.id);
       }
     }
 
     const meta = document.getElementById('ds-custom-offset-meta');
     if (meta) {
       const totalNow = DS_STATE.groundArrays.length;
+      const label = sectionType === 'AVANS_10' ? 'AVANS 10.0' : 'AVANS 8.0';
       if (delta > 0) {
-        const label = sectionType === 'AVANS_10' ? 'AVANS 10.0' : 'AVANS 8.0';
-        meta.innerHTML = `Deployed ${delta} ${label} section${delta !== 1 ? 's' : ''} · total <strong>${totalNow}</strong> on site for <strong>${offsetPct}%</strong> offset`;
-      } else if (delta === 0) {
-        meta.innerHTML = `Already at <strong>${offsetPct}%</strong> offset (${totalNow} sections placed)`;
+        meta.innerHTML = `Added ${delta} ${label} section${delta !== 1 ? 's' : ''} · <strong>${totalNow}</strong> on site for <strong>${offsetPct}%</strong> offset`;
+      } else if (delta < 0) {
+        meta.innerHTML = `Removed ${-delta} ${label} section${-delta !== 1 ? 's' : ''} · <strong>${totalNow}</strong> on site for <strong>${offsetPct}%</strong> offset`;
       } else {
-        meta.innerHTML = `<span style="color:#f59e0b">You have ${-delta} more section${-delta !== 1 ? 's' : ''} than needed for ${offsetPct}% — clear and redeploy if you want to downsize</span>`;
+        meta.innerHTML = `Already at <strong>${offsetPct}%</strong> offset (${totalNow} sections)`;
       }
     }
     updateSystemStats();
+    if (typeof refreshOffsetPresets === 'function') refreshOffsetPresets();
     return;
   }
 
