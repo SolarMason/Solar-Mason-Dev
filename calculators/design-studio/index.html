@@ -9991,25 +9991,35 @@ async function runDesignStudio() {
 // ═════════════════════════════════════════════════════════════
 function renderMonthlyChart(monthly) {
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const cons = DS_STATE.billData && DS_STATE.billData.monthlyConsumption;
-  const hasCons = !!cons;
+  const baseCons = DS_STATE.billData && DS_STATE.billData.monthlyConsumption;
+  const hasCons = !!baseCons;
 
-  // Y-axis max must accommodate the larger of the two series
+  // EV + fleet loads distributed evenly across 12 months
+  const evMonthly = (DS_STATE.evLoad && DS_STATE.evLoad.annualKwh) ? DS_STATE.evLoad.annualKwh / 12 : 0;
+  const fleetMonthly = (DS_STATE.fleetLoad && DS_STATE.fleetLoad.totalAnnualKwh) ? DS_STATE.fleetLoad.totalAnnualKwh / 12 : 0;
+  const hasEv = evMonthly > 0;
+  const hasFleet = fleetMonthly > 0;
+
+  // Build total consumption per month (base + EV + fleet)
+  const totalCons = hasCons ? baseCons.map(c => c + evMonthly + fleetMonthly) : null;
+
+  // Y-axis max must accommodate the larger of production vs total consumption
   const maxProd = Math.max(...monthly);
-  const maxCons = hasCons ? Math.max(...cons) : 0;
+  const maxCons = totalCons ? Math.max(...totalCons) : 0;
   const max = Math.max(maxProd, maxCons);
 
   const W = 780, H = 260, padL = 55, padR = 20, padT = 25, padB = 40;
   const plotH = H - padT - padB;
   const plotW = W - padL - padR;
   const slot = plotW / 12;
-  // Two bars per month if comparison active, otherwise one wider bar
   const barW = hasCons ? slot * 0.34 : slot * 0.7;
   const gap = hasCons ? slot * 0.04 : 0;
 
   let svg = `<svg viewBox="0 0 ${W} ${H}" class="ds-monthly-chart"><defs>`
           + `<linearGradient id="dsbar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2D82BE"/><stop offset="1" stop-color="#1B5E8A"/></linearGradient>`
           + `<linearGradient id="dsbar2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dc2626"/><stop offset="1" stop-color="#991b1b"/></linearGradient>`
+          + `<linearGradient id="dsbar-ev" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f59e0b"/><stop offset="1" stop-color="#d97706"/></linearGradient>`
+          + `<linearGradient id="dsbar-fleet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#6d28d9"/></linearGradient>`
           + `</defs>`;
 
   // Grid + Y labels
@@ -10025,23 +10035,46 @@ function renderMonthlyChart(monthly) {
   monthly.forEach((kwh, i) => {
     const slotX = padL + i * slot;
     if (hasCons) {
-      // Two bars: production (blue, left) + consumption (red, right)
+      // Production bar (blue, left)
       const hP = (kwh / max) * plotH;
       const xP = slotX + (slot/2) - barW - gap/2;
       const yP = padT + plotH - hP;
       svg += `<rect x="${xP}" y="${yP}" width="${barW}" height="${hP}" fill="url(#dsbar)" rx="2"/>`;
 
-      const cKwh = cons[i];
-      const hC = (cKwh / max) * plotH;
+      // Consumption bar (stacked: base bill + EV + fleet, right)
       const xC = slotX + (slot/2) + gap/2;
-      const yC = padT + plotH - hC;
-      svg += `<rect x="${xC}" y="${yC}" width="${barW}" height="${hC}" fill="url(#dsbar2)" rx="2"/>`;
+      const baseH = (baseCons[i] / max) * plotH;
+      const evH = (evMonthly / max) * plotH;
+      const fleetH = (fleetMonthly / max) * plotH;
+      const totalH = baseH + evH + fleetH;
+      const yBase = padT + plotH - totalH;
 
-      // Offset % above the taller bar
+      // Draw bottom-to-top: base (red), then EV (amber), then fleet (purple)
+      // Stack order: fleet on top, EV in middle, base at bottom
+      let stackY = padT + plotH;
+      // Base bill segment (bottom)
+      stackY -= baseH;
+      svg += `<rect x="${xC}" y="${stackY}" width="${barW}" height="${baseH}" fill="url(#dsbar2)" rx="0"/>`;
+      // EV segment (middle)
+      if (hasEv) {
+        stackY -= evH;
+        svg += `<rect x="${xC}" y="${stackY}" width="${barW}" height="${evH}" fill="url(#dsbar-ev)" rx="0"/>`;
+      }
+      // Fleet segment (top)
+      if (hasFleet) {
+        stackY -= fleetH;
+        svg += `<rect x="${xC}" y="${stackY}" width="${barW}" height="${fleetH}" fill="url(#dsbar-fleet)" rx="0"/>`;
+      }
+      // Round the top corners of the topmost segment
+      const topY = padT + plotH - totalH;
+      svg += `<rect x="${xC}" y="${topY}" width="${barW}" height="3" fill="${hasFleet ? 'url(#dsbar-fleet)' : hasEv ? 'url(#dsbar-ev)' : 'url(#dsbar2)'}" rx="2"/>`;
+
+      // Offset % above the taller bar (production vs TOTAL consumption)
+      const cKwh = totalCons[i];
       const offset = cKwh > 0 ? (kwh / cKwh * 100) : 0;
       const offColor = offset >= 100 ? '#059669' : '#dc2626';
-      const topY = Math.min(yP, yC);
-      svg += `<text x="${slotX + slot/2}" y="${topY - 5}" text-anchor="middle" fill="${offColor}" font-size="9.5" font-weight="800">${offset.toFixed(0)}%</text>`;
+      const topBar = Math.min(yP, topY);
+      svg += `<text x="${slotX + slot/2}" y="${topBar - 5}" text-anchor="middle" fill="${offColor}" font-size="9.5" font-weight="800">${offset.toFixed(0)}%</text>`;
     } else {
       // Single production bar
       const h = (kwh / max) * plotH;
@@ -10059,8 +10092,10 @@ function renderMonthlyChart(monthly) {
   if (hasCons) {
     html += '<div class="ds-chart-legend">'
           + '<div class="ds-chart-legend-item"><div class="ds-chart-legend-swatch prod"></div>Production (modeled)</div>'
-          + '<div class="ds-chart-legend-item"><div class="ds-chart-legend-swatch cons"></div>Consumption (your bill)</div>'
-          + '</div>';
+          + '<div class="ds-chart-legend-item"><div class="ds-chart-legend-swatch cons"></div>Consumption (bill)</div>';
+    if (hasEv) html += '<div class="ds-chart-legend-item"><div class="ds-chart-legend-swatch" style="background:linear-gradient(135deg,#f59e0b,#d97706)"></div>EV Charging</div>';
+    if (hasFleet) html += '<div class="ds-chart-legend-item"><div class="ds-chart-legend-swatch" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)"></div>Fleet EV</div>';
+    html += '</div>';
   }
   document.getElementById('ds-monthly-chart').innerHTML = html;
 
@@ -10069,8 +10104,8 @@ function renderMonthlyChart(monthly) {
   if (chartTitle) {
     if (hasCons) {
       const totalProd = monthly.reduce((a,b)=>a+b,0);
-      const totalCons = cons.reduce((a,b)=>a+b,0);
-      const annualOff = totalCons > 0 ? (totalProd/totalCons*100) : 0;
+      const totalConsAll = totalCons.reduce((a,b)=>a+b,0);
+      const annualOff = totalConsAll > 0 ? (totalProd/totalConsAll*100) : 0;
       const pillClass = annualOff >= 100 ? 'over' : (annualOff >= 80 ? '' : 'under');
       chartTitle.innerHTML = `<svg class="gc-ico" viewBox="0 0 20 20" fill="none"><path d="M3 17h14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="5" y="9" width="2.5" height="7" rx=".5" fill="currentColor" opacity=".5"/><rect x="9" y="5" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".65"/><rect x="13" y="7" width="2.5" height="9" rx=".5" fill="currentColor" opacity=".8"/></svg> Production vs. Consumption <span class="ds-offset-pill ${pillClass}">${annualOff.toFixed(0)}% annual offset</span>`;
     } else {
@@ -11518,12 +11553,16 @@ async function exportProposal() {
   // Production-vs-Consumption dual-bar chart for the PDF.
   // Mirrors the in-app renderMonthlyChart() dual-bar logic but is fully
   // self-contained — no DOM dependencies, returns a complete SVG string
-  // including legend HTML below it. Per-month offset percentages render
-  // above the taller bar in green (≥100%) or red (<100%), and the title
-  // includes an annual offset pill so the customer can see the headline
-  // number without doing arithmetic.
+  // including legend HTML below it. Consumption bar is stacked: base bill
+  // (red) + EV charging (amber) + fleet EV (purple) when those loads exist.
   const svgProdVsCons = (monthly, cons) => {
     if (!monthly || !cons || cons.length !== 12) return '';
+    const evMonthly = (DS_STATE.evLoad && DS_STATE.evLoad.annualKwh) ? DS_STATE.evLoad.annualKwh / 12 : 0;
+    const fleetMonthly = (DS_STATE.fleetLoad && DS_STATE.fleetLoad.totalAnnualKwh) ? DS_STATE.fleetLoad.totalAnnualKwh / 12 : 0;
+    const hasEv = evMonthly > 0;
+    const hasFleet = fleetMonthly > 0;
+    const totalCons = cons.map(c => c + evMonthly + fleetMonthly);
+
     const W = 640, H = 220;
     const padL = 50, padR = 16, padT = 22, padB = 38;
     const plotW = W - padL - padR;
@@ -11531,9 +11570,8 @@ async function exportProposal() {
     const slot = plotW / 12;
     const barW = slot * 0.36;
     const gap  = slot * 0.06;
-    const max  = Math.max(...monthly, ...cons) * 1.18;  // headroom for offset labels
+    const max  = Math.max(...monthly, ...totalCons) * 1.18;
 
-    // Gradient defs (subtle 2-stop fills, blue for production, red for consumption)
     let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:640px;display:block;margin:.5rem auto">
       <defs>
         <linearGradient id="pdfBarP" x1="0" y1="0" x2="0" y2="1">
@@ -11542,9 +11580,14 @@ async function exportProposal() {
         <linearGradient id="pdfBarC" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#f87171"/><stop offset="100%" stop-color="#dc2626"/>
         </linearGradient>
+        <linearGradient id="pdfBarEv" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/>
+        </linearGradient>
+        <linearGradient id="pdfBarFleet" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#6d28d9"/>
+        </linearGradient>
       </defs>`;
 
-    // Y axis gridlines and labels
     for (let i = 0; i <= 4; i++) {
       const val = max * (1 - i/4);
       const y = padT + (plotH * i / 4);
@@ -11553,37 +11596,57 @@ async function exportProposal() {
     }
     svg += `<text x="14" y="${padT + plotH/2}" fill="#64748B" font-size="9" font-weight="700" text-anchor="middle" transform="rotate(-90, 14, ${padT + plotH/2})">kWh / month</text>`;
 
-    // Bars + offset labels
     monthly.forEach((kwh, i) => {
       const slotX = padL + i * slot;
+      // Production bar (blue, left)
       const hP = (kwh / max) * plotH;
       const xP = slotX + (slot/2) - barW - gap/2;
       const yP = padT + plotH - hP;
       svg += `<rect x="${xP.toFixed(1)}" y="${yP.toFixed(1)}" width="${barW.toFixed(1)}" height="${hP.toFixed(1)}" fill="url(#pdfBarP)" rx="1.5"/>`;
 
-      const cKwh = cons[i] || 0;
-      const hC = (cKwh / max) * plotH;
+      // Consumption bar (stacked: base + EV + fleet, right)
       const xC = slotX + (slot/2) + gap/2;
-      const yC = padT + plotH - hC;
-      svg += `<rect x="${xC.toFixed(1)}" y="${yC.toFixed(1)}" width="${barW.toFixed(1)}" height="${hC.toFixed(1)}" fill="url(#pdfBarC)" rx="1.5"/>`;
+      const baseH = ((cons[i] || 0) / max) * plotH;
+      const evH = (evMonthly / max) * plotH;
+      const fleetH = (fleetMonthly / max) * plotH;
+      let stackY = padT + plotH;
+      // Base bill (bottom, red)
+      stackY -= baseH;
+      svg += `<rect x="${xC.toFixed(1)}" y="${stackY.toFixed(1)}" width="${barW.toFixed(1)}" height="${baseH.toFixed(1)}" fill="url(#pdfBarC)" rx="0"/>`;
+      // EV (middle, amber)
+      if (hasEv) {
+        stackY -= evH;
+        svg += `<rect x="${xC.toFixed(1)}" y="${stackY.toFixed(1)}" width="${barW.toFixed(1)}" height="${evH.toFixed(1)}" fill="url(#pdfBarEv)" rx="0"/>`;
+      }
+      // Fleet (top, purple)
+      if (hasFleet) {
+        stackY -= fleetH;
+        svg += `<rect x="${xC.toFixed(1)}" y="${stackY.toFixed(1)}" width="${barW.toFixed(1)}" height="${fleetH.toFixed(1)}" fill="url(#pdfBarFleet)" rx="0"/>`;
+      }
 
-      // Offset % above the taller bar
+      // Offset % above the taller bar (production vs TOTAL consumption)
+      const cKwh = totalCons[i];
       const offset = cKwh > 0 ? (kwh / cKwh * 100) : 0;
       const offColor = offset >= 100 ? '#059669' : '#dc2626';
-      const topY = Math.min(yP, yC);
+      const topCons = padT + plotH - (baseH + evH + fleetH);
+      const topY = Math.min(yP, topCons);
       svg += `<text x="${(slotX + slot/2).toFixed(1)}" y="${(topY - 4).toFixed(1)}" text-anchor="middle" fill="${offColor}" font-size="8.5" font-weight="800">${offset.toFixed(0)}%</text>`;
 
-      // Month label
       svg += `<text x="${(slotX + slot/2).toFixed(1)}" y="${(padT + plotH + 14).toFixed(1)}" text-anchor="middle" fill="#64748B" font-size="9.5" font-weight="700">${months[i]}</text>`;
     });
 
     svg += '</svg>';
 
-    // Legend below the chart
-    const legend = `
-      <div style="display:flex;justify-content:center;gap:1.4rem;margin-top:.3rem;font-size:.7rem;color:#475569;font-weight:700">
+    // Legend below the chart — includes EV + fleet when those loads exist
+    let legend = `
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:1.4rem;margin-top:.3rem;font-size:.7rem;color:#475569;font-weight:700">
         <div style="display:flex;align-items:center;gap:.35rem"><span style="display:inline-block;width:14px;height:10px;background:linear-gradient(180deg,#3B97D6,#1B5E8A);border-radius:2px"></span> Production (modeled)</div>
-        <div style="display:flex;align-items:center;gap:.35rem"><span style="display:inline-block;width:14px;height:10px;background:linear-gradient(180deg,#f87171,#dc2626);border-radius:2px"></span> Consumption (your bill)</div>
+        <div style="display:flex;align-items:center;gap:.35rem"><span style="display:inline-block;width:14px;height:10px;background:linear-gradient(180deg,#f87171,#dc2626);border-radius:2px"></span> Consumption (bill)</div>`;
+    if (hasEv) legend += `
+        <div style="display:flex;align-items:center;gap:.35rem"><span style="display:inline-block;width:14px;height:10px;background:linear-gradient(180deg,#f59e0b,#d97706);border-radius:2px"></span> EV Charging</div>`;
+    if (hasFleet) legend += `
+        <div style="display:flex;align-items:center;gap:.35rem"><span style="display:inline-block;width:14px;height:10px;background:linear-gradient(180deg,#8b5cf6,#6d28d9);border-radius:2px"></span> Fleet EV</div>`;
+    legend += `
       </div>`;
     return svg + legend;
   };
@@ -11978,7 +12041,21 @@ async function exportProposal() {
   <!-- ========== EXECUTIVE SUMMARY ========== -->
   <div class="page-break"></div>
   <h2>Executive Summary</h2>
-  <p>This proposal summarizes a <strong>${r.systemKw.toFixed(2)} kW DC grid-tied solar photovoltaic system</strong> engineered for ${r.address || 'the site'}. Based on ${r.productionSource === 'nrel_pvwatts' ? 'NREL PVWatts v8 modeling with locally-calibrated TMY weather data' : 'regional production estimates'}, this system will produce an estimated <strong>${Math.round(r.annualProd).toLocaleString()} kWh annually</strong> in Year 1${DS_STATE.billData?.annualKwh ? `, offsetting approximately <strong>${Math.round((r.annualProd/DS_STATE.billData.annualKwh)*100)}%</strong> of the property's current ${Math.round(DS_STATE.billData.annualKwh).toLocaleString()} kWh annual consumption` : ''}.</p>
+  <p>This proposal summarizes a <strong>${r.systemKw.toFixed(2)} kW DC grid-tied solar photovoltaic system</strong> engineered for ${r.address || 'the site'}. Based on ${r.productionSource === 'nrel_pvwatts' ? 'NREL PVWatts v8 modeling with locally-calibrated TMY weather data' : 'regional production estimates'}, this system will produce an estimated <strong>${Math.round(r.annualProd).toLocaleString()} kWh annually</strong> in Year 1${DS_STATE.billData?.annualKwh ? (() => {
+    const billKwh = DS_STATE.billData.annualKwh;
+    const evKwh = (DS_STATE.evLoad && DS_STATE.evLoad.annualKwh) || 0;
+    const fleetKwh = (DS_STATE.fleetLoad && DS_STATE.fleetLoad.totalAnnualKwh) || 0;
+    const totalKwh = billKwh + evKwh + fleetKwh;
+    const offsetPct = Math.round((r.annualProd / totalKwh) * 100);
+    let desc = `, offsetting approximately <strong>${offsetPct}%</strong> of the property's total <strong>${Math.round(totalKwh).toLocaleString()} kWh</strong> annual consumption`;
+    if (evKwh > 0 || fleetKwh > 0) {
+      desc += ` (${Math.round(billKwh).toLocaleString()} kWh utility`;
+      if (evKwh > 0) desc += ` + ${Math.round(evKwh).toLocaleString()} kWh EV charging`;
+      if (fleetKwh > 0) desc += ` + ${Math.round(fleetKwh).toLocaleString()} kWh fleet`;
+      desc += ')';
+    }
+    return desc;
+  })() : ''}.</p>
 
   <div class="grid-4">
     <div class="big-box"><strong>System Size</strong><span>${r.systemKw.toFixed(1)}</span><span class="sub">kW DC · ${r.count} modules</span></div>
@@ -12026,7 +12103,10 @@ async function exportProposal() {
     if (cons && cons.length === 12) {
       // Dual-bar prod-vs-cons with annual offset pill in the title
       const totalProd = r.monthly.reduce((a,b) => a+b, 0);
-      const totalCons = cons.reduce((a,b) => a+b, 0);
+      const baseCons = cons.reduce((a,b) => a+b, 0);
+      const evAnnual = (DS_STATE.evLoad && DS_STATE.evLoad.annualKwh) || 0;
+      const fleetAnnual = (DS_STATE.fleetLoad && DS_STATE.fleetLoad.totalAnnualKwh) || 0;
+      const totalCons = baseCons + evAnnual + fleetAnnual;
       const annualOff = totalCons > 0 ? (totalProd / totalCons * 100) : 0;
       const offColor  = annualOff >= 100 ? '#059669' : (annualOff >= 80 ? '#0B2545' : '#dc2626');
       return `<h3>Production vs. Consumption <span style="display:inline-block;margin-left:.4rem;padding:.15rem .55rem;background:${offColor};color:#fff;border-radius:999px;font-size:.7rem;font-weight:800;letter-spacing:.02em">${annualOff.toFixed(0)}% annual offset</span></h3>${svgProdVsCons(r.monthly, cons)}`;
