@@ -10122,14 +10122,16 @@ function refreshChartIfReady() {
 function renderMonthlyTable(monthly, rate) {
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const total = monthly.reduce((a,b) => a+b, 0);
-  const cons = DS_STATE.billData && DS_STATE.billData.monthlyConsumption;
-  const hasCons = !!cons;
+  const baseCons = DS_STATE.billData && DS_STATE.billData.monthlyConsumption;
+  const hasCons = !!baseCons;
+  const evMonthly = (DS_STATE.evLoad && DS_STATE.evLoad.annualKwh) ? DS_STATE.evLoad.annualKwh / 12 : 0;
+  const fleetMonthly = (DS_STATE.fleetLoad && DS_STATE.fleetLoad.totalAnnualKwh) ? DS_STATE.fleetLoad.totalAnnualKwh / 12 : 0;
   let h = '<table class="ds-monthly-table"><thead><tr><th>Month</th><th>Production</th>'
         + (hasCons ? '<th>Consumption</th><th>Offset</th>' : '<th>% Annual</th>')
         + '<th>Savings</th></tr></thead><tbody>';
   monthly.forEach((kwh, i) => {
     if (hasCons) {
-      const c = cons[i];
+      const c = baseCons[i] + evMonthly + fleetMonthly;
       const offset = c > 0 ? (kwh / c * 100) : 0;
       const offClass = offset >= 100 ? 'color:#059669;font-weight:800' : 'color:#0B2545;font-weight:700';
       h += `<tr><td>${months[i]}</td><td>${Math.round(kwh).toLocaleString()} kWh</td>`
@@ -10141,7 +10143,7 @@ function renderMonthlyTable(monthly, rate) {
     }
   });
   if (hasCons) {
-    const totalCons = cons.reduce((a,b)=>a+b,0);
+    const totalCons = baseCons.reduce((a,b)=>a+b,0) + (evMonthly + fleetMonthly) * 12;
     const annualOff = totalCons > 0 ? (total / totalCons * 100) : 0;
     const offClass = annualOff >= 100 ? 'color:#22c55e' : 'color:#fff';
     h += `<tr class="total"><td>Annual Total</td><td>${Math.round(total).toLocaleString()} kWh</td>`
